@@ -5,6 +5,7 @@ import type {KitManifest, KitRegistration, RegisteredCapability, CapabilityKind}
 export class KitRegistry {
   private capabilities = new Map<string, {kitId:string; value:RegisteredCapability}>();
   private manifests = new Map<string,KitManifest>();
+  constructor(private availableDependencies:Record<string,string>={}){}
   list(): RegisteredCapability[] {return [...this.capabilities.values()].map(c => c.value);}
   get(id: string): RegisteredCapability | undefined {return this.capabilities.get(id)?.value;}
   manifest(id: string): KitManifest | undefined {const result=this.manifests.get(id); return result && structuredClone(result);}
@@ -12,7 +13,7 @@ export class KitRegistry {
     manifestSchema.parse(manifest);
     if (this.manifests.has(manifest.id)) throw new Error(`Kit already registered: ${manifest.id}`);
     for (const [dependency,version] of Object.entries(manifest.dependencies)) {
-      if (this.manifests.get(dependency)?.version !== version) throw new Error(`Kit dependency unavailable: ${dependency}@${version}`);
+      if (dependency===manifest.id || (this.manifests.get(dependency)?.version??this.availableDependencies[dependency]) !== version) throw new Error(`Kit dependency unavailable: ${dependency}@${version}`);
     }
     const pending = new Map<string,RegisteredCapability>();
     let phase:'staging'|'committed'|'closed'='staging';

@@ -12,6 +12,8 @@ export interface KitManifest {
   author: string; license: string; hostApi: '1'; source: string;
   permissions: string[]; dependencies: Record<string, string>;
   capabilities: {id: string; kind: CapabilityKind}[];
+  /** Native code only: a reviewed relative JavaScript module. Never auto-loaded. */
+  entry?: string;
 }
 export interface ToolContext {
   projectId: string; sequenceId?: string; revision?: number;
