@@ -25,30 +25,39 @@
     "media:build": "sh scripts/build-media.sh"
   },
   "dependencies": {
+    "@assistant-ui/react": "0.15.28",
     "@mariozechner/pi-agent-core": "0.73.1",
     "@mariozechner/pi-ai": "0.73.1",
+    "@napi-rs/canvas": "1.0.11",
+    "@radix-ui/react-dialog": "1.3.1",
+    "@radix-ui/react-tabs": "1.2.1",
+    "@radix-ui/react-tooltip": "1.4.1",
     "@sinclair/typebox": "0.34.41",
     "@xyflow/react": "12.10.0",
+    "adm-zip": "0.6.1",
+    "ajv": "8.20.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
     "lucide-react": "0.577.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "zod": "4.3.6",
-    "adm-zip": "0.6.1",
-    "@napi-rs/canvas": "1.0.11",
-    "ajv": "8.20.0"
+    "tailwind-merge": "3.7.0",
+    "zod": "4.3.6"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/adm-zip": "0.5.8",
     "@types/node": "24.12.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@types/adm-zip": "0.5.8",
     "electron": "44.7.0",
     "electron-builder": "26.15.3",
     "esbuild": "0.28.2",
+    "tailwindcss": "4.3.3",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "vite": "7.3.7",
-    "@playwright/test": "1.58.2"
+    "vite": "7.3.7"
   },
   "build": {
     "appId": "com.reelbeam.desktop",
