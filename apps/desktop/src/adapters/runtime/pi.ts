@@ -1,6 +1,6 @@
 import {fork} from 'node:child_process';
 import type {HostToWorker,WorkerToHost,WorkerRun,WorkerResult,HostToolRequest,RuntimeEvent,HistoryUpdate} from '../../agent-worker/protocol.js';
-export type {WorkerRun,WorkerResult,HostToolRequest,RuntimeEvent,HistoryUpdate} from '../../agent-worker/protocol.js';
+export type {WorkerRun,WorkerResult,HostToolRequest,RuntimeEvent,HistoryUpdate,RunBudget,WorkerRole,HostToolName} from '../../agent-worker/protocol.js';
 
 export interface WorkerProcess {
   on(event:'message'|'error'|'exit',listener:(...args:any[])=>void):unknown;
