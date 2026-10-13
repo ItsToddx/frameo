@@ -8,7 +8,7 @@ import { CreateModal, GenerateModal, JobsModal, KitsModal, MemoriesModal, Settin
 import { Button, Empty, IconButton, Modal, uid } from './ui';
 
 type ModalType='settings'|'project'|'sequence'|'generation'|'jobs'|'kits'|'memories'|'share'|'recipe'|null;
-const defaultSettings: Settings={arkBaseUrl:'https://ark.cn-beijing.volces.com/api/v3',agentModel:'',seedanceModel:'',hasApiKey:false,generationCostLimit:20,maxModelCalls:20};
+const defaultSettings: Settings={arkBaseUrl:'https://ark.cn-beijing.volces.com/api/v3',agentModel:'',seedanceModel:'',hasApiKey:false,generationCostLimit:10,maxModelCalls:12};
 export function App() {
   const [boot,setBoot]=useState<AppBootstrap|null>(null);
   const [snapshot,setSnapshot]=useState<ProjectSnapshot|null>(null);

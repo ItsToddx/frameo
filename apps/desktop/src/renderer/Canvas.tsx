@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant, applyNodeChanges, useReactFlow, useNodesInitialized, type Node, type NodeProps } from '@xyflow/react';
+import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant, applyNodeChanges, useReactFlow, type Node, type NodeProps } from '@xyflow/react';
 import { Aperture, Film, Image, Music2, Maximize, Plus, Minus, X, ArrowDownToLine, LayoutGrid, MousePointer2 } from 'lucide-react';
 import type { Asset, CanvasItem, ProjectSnapshot, Sequence } from '../adapters/contracts/api';
 import { Button, IconButton, timecode } from './ui';
@@ -27,7 +27,6 @@ function CanvasInner({snapshot,selection,timelineOpen,onSelect,onSave,onHide,onA
   const dragging = useRef(false);
   const container = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
-  const initialized = useNodesInitialized();
   const fitCanvas = () => {
     const bounds = container.current;
     if(!bounds||!snapshot.canvas.items.length)return;
@@ -46,10 +45,10 @@ function CanvasInner({snapshot,selection,timelineOpen,onSelect,onSave,onHide,onA
     setNodes(snapshot.canvas.items.map(item => ({id:item.id,type:'card',position:{x:item.x,y:item.y},selected:item.refId===selection,style:{width:260},data:{item,asset:snapshot.assets.find(a => a.id===item.refId),sequence:snapshot.sequences.find(s=>s.id===item.refId),selected:item.refId===selection,onOpen:onSelect,onHide,onAdd}})));
   },[snapshot,selection,onSelect,onHide,onAdd]);
   useEffect(() => {
-    if(!initialized)return;
+    if(!flow.viewportInitialized)return;
     const timer = setTimeout(() => fitRef.current(),80);
     return () => clearTimeout(timer);
-  },[initialized,snapshot.project.id,snapshot.canvas.items.length,timelineOpen,flow]);
+  },[flow.viewportInitialized,snapshot.project.id,snapshot.canvas.items.length,timelineOpen]);
   return <div ref={container} className="canvas-shell" data-testid="canvas">
     <div className="canvas-topline"><div><span className="eyebrow">创作画布</span><h2>{snapshot.project.name}</h2><p>整理素材，让每一个镜头各就其位。</p></div><div className="canvas-actions"><Button onClick={onImport} disabled={busy}><Plus size={14}/>导入素材</Button><Button kind="accent" onClick={onGenerate} disabled={busy}><Aperture size={14}/>生成视频</Button></div></div>
     <ReactFlow nodes={nodes} nodeTypes={nodeTypes} onNodesChange={changes=>setNodes(prev=>applyNodeChanges(changes,prev))} onNodeClick={(_,node)=>onSelect(node.data.item)} onNodeDragStart={()=>{dragging.current=true;}} onNodeDragStop={(_,node)=>{dragging.current=false;void onSave(snapshot.canvas.items.map(item=>item.id===node.id?{...item,x:node.position.x,y:node.position.y}:item));}} fitView fitViewOptions={{padding:0.4,maxZoom:1}} minZoom={0.25} maxZoom={1.6} panOnScroll nodesDraggable={!busy} selectionOnDrag={false} nodesConnectable={false} deleteKeyCode={null} proOptions={{hideAttribution:true}}>
