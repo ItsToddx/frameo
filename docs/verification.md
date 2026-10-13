@@ -31,4 +31,6 @@ The macOS Apple Silicon release was built and checked locally on 2026-10-13:
 - Runtime dependency audit reported zero vulnerabilities. The standalone SDK built and packed with its license.
 - DMG, ZIP, SDK and the corresponding FFmpeg source archive have SHA-256 checksums.
 
-Paid Ark inference and Seedance generation have not been exercised on the owner's account. The preview is ad-hoc signed; Apple Developer ID signing/notarization has not been performed.
+One authorized real Seedance creation request was made on 2026-10-13 through the production provider and durable job runner, in an isolated project. Ark returned HTTP 404 / `ModelNotOpen` for `doubao-seedance-2-5-260628`: the selected model was not activated on the account. The app persisted a failed job without a remote task ID and did not resubmit. Credentials were loaded only into memory; no credentials or account identifiers are published.
+
+Successful real Seedance generation, polling, collection and decoding remain unverified until an activated model or endpoint is supplied. Paid Ark chat inference remains untested. The preview is ad-hoc signed; Apple Developer ID signing/notarization has not been performed.
