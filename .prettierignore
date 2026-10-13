@@ -1,0 +1,7 @@
+node_modules
+release
+dist
+resources/bin
+.scratch
+test-results
+package-lock.json
