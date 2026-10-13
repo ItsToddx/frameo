@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {GenerationGatewayError} from '../../../../../packages/application/src/generation-ports.js';
 import type {CapabilityDescriptor,JsonValue,MediaProvider,ProviderStatus} from '../../../../../packages/kit-sdk/src/index.js';
 import {seedanceDescriptor} from '../../../../../kits/builtin.js';
 
@@ -6,8 +7,8 @@ export interface SeedanceInput {
   model:string; prompt:string; duration:number; ratio:'16:9'|'9:16'|'1:1'; referenceImageDataUrl?:string;
 }
 export interface SeedanceOptions {baseUrl:string;apiKey:string;fetch?:typeof fetch;timeoutMs?:number}
-export class SeedanceError extends Error {
-  constructor(message:string,readonly kind:'unknown'|'rejected'|'failed',readonly code?:string,readonly status?:number){super(message);this.name='SeedanceError';}
+export class SeedanceError extends GenerationGatewayError {
+  constructor(message:string,readonly kind:'unknown'|'rejected'|'failed',readonly code?:string,readonly status?:number){super(message,kind,code,status);this.name='SeedanceError';}
 }
 const inputSchema=z.object({model:z.string().trim().min(1).max(200),prompt:z.string().trim().min(1).max(20000),
   duration:z.number().int().min(2).max(30),ratio:z.enum(['16:9','9:16','1:1']),

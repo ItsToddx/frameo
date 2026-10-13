@@ -82,7 +82,7 @@ export class WorkerEngine {
   private agents=new Set<Agent>();private budget?:RequestBudget;private running=false;
   constructor(private emit:Emit,private invoke:Invoke,private stream:StreamFn=streamSimple){}
   stop():void{this.budget?.stop();for(const agent of this.agents)agent.abort();}
-  async run(run:WorkerRun):Promise<WorkerResult> {
+  async run(run:WorkerRun):Promise<WorkerResult<AgentMessage>> {
     if(this.running)throw new Error('A worker can run one root request at a time');
     this.running=true;const budget=new RequestBudget({maxModelCalls:run.settings.maxModelCalls,previousBudget:run.previousBudget});this.budget=budget;
     const timer=setTimeout(()=>{budget.stop('Foreground reasoning time limit reached');this.stop();},Math.max(1,budget.maxDurationMs-budget.snapshot().elapsedMs));
@@ -91,7 +91,7 @@ export class WorkerEngine {
       if(!run.settings.apiKey.trim())throw new Error('Configure an Ark API key in Settings before starting an agent');
       const model=arkModel(run.settings.arkBaseUrl,run.settings.agentModel);
       const role=run.role??'coordinator';
-      main=this.createAgent(run,role,run.sessionId,model,budget,role==='coordinator',run.history??[]);
+      main=this.createAgent(run,role,run.sessionId,model,budget,role==='coordinator',(run.history??[]) as AgentMessage[]);
       await main.prompt(run.text);await main.waitForIdle();
       const history=this.redactValue(main.state.messages,run.settings.apiKey);
       const text=history.filter(m=>m.role==='assistant').flatMap(m=>m.content.filter(c=>c.type==='text').map(c=>c.text)).slice(-1).join('\n');

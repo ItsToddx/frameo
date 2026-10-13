@@ -2,22 +2,16 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, realpathSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
-import type { Asset, CanvasLayout, ProjectInfo, ProjectSnapshot, Sequence, Settings, Memory, KitInfo, Job, ChatMessage } from '../contracts/api';
-import type {RunBudget} from '../../agent-worker/protocol';
+import type { Asset, ProjectInfo, ProjectSnapshot, Sequence, Settings, Memory, Job, ChatMessage } from '../contracts/api';
 
 export function canonical(value:unknown):string {if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';return JSON.stringify(value)??'null';}
 export function digest(value: unknown): string { return createHash('sha256').update(canonical(value)).digest('hex'); }
 export const now = () => new Date().toISOString();
 export const id = () => randomUUID();
 export function mediaUrl(path: string): string { return `reelbeam-media://local/${encodeURIComponent(path)}`; }
-interface HistoryEntry { before: Sequence; after: Sequence; commandId: string }
-export interface PersistedState extends ProjectSnapshot {
-  formatVersion: 1; undo: Record<string,HistoryEntry[]>; redo: Record<string,HistoryEntry[]>;
-  canvasUndo: (CanvasLayout&{afterIds?:string[]})[]; canvasRedo: CanvasLayout[];
-  budgets?:Record<string,RunBudget>;
-  agentRuns?:Record<string,{rootRequestId:string;sessionId:string;status:string;sequenceId?:string;clipId?:string}>;
-}
-export class ProjectDatabase {
+export type {ProjectState as PersistedState} from '../../../../../packages/application/src/project-store.js';
+import type {ProjectState as PersistedState, ProjectStore} from '../../../../../packages/application/src/project-store.js';
+export class ProjectDatabase implements ProjectStore {
   readonly db: DatabaseSync;
   readonly directory: string;
   constructor(directory: string) {
