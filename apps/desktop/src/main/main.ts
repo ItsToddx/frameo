@@ -30,7 +30,7 @@ controller=await createDesktopApplication({userData:app.getPath('userData'),docu
   emit:event=>{if(window&&!window.isDestroyed())window.webContents.send('reelbeam:event',event);},revealFile:path=>shell.showItemInFolder(path),
   dialog:{save:options=>dialog.showSaveDialog(window,options),open:options=>dialog.showOpenDialog(window,options),confirm:options=>dialog.showMessageBox(window,options)}
 });
-window=new BrowserWindow({width:1520,height:1000,minWidth:1120,minHeight:760,title:'Reelbeam',backgroundColor:'#101112',titleBarStyle:'hiddenInset',webPreferences:{preload:join(base,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
+window=new BrowserWindow({width:1520,height:1000,minWidth:1120,minHeight:760,title:'Reelbeam',backgroundColor:'#fafafa',titleBarStyle:'hiddenInset',webPreferences:{preload:join(base,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true,webSecurity:true}});
 window.webContents.setWindowOpenHandler(()=>({action:'deny'}));
 window.webContents.on('render-process-gone',()=>{controller.resetRenderer();});
 window.webContents.on('did-start-navigation',(_event,_url,isInPlace,isMainFrame)=>{if(isMainFrame&&!isInPlace){controller.resetRenderer();}});

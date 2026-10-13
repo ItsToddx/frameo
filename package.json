@@ -22,7 +22,9 @@
     "package": "npm run build && electron-builder --mac dir",
     "dist:mac": "npm run build && npm --prefix packages/kit-sdk run build && mkdir -p release && npm pack ./packages/kit-sdk --pack-destination release && node scripts/dist-mac.mjs",
     "check": "npm run typecheck && npm test && npm run build",
-    "media:build": "sh scripts/build-media.sh"
+    "media:build": "sh scripts/build-media.sh",
+    "format": "prettier --write apps packages tests scripts docs *.json *.ts *.md",
+    "format:check": "prettier --check apps packages tests scripts docs *.json *.ts *.md"
   },
   "dependencies": {
     "@assistant-ui/react": "0.15.28",
@@ -41,6 +43,8 @@
     "lucide-react": "0.577.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
     "tailwind-merge": "3.7.0",
     "zod": "4.3.6"
   },
@@ -54,6 +58,7 @@
     "electron": "44.7.0",
     "electron-builder": "26.15.3",
     "esbuild": "0.28.2",
+    "prettier": "3.9.10",
     "tailwindcss": "4.3.3",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
