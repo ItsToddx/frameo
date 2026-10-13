@@ -1,3 +1,4 @@
+import type {RecipeRun as DomainRecipeRun, RecipeStep as DomainRecipeStep} from '../../../../../packages/core/src/recipe';
 export type Id = string;
 export type AssetKind = 'video' | 'image' | 'audio';
 export interface Asset {
@@ -35,17 +36,18 @@ export interface Job {
   title: string; progress: number; createdAt: string; updatedAt: string;
   remoteId?: string; outputAssetId?: Id; outputPath?: string; error?: string;
   cancelRequested: boolean; input: Record<string, unknown>; estimatedCost?: number;
+  stagedOutput?:{path:string;hash:string};
 }
 export interface ChatMessage {id: Id; role: 'user'|'assistant'|'tool'; text: string; createdAt: string; agent?: string}
 export interface Session {id: Id; title: string; messages: ChatMessage[]}
 export interface Memory {id: Id; scope: 'project'|'user'; content: string; revision: number; createdAt: string}
 export interface Review {
-  id: Id; kind: 'edit'|'generation'; title: string; description: string; status: 'pending'|'accepted'|'rejected';
-  sequenceId?: Id; expectedRevision?: number; commands?: EditCommand[]; generation?: GenerationInput;
-  createdAt: string;
+  id: Id; kind: 'edit'|'generation'|'memory'; title: string; description: string; status: 'pending'|'accepted'|'rejected';
+  sequenceId?: Id; expectedRevision?: number; commands?: EditCommand[]; generation?: GenerationInput; memory?:{scope:'project'|'user';content:string};
+  createdAt: string; recipeId?: Id; stepId?: Id; recipeAttempt?: number; jobId?: Id; configHash?: string; kitId?: Id; kitDigest?: string;
 }
-export interface RecipeStep {id: Id; title: string; role: 'creative'|'visual'|'editor'; status: 'pending'|'running'|'review'|'completed'|'failed'|'stale'; result?: string; attempt: number}
-export interface RecipeRun {id: Id; title: string; revision: number; status: 'running'|'paused'|'completed'|'failed'; steps: RecipeStep[]}
+export interface RecipeStep extends DomainRecipeStep {}
+export interface RecipeRun extends DomainRecipeRun {kitId: Id}
 export interface KitInfo {id: Id; name: string; version: string; description: string; author: string; license: string; category: 'provider'|'tool'|'agent'|'recipe'; installed: boolean; enabled: boolean; source: string; permissions: string[]; updateAvailable?: boolean}
 export interface ProjectInfo {id: Id; name: string; path: string; createdAt: string; updatedAt: string}
 export interface ProjectSnapshot {
@@ -73,9 +75,11 @@ export interface DesktopApi {
   snapshot(): Promise<ProjectSnapshot>;
   createSequence(input: {name: string; width: number; height: number; fps: number}): Promise<ProjectSnapshot>;
   importMedia(): Promise<ProjectSnapshot>;
-  apply(input: {sequenceId: Id; expectedRevision: number; commandId: Id; commands: EditCommand[]}): Promise<ProjectSnapshot>;
-  undo(sequenceId: Id): Promise<ProjectSnapshot>;
-  redo(sequenceId: Id): Promise<ProjectSnapshot>;
+  beginEdit(input: {sequenceId: Id; interactionId: Id}): Promise<void>;
+  endEdit(input: {sequenceId: Id; interactionId: Id}): Promise<void>;
+  apply(input: {sequenceId: Id; expectedRevision: number; commandId: Id; commands: EditCommand[]; interactionId?: Id}): Promise<ProjectSnapshot>;
+  undo(input: {sequenceId: Id; expectedRevision:number; commandId:Id}): Promise<ProjectSnapshot>;
+  redo(input: {sequenceId: Id; expectedRevision:number; commandId:Id}): Promise<ProjectSnapshot>;
   saveCanvas(input: {expectedRevision: number; items: CanvasItem[]}): Promise<ProjectSnapshot>;
   undoCanvas(): Promise<ProjectSnapshot>;
   generate(input: GenerationInput): Promise<Job>;
@@ -97,8 +101,10 @@ export interface DesktopApi {
   importKit(): Promise<KitInfo[]>;
   uninstallKit(id: Id): Promise<KitInfo[]>;
   exportRecipe(input: {recipeId: Id}): Promise<string|null>;
-  startRecipe(input: {kitId: Id; title: string; sequenceId?: Id}): Promise<ProjectSnapshot>;
+  startRecipe(input: {kitId: Id; title: string; sequenceId?: Id; input?:Record<string,unknown>}): Promise<ProjectSnapshot>;
   resumeRecipe(input: {recipeId: Id; redoStepId?: Id}): Promise<void>;
+  decideRecipeInput(input: {recipeId: Id; expectedRevision: number; stepId: Id; inputHash: string; decision: 'accept'|'reject'}): Promise<ProjectSnapshot>;
+  decideRecipeResult(input: {recipeId: Id; expectedRevision: number; stepId: Id; attempt: number; resultHash: string; decision: 'accept'|'reject'}): Promise<ProjectSnapshot>;
   exportProject(): Promise<string|null>;
   importProject(): Promise<ProjectSnapshot|null>;
   onEvent(callback: (event: AppEvent) => void): () => void;

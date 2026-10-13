@@ -11,3 +11,6 @@ test-results/
 playwright-report/
 *.sqlite*
 *.reelbeam/
+.media-build/
+resources/bin/
+resources/icon.iconset/

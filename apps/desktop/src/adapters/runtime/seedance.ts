@@ -42,7 +42,8 @@ export class SeedanceProvider implements MediaProvider {
     this.baseUrl=normalizeArkBaseUrl(options.baseUrl);this.fetcher=options.fetch??fetch;this.timeout=options.timeoutMs??30000;
   }
   async submit(input:SeedanceInput|JsonValue,signal?:AbortSignal):Promise<{remoteId:string}> {
-    const payload=seedancePayload(input as SeedanceInput);
+    let payload:Record<string,unknown>;
+    try{payload=seedancePayload(input as SeedanceInput);}catch(error){throw new SeedanceError(error instanceof Error?error.message:'Invalid Seedance parameters','rejected');}
     if(signal?.aborted)throw new SeedanceError('Generation stopped before submission','rejected');
     const data=await this.request('POST','',payload,signal);
     const id=z.object({id:remoteIdSchema}).safeParse(data);

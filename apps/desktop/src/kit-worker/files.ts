@@ -10,7 +10,7 @@ export async function codeKitDigest(directory:string):Promise<string> {
       const full=join(path,entry.name);const stat=await lstat(full);
       if(stat.isSymbolicLink())throw new Error('Code Kit symlinks are not accepted');
       if(stat.isDirectory()){await visit(full);continue;}
-      if(!stat.isFile()||++count>256||(bytes+=stat.size)>10*1024*1024)throw new Error('Code Kit exceeds file or size limits');
+      if(!stat.isFile()||++count>500||(bytes+=stat.size)>50*1024*1024)throw new Error('Code Kit exceeds file or size limits');
       const name=relative(root,full).split(sep).join('/');
       hash.update(name.length.toString()+':'+name+':'+stat.size+':');hash.update(await readFile(full));
     }

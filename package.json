@@ -1,36 +1,89 @@
 {
-  "name": "reelbeam", "version": "0.1.0", "private": true,
-  "description": "An agent-powered desktop video studio", "type": "module",
-  "main": "dist/main/main.js", "author": "ItsToddx", "license": "Apache-2.0",
-  "engines": { "node": ">=22.13" },
+  "name": "reelbeam",
+  "version": "0.1.0",
+  "private": true,
+  "description": "An agent-powered desktop video studio",
+  "type": "module",
+  "main": "dist/main/main.js",
+  "author": "ItsToddx",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "build": "tsc --noEmit && node scripts/build.mjs && vite build",
-    "typecheck": "tsc --noEmit", "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/*.test.ts",
     "test:desktop": "tsx scripts/desktop-smoke.ts",
-    "start": "electron .", "package": "npm run build && electron-builder --mac dir",
-    "dist:mac": "npm run build && electron-builder --mac zip dmg",
-    "check": "npm run typecheck && npm test && npm run build"
+    "start": "electron .",
+    "package": "npm run build && electron-builder --mac dir",
+    "dist:mac": "npm run build && npm --prefix packages/kit-sdk run build && mkdir -p release && npm pack ./packages/kit-sdk --pack-destination release && node scripts/dist-mac.mjs",
+    "check": "npm run typecheck && npm test && npm run build",
+    "media:build": "sh scripts/build-media.sh"
   },
   "dependencies": {
-    "@mariozechner/pi-agent-core": "0.73.1", "@mariozechner/pi-ai": "0.73.1",
-    "@sinclair/typebox": "0.34.41", "@xyflow/react": "12.10.0",
-    "ffmpeg-static": "5.3.0", "ffprobe-static": "3.1.0",
-    "lucide-react": "0.577.0", "react": "19.2.4", "react-dom": "19.2.4",
-    "zod": "4.3.6", "adm-zip": "0.5.16"
+    "@mariozechner/pi-agent-core": "0.73.1",
+    "@mariozechner/pi-ai": "0.73.1",
+    "@sinclair/typebox": "0.34.41",
+    "@xyflow/react": "12.10.0",
+    "lucide-react": "0.577.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "4.3.6",
+    "adm-zip": "0.6.1",
+    "@napi-rs/canvas": "1.0.11",
+    "ajv": "8.20.0"
   },
   "devDependencies": {
-    "@types/node": "24.12.0", "@types/react": "19.2.14", "@types/react-dom": "19.2.3",
-    "@types/adm-zip": "0.5.8", "electron": "44.7.0", "electron-builder": "26.0.12",
-    "esbuild": "0.25.12", "tsx": "4.21.0", "typescript": "5.9.3",
-    "vite": "7.3.1", "@playwright/test": "1.58.2"
+    "@types/node": "24.12.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@types/adm-zip": "0.5.8",
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.7",
+    "@playwright/test": "1.58.2"
   },
   "build": {
-    "appId": "com.reelbeam.desktop", "productName": "Reelbeam",
-    "directories": {"output": "release"},
-    "files": ["dist/**/*", "package.json"],
-    "asar": true, "asarUnpack": ["node_modules/ffmpeg-static/**", "node_modules/ffprobe-static/**"],
-    "mac": {"category": "public.app-category.video", "target": ["zip", "dmg"], "identity": null},
-    "artifactName": "Reelbeam-${version}-${arch}.${ext}", "npmRebuild": false
+    "appId": "com.reelbeam.desktop",
+    "productName": "Reelbeam",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "resources/icon.icns",
+      "target": [
+        "zip",
+        "dmg"
+      ],
+      "identity": null
+    },
+    "artifactName": "Reelbeam-${version}-${arch}.${ext}",
+    "npmRebuild": false,
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin"
+      },
+      {
+        "from": "resources/licenses",
+        "to": "licenses"
+      }
+    ]
+  },
+  "overrides": {
+    "tar": "7.5.22",
+    "basic-ftp": "6.2.3",
+    "esbuild": "0.28.2"
   }
 }

@@ -24,8 +24,9 @@ export const generationSchema=z.object({requestId:identifier,prompt:z.string().t
 export const settingsSchema=z.object({arkBaseUrl:z.string().url().max(500),agentModel:z.string().trim().min(1).max(200),seedanceModel:z.string().trim().min(1).max(200),generationCostLimit:z.number().positive().max(10000),maxModelCalls:z.number().int().min(1).max(12),apiKey:z.string().trim().min(1).max(8192).optional()}).strict();
 export const schemas:Record<string,z.ZodType>={
   createProject:projectInput,createSequence:projectInput,openRecent:z.string().min(1).max(4096),
-  apply:z.object({sequenceId:identifier,expectedRevision:tick,commandId:identifier,commands:z.array(commandSchema).min(1).max(100)}).strict(),
-  undo:identifier,redo:identifier,
+  beginEdit:z.object({sequenceId:identifier,interactionId:identifier}).strict(),endEdit:z.object({sequenceId:identifier,interactionId:identifier}).strict(),
+  apply:z.object({sequenceId:identifier,expectedRevision:tick,commandId:identifier,commands:z.array(commandSchema).min(1).max(100),interactionId:identifier.optional()}).strict(),
+  undo:z.object({sequenceId:identifier,expectedRevision:tick,commandId:identifier}).strict(),redo:z.object({sequenceId:identifier,expectedRevision:tick,commandId:identifier}).strict(),
   saveCanvas:z.object({expectedRevision:tick,items:z.array(z.object({id:identifier,x:z.number().finite().min(-100000).max(100000),y:z.number().finite().min(-100000).max(100000),width:z.number().min(80).max(3000),height:z.number().min(60).max(3000),kind:z.enum(['asset','sequence']),refId:identifier}).strict()).max(1000)}).strict(),
   generate:generationSchema,cancelJob:identifier,reconcileJob:identifier,
   preview:z.object({sequenceId:identifier,expectedRevision:tick}).strict(),exportVideo:z.object({sequenceId:identifier,expectedRevision:tick}).strict(),
@@ -35,5 +36,7 @@ export const schemas:Record<string,z.ZodType>={
   saveMemory:z.object({id:identifier.optional(),scope:z.enum(['project','user']),content:z.string().trim().min(1).max(4000),expectedRevision:tick.optional()}).strict(),
   deleteMemory:z.object({id:identifier,scope:z.enum(['project','user']),expectedRevision:tick}).strict(),
   saveSettings:settingsSchema,setKitEnabled:z.object({id:identifier,enabled:z.boolean()}).strict(),installKit:identifier,uninstallKit:identifier,
-  exportRecipe:z.object({recipeId:identifier}).strict(),startRecipe:z.object({kitId:identifier,title:z.string().trim().min(1).max(4000),sequenceId:identifier.optional()}).strict(),resumeRecipe:z.object({recipeId:identifier,redoStepId:identifier.optional()}).strict()
+  exportRecipe:z.object({recipeId:identifier}).strict(),startRecipe:z.object({kitId:identifier,title:z.string().trim().min(1).max(4000),sequenceId:identifier.optional(),input:z.record(z.string(),z.unknown()).optional()}).strict(),resumeRecipe:z.object({recipeId:identifier,redoStepId:identifier.optional()}).strict(),
+  decideRecipeInput:z.object({recipeId:identifier,expectedRevision:tick,stepId:identifier,inputHash:z.string().regex(/^[a-f0-9]{64}$/),decision:z.enum(['accept','reject'])}).strict(),
+  decideRecipeResult:z.object({recipeId:identifier,expectedRevision:tick,stepId:identifier,attempt:tick.min(1),resultHash:z.string().regex(/^[a-f0-9]{64}$/),decision:z.enum(['accept','reject'])}).strict()
 };

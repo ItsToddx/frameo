@@ -90,6 +90,8 @@ export class NativeKitManager {
     });
   }
   list():KitInfo[]{return [...this.installs.values()].map(record=>this.info(record));}
+  manifests():KitManifest[]{return [...this.installs.values()].map(record=>structuredClone(record.manifest));}
+  fingerprint(id:string):{manifest:KitManifest;digest:string}|undefined {const record=this.installs.get(id);return record?{manifest:structuredClone(record.manifest),digest:record.digest}:undefined;}
   async setEnabled(id:string,enabled:boolean,dependencies:KitManifest[]=[]):Promise<void> {
     return this.serial(async()=>{
       await this.initialize();this.assertActive();const record=this.installs.get(id);if(!record)throw new Error('Native Kit is not installed');
