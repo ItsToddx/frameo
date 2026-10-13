@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp,writeFile,rm,readFile,symlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
+import {setTimeout as delay} from 'node:timers/promises';
 import {build} from 'esbuild';
 import {CodeKitEngine} from '../apps/desktop/src/kit-worker/engine.js';
 import {CodeKitRuntime,codeKitDigest} from '../apps/desktop/src/adapters/runtime/code-kits.js';
@@ -18,6 +19,7 @@ const descriptor=(id,kind)=>({id,name:title,kind,description:'fixture tool',perm
 export function register(api) {
   api.registerReadTool({descriptor:descriptor('fixture.read','read'),async execute(input,ctx){
     if(input.mode==='exit')process.exit(9);
+    if(input.mode==='hang')await new Promise(()=>{});
     if(input.mode==='wait')await new Promise((resolve,reject)=>ctx.signal.addEventListener('abort',()=>reject(new Error('stopped')),{once:true}));
     return {value:{text:input.text,projectId:ctx.projectId,hasSecret:!!process.env.REELBEAM_TEST_SECRET},artifacts:[]};
   }});
@@ -46,8 +48,18 @@ test('native worker loads reviewed relative modules, validates tools, and return
   await assert.rejects(runtime.invoke('fixture.read',{text:'',extra:true},context()),/schema validation/);
   await assert.rejects(runtime.invoke('fixture.edit',{text:'Product',mode:'wrong'},context()),/target/);
   const controller=new AbortController();const waiting=runtime.invoke('fixture.read',{text:'Wait',mode:'wait'},context(controller.signal));controller.abort();await assert.rejects(waiting,/stopped/);
-  await assert.rejects(runtime.invoke('fixture.read',{text:'Crash',mode:'exit'},context()),/exited/);
+  const deadline=Date.now()+3000;while(runtime.isStopping&&Date.now()<deadline)await delay(10);
+  assert.equal(runtime.isStopping,false);await assert.rejects(runtime.invoke('fixture.read',{text:'Crash',mode:'exit'},context()),/exited/);
   await assert.rejects(runtime.invoke('fixture.read',{text:'After crash'},context()),/not loaded/);
+});
+test('noncooperative native tool is terminated after cancellation grace period',async t=>{
+  const directory=await fixture(t),scratch=await mkdtemp(join(tmpdir(),'reelbeam-worker-'));t.after(()=>rm(scratch,{recursive:true,force:true}));
+  const workerPath=join(scratch,'kit-worker.mjs');await build({entryPoints:[resolve('apps/desktop/src/kit-worker/worker.ts')],outfile:workerPath,bundle:true,platform:'node',format:'esm',target:'node22'});
+  const runtime=new CodeKitRuntime({workerPath,timeoutMs:5000,cancelGraceMs:30});t.after(()=>runtime.dispose());await runtime.load(directory,manifest);
+  const controller=new AbortController(),pending=runtime.invoke('fixture.read',{text:'Never finishes',mode:'hang'},context(controller.signal));
+  controller.abort();await assert.rejects(pending,/stopped/);
+  const deadline=Date.now()+3000;while(runtime.isLoaded&&Date.now()<deadline)await delay(10);
+  assert.equal(runtime.isLoaded,false);assert.equal(runtime.isStopping,false);
 });
 test('native code is not evaluated before digest, manifest and dependency verification',async t=>{
   const directory=await fixture(t),engine=new CodeKitEngine();
