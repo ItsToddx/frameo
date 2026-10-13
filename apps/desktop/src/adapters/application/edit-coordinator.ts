@@ -1,1 +1,1 @@
-export {EditCoordinator} from '../../../../../packages/application/src/edit-coordinator.js';
+export { EditCoordinator } from '../../../../../packages/application/src/edit-coordinator.js';

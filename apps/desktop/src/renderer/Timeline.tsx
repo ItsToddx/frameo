@@ -506,13 +506,6 @@ export function Timeline({
                   <Play size={30} />
                   <strong>预览你的作品</strong>
                   <span>合成后在这里播放画面和声音</span>
-                  <Button
-                    onClick={onPreview}
-                    disabled={editingBusy || previewBusy || !workingSequence.clips.length}
-                  >
-                    <RefreshCw size={15} />
-                    {previewBusy ? '正在合成…' : '合成预览'}
-                  </Button>
                 </div>
               )}
             </div>

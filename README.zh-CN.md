@@ -1,16 +1,18 @@
-# Reelbeam
+# Frameo
 
 **把想法，打磨成下一个镜头。**
 
-Reelbeam 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作，时间线完成精调；人工与 Agent 修改同一份作品。
+**Frameo** 是 **frame-operation** 的缩写。
+
+Frameo 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作，时间线完成精调；人工与 Agent 修改同一份作品。
 
 [安装与使用](#安装与使用) · [创作套件](docs/kits.md) · [技术架构](docs/architecture.md) · [验证说明](docs/verification.md) · [English](README.md)
 
-![Reelbeam 工作台](docs/images/workbench.png)
+![Frameo 工作台](docs/images/workbench.png)
 
 ## 安装与使用
 
-1. 从 [GitHub Releases](https://github.com/ItsToddx/reelbeam/releases) 下载 Apple Silicon 版。
+1. 从 [GitHub Releases](https://github.com/ItsToddx/frameo/releases) 下载 Apple Silicon 版。
 2. 在设置中填写火山方舟 API Key、支持工具调用的 Agent 模型或接入点 ID，以及 Seedance 模型 ID。
 3. 创建工程，导入参考图片或已有视频，在右侧对话提出创作目标。
 4. 检查 Agent 提案、生成参数与预算，确认后提交；生成结果先进入素材库。
@@ -22,9 +24,9 @@ Reelbeam 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作�
 
 ## 主要能力
 
-- 画布与持续可见的 Agent 对话；选中作品后就地展开时间线。
+- 浅色工作台与持续可见的 Agent 对话；打开作品后，预览与时间线占据主要编辑区域。
 - 创作、视觉、剪辑专业 Agent；编辑与付费生成均先提出审阅。
-- 添加轨道与片段、移动、裁剪、分割、删除、替换、音量、静音、字幕与样式。
+- 添加轨道与片段、拖动与逐帧键盘移动/裁剪、分割、删除、替换、音量、静音、字幕与样式；草稿明确保存或放弃。
 - 人工与 Agent 共用撤销栈；版本冲突先重读，不覆盖未核对的修改。
 - 保存重开、项目与个人记忆、任务恢复、候选采纳、合成预览与检查后的 MP4 导出。
 - Kit 安装、启停、卸载、配方分享与受信任代码扩展。
@@ -36,8 +38,8 @@ Reelbeam 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作�
 需要 macOS Apple Silicon、Node.js 22.13+ 和 Apple command line tools。
 
 ```bash
-git clone https://github.com/ItsToddx/reelbeam.git
-cd reelbeam
+git clone https://github.com/ItsToddx/frameo.git
+cd frameo
 npm ci
 npm run media:build
 npm run dev
@@ -51,10 +53,18 @@ npm test
 npm run build
 npm run test:desktop
 npm run test:desktop-failures
+npm run test:desktop-ui
+npm run format:check
 npm run dist:mac
 ```
 
 测试使用独立临时工程、受控模型接口和原生 FFmpeg；不会使用你的真实账户发起付费任务。真实 Seedance 联调需要你配置账户并明确确认预算。
+
+## 实现与兼容
+
+应用用例与领域规则通过向内依赖隔离 Electron、SQLite、Pi、Seedance 和媒体处理细节。具有实际状态约束的生成任务、生成订单、请求预算与用例对象负责规则和执行；Repository、Gateway、Command 与 Facade 模式用于可替换的边界。详见[架构](docs/architecture.md)与[领域词汇](GLOSSARY.md)。
+
+已有工程、共享包和内置 Kit 引用保持兼容；改名不会重发付费任务。
 
 ## 创作套件
 

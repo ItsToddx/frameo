@@ -1,13 +1,20 @@
-import {test} from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {EditCoordinator} from '../apps/desktop/src/adapters/application/edit-coordinator';
-test('manual drafts exclude other writers and stale release tokens',()=>{
-  const leases=new EditCoordinator();leases.begin('p','s','manual');
-  assert.throws(()=>leases.assertAvailable('p','s'),/草稿/);
-  assert.throws(()=>leases.assertAvailable('p'),/草稿/);
-  assert.throws(()=>leases.begin('p','s','other'),/草稿/);
-  leases.assertAvailable('p','s','manual');leases.assertAvailable('other','s');leases.assertAvailable('p','another');
-  leases.end('p','s','obsolete');assert.throws(()=>leases.assertAvailable('p','s'),/草稿/);
-  leases.end('p','s','manual');leases.assertAvailable('p','s');
-  leases.begin('p','s','manual');leases.reset();leases.assertAvailable('p','s');
+import { EditCoordinator } from '../apps/desktop/src/adapters/application/edit-coordinator';
+test('manual drafts exclude other writers and stale release tokens', () => {
+  const leases = new EditCoordinator();
+  leases.begin('p', 's', 'manual');
+  assert.throws(() => leases.assertAvailable('p', 's'), /草稿/);
+  assert.throws(() => leases.assertAvailable('p'), /草稿/);
+  assert.throws(() => leases.begin('p', 's', 'other'), /草稿/);
+  leases.assertAvailable('p', 's', 'manual');
+  leases.assertAvailable('other', 's');
+  leases.assertAvailable('p', 'another');
+  leases.end('p', 's', 'obsolete');
+  assert.throws(() => leases.assertAvailable('p', 's'), /草稿/);
+  leases.end('p', 's', 'manual');
+  leases.assertAvailable('p', 's');
+  leases.begin('p', 's', 'manual');
+  leases.reset();
+  leases.assertAvailable('p', 's');
 });

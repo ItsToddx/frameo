@@ -1,21 +1,21 @@
 # Third-party notices
 
-Reelbeam source and Kit SDK: Apache-2.0.
+Frameo source and Kit SDK: Apache-2.0.
 
-| Component | Use | License |
-| --- | --- | --- |
-| Electron / Chromium / Node.js | Desktop shell | MIT and their bundled third-party notices |
-| React / React DOM | Workbench | MIT |
-| React Flow | Canvas interaction | MIT |
-| Pi agent-core / pi-ai | Reasoning runtime | MIT |
-| Zod / Ajv | Boundary and Kit schemas | MIT |
-| Lucide | Interface icons | ISC |
-| @napi-rs/canvas / Skia | Caption rasterization | MIT / BSD and bundled notices |
-| adm-zip | Explicit project and Kit archives | MIT |
-| SQLite | Project storage via Node | Public domain |
-| FFmpeg / FFprobe 9.0.2 | Standalone media subprocesses | LGPL-2.1-or-later; see native build notices |
+| Component                     | Use                               | License                                     |
+| ----------------------------- | --------------------------------- | ------------------------------------------- |
+| Electron / Chromium / Node.js | Desktop shell                     | MIT and their bundled third-party notices   |
+| React / React DOM             | Workbench                         | MIT                                         |
+| React Flow                    | Canvas interaction                | MIT                                         |
+| Pi agent-core / pi-ai         | Reasoning runtime                 | MIT                                         |
+| Zod / Ajv                     | Boundary and Kit schemas          | MIT                                         |
+| Lucide                        | Interface icons                   | ISC                                         |
+| @napi-rs/canvas / Skia        | Caption rasterization             | MIT / BSD and bundled notices               |
+| adm-zip                       | Explicit project and Kit archives | MIT                                         |
+| SQLite                        | Project storage via Node          | Public domain                               |
+| FFmpeg / FFprobe 9.0.2        | Standalone media subprocesses     | LGPL-2.1-or-later; see native build notices |
 
-The distributed media build does not enable GPL or nonfree components. Source is the official FFmpeg 9.0.2 archive; exact configuration and binary hashes are included under `resources/licenses/`. The corresponding archive and `scripts/build-media.sh` are provided with release artifacts. Users may replace these standalone executables through `REELBEAM_FFMPEG` and `REELBEAM_FFPROBE`.
+The distributed media build does not enable GPL or nonfree components. Source is the official FFmpeg 9.0.2 archive; exact configuration and binary hashes are included under `resources/licenses/`. The corresponding archive and `scripts/build-media.sh` are provided with release artifacts. Users may replace these standalone executables through `FRAMEO_FFMPEG` and `FRAMEO_FFPROBE`.
 
 System fonts are referenced from macOS and are not redistributed. Imported media belongs to its owner; project sharing asks the user to confirm redistribution rights. The desktop smoke screenshot uses a synthetic image created by this project.
 

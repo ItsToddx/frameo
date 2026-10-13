@@ -391,7 +391,7 @@ function ChatMessage() {
         ? '你'
         : role === 'tool'
           ? '工具'
-          : 'Reelbeam';
+          : 'Frameo';
   const streaming = message.status?.type === 'running';
   return (
     <MessagePrimitive.Root className={`chat-message ${role}`} data-message-id={message.id}>

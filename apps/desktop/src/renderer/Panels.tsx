@@ -60,7 +60,7 @@ export function SettingsModal({
   return (
     <Modal
       title="连接火山方舟"
-      description="Reelbeam 通过模型理解创作需求，第一版使用 Seedance 生成视频。"
+      description="Frameo 通过模型理解创作需求，第一版使用 Seedance 生成视频。"
       onClose={onClose}
       busy={busy}
     >

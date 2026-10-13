@@ -10,6 +10,7 @@ release/
 test-results/
 playwright-report/
 *.sqlite*
+*.frameo/
 *.reelbeam/
 .media-build/
 resources/bin/

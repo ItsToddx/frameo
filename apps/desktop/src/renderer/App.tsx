@@ -34,6 +34,7 @@ import type {
   Session,
   KitInfo,
 } from '../adapters/contracts/api';
+import { FrameMark } from './FrameMark';
 import { Canvas } from './Canvas';
 import { Chat } from './Chat';
 import { Timeline } from './Timeline';
@@ -123,7 +124,7 @@ export function App() {
           };
           editLeaseRef.current = lease;
           const entry = lease;
-          entry.ready = window.reelbeam
+          entry.ready = window.frameo
             .beginEdit({ sequenceId: entry.sequenceId, interactionId: entry.interactionId })
             .then(() => {
               entry.acquired = true;
@@ -142,7 +143,7 @@ export function App() {
         await lease.ready.catch(() => {});
         if (lease.acquired) {
           try {
-            await window.reelbeam.endEdit({
+            await window.frameo.endEdit({
               sequenceId: lease.sequenceId,
               interactionId: lease.interactionId,
             });
@@ -195,8 +196,8 @@ export function App() {
   const initialize = useCallback(async () => {
     setLoadError('');
     try {
-      if (!window.reelbeam) throw new Error('桌面连接不可用。请通过 Reelbeam 桌面应用启动工作台。');
-      const data = await window.reelbeam.bootstrap();
+      if (!window.frameo) throw new Error('桌面连接不可用。请通过 Frameo 桌面应用启动工作台。');
+      const data = await window.frameo.bootstrap();
       setBoot(data);
       setSettings(data.settings);
       setKits(data.kits);
@@ -207,8 +208,8 @@ export function App() {
   }, [acceptSnapshot]);
   useEffect(() => {
     void initialize();
-    if (!window.reelbeam) return;
-    return window.reelbeam.onEvent((event) => {
+    if (!window.frameo) return;
+    return window.frameo.onEvent((event) => {
       if (event.projectId && event.projectId !== snapshotRef.current?.project.id) return;
       if (event.type === 'state' && event.snapshot) acceptSnapshot(event.snapshot, 'event');
       if (event.type === 'chat.delta') {
@@ -277,7 +278,7 @@ export function App() {
     setModal('generation');
   };
   async function refresh() {
-    const result = await perform('读取工程', () => window.reelbeam.snapshot());
+    const result = await perform('读取工程', () => window.frameo.snapshot());
     if (result) acceptSnapshot(result.value);
   }
   async function apply(commands: EditCommand[], expectedRevision?: number): Promise<boolean> {
@@ -285,7 +286,7 @@ export function App() {
     const lease = editLeaseRef.current?.sequenceId === sequence.id ? editLeaseRef.current : null;
     const result = await update('保存剪辑', async () => {
       if (lease) await lease.ready;
-      return window.reelbeam.apply({
+      return window.frameo.apply({
         sequenceId: sequence.id,
         expectedRevision: expectedRevision ?? sequence.revision,
         commandId: uid(),
@@ -299,7 +300,7 @@ export function App() {
     async (items: CanvasItem[]) => {
       if (!snapshot) return;
       await update('保存画布', () =>
-        window.reelbeam.saveCanvas({ expectedRevision: snapshot.canvas.revision, items }),
+        window.frameo.saveCanvas({ expectedRevision: snapshot.canvas.revision, items }),
       );
     },
     [snapshot],
@@ -391,7 +392,7 @@ export function App() {
         },
       });
       void update('添加片段', () =>
-        window.reelbeam.apply({
+        window.frameo.apply({
           sequenceId: target.id,
           expectedRevision: target.revision,
           commandId: uid(),
@@ -411,7 +412,7 @@ export function App() {
     let session: Session | undefined =
       snapshot.sessions.find((s) => s.id === sessionId) || snapshot.sessions[0];
     if (!session) {
-      const created = await update('创建对话', () => window.reelbeam.createSession('创作对话'));
+      const created = await update('创建对话', () => window.frameo.createSession('创作对话'));
       if (!created?.value) return false;
       session = created.value.sessions.at(-1);
       setSessionId(session?.id || null);
@@ -422,7 +423,7 @@ export function App() {
     setDelta('');
     setAgentStatus('Agent 正在理解你的需求…');
     const result = await perform('发送指令', () =>
-      window.reelbeam.prompt({
+      window.frameo.prompt({
         requestId: uid(),
         sessionId: session!.id,
         text: selectedAsset
@@ -436,7 +437,7 @@ export function App() {
     return !!result;
   }
   async function listKits() {
-    const result = await perform('读取 Kit 列表', () => window.reelbeam.listKits());
+    const result = await perform('读取 Kit 列表', () => window.frameo.listKits());
     if (result) setKits(result.value);
   }
   async function kitOperation(label: string, fn: () => Promise<AppBootstrap['kits']>) {
@@ -447,7 +448,7 @@ export function App() {
     if (!requireSavedDraft()) return;
     await update(
       '打开工程',
-      () => (path ? window.reelbeam.openRecent(path) : window.reelbeam.openProject()),
+      () => (path ? window.frameo.openRecent(path) : window.frameo.openProject()),
       true,
     );
   }
@@ -467,7 +468,7 @@ export function App() {
     return (
       <div className="loading-screen">
         <Aperture size={38} />
-        <h1>Reelbeam</h1>
+        <h1>Frameo</h1>
         <span>
           <LoaderCircle size={14} className="spin" />
           正在打开创作工作台
@@ -478,8 +479,8 @@ export function App() {
     <div className="app-shell">
       <header className="app-header">
         <div className="brand">
-          <Aperture size={21} />
-          <span>reelbeam</span>
+          <FrameMark size={25} />
+          <span>frameo</span>
         </div>
         <div className="header-project">
           <span className={`status-dot ${snapshot ? 'ready' : ''}`} />
@@ -559,7 +560,7 @@ export function App() {
             <IconButton
               label="导入共享工程"
               disabled={busy || dirtyEdit}
-              onClick={() => void update('导入工程', () => window.reelbeam.importProject(), true)}
+              onClick={() => void update('导入工程', () => window.frameo.importProject(), true)}
             >
               <Upload size={18} />
               <span>导入</span>
@@ -568,8 +569,8 @@ export function App() {
               <Plus size={19} />
               <span>新建</span>
             </IconButton>
-            <span className="rail-version" title={`Reelbeam ${boot.version}`}>
-              0.1
+            <span className="rail-version" title={`Frameo ${boot.version}`}>
+              {boot.version}
             </span>
           </div>
         </nav>
@@ -588,7 +589,7 @@ export function App() {
                   <strong>{snapshot.project.name}</strong>
                   <Button
                     disabled={busy}
-                    onClick={() => void update('导入素材', () => window.reelbeam.importMedia())}
+                    onClick={() => void update('导入素材', () => window.frameo.importMedia())}
                     testId="import-media"
                   >
                     <Plus size={14} />
@@ -693,7 +694,7 @@ export function App() {
                   <IconButton
                     label="撤销画布布局"
                     disabled={busy}
-                    onClick={() => void update('撤销画布', () => window.reelbeam.undoCanvas())}
+                    onClick={() => void update('撤销画布', () => window.frameo.undoCanvas())}
                   >
                     <Undo2 size={14} />
                   </IconButton>
@@ -718,7 +719,7 @@ export function App() {
                 {snapshot && (
                   <Button
                     onClick={() =>
-                      void perform('关闭工程', () => window.reelbeam.closeProject()).then(
+                      void perform('关闭工程', () => window.frameo.closeProject()).then(
                         (result) => {
                           if (result) {
                             snapshotRef.current = null;
@@ -779,7 +780,7 @@ export function App() {
                 onHide={hideCard}
                 onAdd={addAsset}
                 onGenerate={showGenerate}
-                onImport={() => void update('导入素材', () => window.reelbeam.importMedia())}
+                onImport={() => void update('导入素材', () => window.frameo.importMedia())}
                 busy={busy}
               />
               {selectedAsset && !sequence && (
@@ -809,7 +810,7 @@ export function App() {
                   onDraftChange={(dirty) => onDraftChange(dirty, sequence.id)}
                   onUndo={() =>
                     void update('撤销剪辑', () =>
-                      window.reelbeam.undo({
+                      window.frameo.undo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                         commandId: uid(),
@@ -818,7 +819,7 @@ export function App() {
                   }
                   onRedo={() =>
                     void update('重做剪辑', () =>
-                      window.reelbeam.redo({
+                      window.frameo.redo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                         commandId: uid(),
@@ -829,7 +830,7 @@ export function App() {
                   canRedo={!!snapshot.canRedo[sequence.id]}
                   onPreview={() =>
                     void perform('提交预览', () =>
-                      window.reelbeam.preview({
+                      window.frameo.preview({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
@@ -839,7 +840,7 @@ export function App() {
                   }
                   onExport={() =>
                     void perform('提交导出', () =>
-                      window.reelbeam.exportVideo({
+                      window.frameo.exportVideo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
@@ -863,9 +864,9 @@ export function App() {
           ) : (
             <div className="welcome-screen">
               <div className="welcome-mark">
-                <Aperture size={28} />
+                <FrameMark size={32} />
               </div>
-              <span className="eyebrow">REELBEAM STUDIO</span>
+              <span className="eyebrow">FRAMEO STUDIO</span>
               <h1>从一个想法开始创作</h1>
               <p>与 Agent 一起规划镜头，审阅方案，打磨成片。</p>
               <div className="welcome-workflow" aria-label="创作流程">
@@ -929,14 +930,14 @@ export function App() {
           onSession={setSessionId}
           onNewSession={() =>
             void update('新建对话', () =>
-              window.reelbeam.createSession(`创作对话 ${(snapshot?.sessions.length || 0) + 1}`),
+              window.frameo.createSession(`创作对话 ${(snapshot?.sessions.length || 0) + 1}`),
             ).then((result) => {
               if (result?.value) setSessionId(result.value.sessions.at(-1)?.id || null);
             })
           }
           onPrompt={sendPrompt}
           onStop={() =>
-            void perform('停止 Agent', () => window.reelbeam.stopAgent()).then((result) => {
+            void perform('停止 Agent', () => window.frameo.stopAgent()).then((result) => {
               if (result) {
                 setAgentRunning(false);
                 setDelta('');
@@ -955,11 +956,11 @@ export function App() {
           onSetup={() => setModal('settings')}
           onReview={(reviewId, decision) => {
             if (decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅方案', () => window.reelbeam.decideReview({ reviewId, decision }));
+            void update('审阅方案', () => window.frameo.decideReview({ reviewId, decision }));
           }}
           onResume={(recipeId) => {
             if (requireSavedDraft())
-              void perform('继续工作流', () => window.reelbeam.resumeRecipe({ recipeId }));
+              void perform('继续工作流', () => window.frameo.resumeRecipe({ recipeId }));
           }}
           onRedo={(recipeId, redoStepId) => {
             if (!requireSavedDraft()) return;
@@ -968,19 +969,19 @@ export function App() {
               return;
             }
             void perform('重做工作流步骤', () =>
-              window.reelbeam.resumeRecipe({ recipeId, redoStepId }),
+              window.frameo.resumeRecipe({ recipeId, redoStepId }),
             );
           }}
           onRecipeResult={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅工作流结果', () => window.reelbeam.decideRecipeResult(input));
+            void update('审阅工作流结果', () => window.frameo.decideRecipeResult(input));
           }}
           onRecipeInput={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅工作流输入', () => window.reelbeam.decideRecipeInput(input));
+            void update('审阅工作流输入', () => window.frameo.decideRecipeInput(input));
           }}
           onExportRecipe={(recipeId) =>
-            void perform('导出工作流', () => window.reelbeam.exportRecipe({ recipeId })).then(
+            void perform('导出工作流', () => window.frameo.exportRecipe({ recipeId })).then(
               (result) => {
                 if (result?.value) notify('工作流记录已导出');
               },
@@ -996,7 +997,7 @@ export function App() {
         <span>
           {snapshot
             ? `${snapshot.assets.length} 个素材 · ${snapshot.sequences.length} 个作品`
-            : '欢迎来到 Reelbeam'}
+            : '欢迎来到 Frameo'}
           {busy && (
             <>
               <LoaderCircle size={10} className="spin" /> {pending}
@@ -1014,7 +1015,7 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onSave={async (value) => {
-            const result = await perform('保存模型配置', () => window.reelbeam.saveSettings(value));
+            const result = await perform('保存模型配置', () => window.frameo.saveSettings(value));
             if (result) {
               setSettings(result.value);
               setModal(null);
@@ -1035,8 +1036,8 @@ export function App() {
               modal === 'project' ? '创建工程' : '创建作品',
               () =>
                 modal === 'project'
-                  ? window.reelbeam.createProject(value)
-                  : window.reelbeam.createSequence(value),
+                  ? window.frameo.createProject(value)
+                  : window.frameo.createSequence(value),
               modal === 'project',
             );
             if (result?.value) {
@@ -1047,7 +1048,7 @@ export function App() {
                 setSelection(created.id);
                 setSequenceId(created.id);
               }
-              const next = await perform('读取最近工程', () => window.reelbeam.bootstrap());
+              const next = await perform('读取最近工程', () => window.frameo.bootstrap());
               if (next) setBoot(next.value);
             }
             return !!result?.value;
@@ -1062,9 +1063,7 @@ export function App() {
           onClose={closeModal}
           onSubmit={async (input) => {
             if (!needModel()) return false;
-            const result = await perform('提交 Seedance 生成', () =>
-              window.reelbeam.generate(input),
-            );
+            const result = await perform('提交 Seedance 生成', () => window.frameo.generate(input));
             if (result) {
               setModal(null);
               notify('Seedance 生成任务已提交');
@@ -1078,9 +1077,9 @@ export function App() {
           jobs={snapshot.jobs}
           busy={busy}
           onClose={closeModal}
-          onCancel={(id) => void perform('取消任务', () => window.reelbeam.cancelJob(id))}
-          onReconcile={(id) => void perform('查询云端任务', () => window.reelbeam.reconcileJob(id))}
-          onReveal={(path) => void perform('查看输出文件', () => window.reelbeam.revealFile(path))}
+          onCancel={(id) => void perform('取消任务', () => window.frameo.cancelJob(id))}
+          onReconcile={(id) => void perform('查询云端任务', () => window.frameo.reconcileJob(id))}
+          onReveal={(path) => void perform('查看输出文件', () => window.frameo.revealFile(path))}
         />
       )}
       {modal === 'kits' && (
@@ -1088,14 +1087,12 @@ export function App() {
           kits={kits}
           busy={busy}
           onClose={closeModal}
-          onInstall={(id) => void kitOperation('安装 Kit', () => window.reelbeam.installKit(id))}
+          onInstall={(id) => void kitOperation('安装 Kit', () => window.frameo.installKit(id))}
           onEnable={(id, enabled) =>
-            void kitOperation('更新 Kit 状态', () => window.reelbeam.setKitEnabled({ id, enabled }))
+            void kitOperation('更新 Kit 状态', () => window.frameo.setKitEnabled({ id, enabled }))
           }
-          onUninstall={(id) =>
-            void kitOperation('卸载 Kit', () => window.reelbeam.uninstallKit(id))
-          }
-          onImport={() => void kitOperation('导入 Kit', () => window.reelbeam.importKit())}
+          onUninstall={(id) => void kitOperation('卸载 Kit', () => window.frameo.uninstallKit(id))}
+          onImport={() => void kitOperation('导入 Kit', () => window.frameo.importKit())}
           onRefresh={() => void listKits()}
           canStart={!!snapshot}
           onStart={(kit) => {
@@ -1111,12 +1108,12 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onSave={async (input) => {
-            const result = await update('保存记忆', () => window.reelbeam.saveMemory(input));
+            const result = await update('保存记忆', () => window.frameo.saveMemory(input));
             return !!result?.value;
           }}
           onDelete={(memory) =>
             void update('删除记忆', () =>
-              window.reelbeam.deleteMemory({
+              window.frameo.deleteMemory({
                 id: memory.id,
                 scope: memory.scope,
                 expectedRevision: memory.revision,
@@ -1148,7 +1145,7 @@ export function App() {
                 return;
               }
               void update('启动创作工作流', () =>
-                window.reelbeam.startRecipe({
+                window.frameo.startRecipe({
                   kitId: recipeKit.id,
                   title: String(data.get('title')).trim(),
                   sequenceId: contextSequence?.id,
@@ -1211,14 +1208,12 @@ export function App() {
               kind="accent"
               disabled={busy}
               onClick={() =>
-                void perform('导出共享工程', () => window.reelbeam.exportProject()).then(
-                  (result) => {
-                    if (result?.value) {
-                      notify('共享工程已导出');
-                      setModal(null);
-                    }
-                  },
-                )
+                void perform('导出共享工程', () => window.frameo.exportProject()).then((result) => {
+                  if (result?.value) {
+                    notify('共享工程已导出');
+                    setModal(null);
+                  }
+                })
               }
             >
               <Share2 size={14} />
@@ -1241,7 +1236,7 @@ export function App() {
           <div className="modal-actions">
             <Button
               onClick={() =>
-                void perform('显示素材文件', () => window.reelbeam.revealFile(inspectAsset.path))
+                void perform('显示素材文件', () => window.frameo.revealFile(inspectAsset.path))
               }
             >
               <FolderOpen size={14} />

@@ -1,4 +1,4 @@
-# Reelbeam application
+# Frameo application
 
 This package owns portable project use cases and the interfaces they need. It imports domain rules
 from `packages/core` and plain Kit declarations from `packages/kit-sdk/src/types`; it does not import

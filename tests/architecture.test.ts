@@ -442,10 +442,19 @@ test('domain and application source dependencies point inward and avoid desktop/
       const dependencies: string[] = [];
       const syntax = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
       function inspect(node: ts.Node): void {
-        if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
+        if (
+          (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+          node.moduleSpecifier &&
+          ts.isStringLiteral(node.moduleSpecifier)
+        ) {
           dependencies.push(node.moduleSpecifier.text);
         }
-        if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+        if (
+          ts.isCallExpression(node) &&
+          node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+          node.arguments[0] &&
+          ts.isStringLiteral(node.arguments[0])
+        ) {
           dependencies.push(node.arguments[0].text);
         }
         ts.forEachChild(node, inspect);

@@ -25,7 +25,9 @@
   --info-surface: #eff6ff;
   --radius: 10px;
   --motion-fast: 140ms;
-  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-ui:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei',
+    sans-serif;
 }
 
 @theme inline {

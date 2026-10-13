@@ -1,6 +1,6 @@
 <div align="center">
 
-# Reelbeam
+# Frameo
 
 **Describe a story. Shape every frame.**
 
@@ -10,17 +10,19 @@ A desktop video studio where an agent, a canvas, and a timeline work on the same
 
 </div>
 
-Reelbeam brings planning, Seedance generation, candidate review, and precise editing into one macOS workspace. Ask the agent for a shot, inspect the proposal, adopt the result, and keep shaping the film yourself.
+**Frameo** abbreviates **frame-operation**.
+
+Frameo brings planning, Seedance generation, candidate review, and precise editing into one macOS workspace. Ask the agent for a shot, inspect the proposal, adopt the result, and keep shaping the film yourself.
 
 **Model configuration is required.** This first release generates video with **Seedance only** through Volcengine Ark. Pi reasoning uses a separate tool-capable, image-capable Ark chat model. Bring your own API key and model access; local test fixtures are not an offline creative mode.
 
-![Reelbeam canvas, timeline and agent](docs/images/workbench.png)
+![Frameo canvas, timeline and agent](docs/images/workbench.png)
 
 ## Quick start
 
-1. Download the macOS Apple Silicon build from [Releases](https://github.com/ItsToddx/reelbeam/releases).
+1. Download the macOS Apple Silicon build from [Releases](https://github.com/ItsToddx/frameo/releases).
 2. This preview is not Developer ID signed or notarized. If macOS blocks it, follow [Apple’s Open Anyway instructions](https://support.apple.com/102445) for a build you have verified.
-3. Open Reelbeam and configure your Ark API key, chat model or endpoint ID, and Seedance model ID in **Settings**. Both models must be available to that account.
+3. Open Frameo and configure your Ark API key, chat model or endpoint ID, and Seedance model ID in **Settings**. Both models must be available to that account.
 4. Create a project. Import a reference image or footage, or describe your idea in the agent panel.
 5. Review generation parameters and the spending estimate before submission. Seedance outputs appear as candidates in your asset library.
 6. Add or replace a timeline clip, edit captions and sound, compose a preview, and export MP4.
@@ -33,17 +35,25 @@ Ark bills model requests to your own account. The app stores the key using macOS
 
 ## What you can do
 
-| Workspace | Behavior |
-| --- | --- |
-| Canvas | Arrange and select asset and film cards; hide a card without deleting its media. |
-| Agent | Plan with a coordinator and creative, visual and editing specialists; review every edit or paid generation. |
-| Timeline | Add tracks and clips, move, trim, split, delete and replace; adjust gain and mute; edit caption text, timing and style. |
-| History | Manual and agent edits share one revision-checked undo/redo history. Canvas history is separate. |
-| Media | Compose preview and final export from the same saved sequence, with H.264 video and AAC audio. |
-| Tasks | Keep durable Seedance task IDs, query original tasks after restart, and collect candidates without resubmitting uncertain requests. |
-| Memory | Review suggested preferences before saving; view, edit and forget project or user memories. |
-| Kits | Install, enable and remove creative capabilities; share declarative recipes or explicitly trust a native code Kit. |
-| Projects | Save in a project directory and reopen it; share media and edit data without account keys, chats or execution records. |
+| Workspace | Behavior                                                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Canvas    | Arrange and select asset and film cards; hide a card without deleting its media.                                                    |
+| Agent     | Plan with a coordinator and creative, visual and editing specialists; review every edit or paid generation.                         |
+| Timeline  | Add tracks and clips, move, trim, split, delete and replace; adjust gain and mute; edit caption text, timing and style.             |
+| History   | Manual and agent edits share one revision-checked undo/redo history. Canvas history is separate.                                    |
+| Media     | Compose preview and final export from the same saved sequence, with H.264 video and AAC audio.                                      |
+| Tasks     | Keep durable Seedance task IDs, query original tasks after restart, and collect candidates without resubmitting uncertain requests. |
+| Memory    | Review suggested preferences before saving; view, edit and forget project or user memories.                                         |
+| Kits      | Install, enable and remove creative capabilities; share declarative recipes or explicitly trust a native code Kit.                  |
+| Projects  | Save in a project directory and reopen it; share media and edit data without account keys, chats or execution records.              |
+
+## A focused creative workspace
+
+A light studio keeps references and Agent decisions visible. Opening a work gives the composed preview and timeline the main workspace. Drag or use frame keyboard controls to move and trim; changes remain a protected draft until Save or Discard.
+
+The assistant-ui conversation projects the actual persisted session, tools and streamed reply. Plans, exact reviews, workflow steps and output candidates are readable working surfaces. Drafts survive tab/session changes and rejected sends; IME input and reading older messages keep their expected behavior.
+
+Domain objects and portable application use cases follow inward dependencies. Repository, runtime, provider and media interfaces isolate SQLite, Electron, Pi and FFmpeg. See [architecture](docs/architecture.md), [application boundaries](packages/application/README.md) and [domain vocabulary](GLOSSARY.md).
 
 ## How it works
 
@@ -83,8 +93,8 @@ The curated catalog lives in this repository. See [catalog contributions](docs/k
 Requirements: macOS Apple Silicon, Node.js 22.13 or newer, and Apple command line tools for the media build.
 
 ```bash
-git clone https://github.com/ItsToddx/reelbeam.git
-cd reelbeam
+git clone https://github.com/ItsToddx/frameo.git
+cd frameo
 npm ci
 npm run media:build
 npm run dev
@@ -96,6 +106,8 @@ npm test
 npm run build
 npm run test:desktop
 npm run test:desktop-failures
+npm run test:desktop-ui
+npm run format:check
 npm run dist:mac
 ```
 
@@ -119,7 +131,7 @@ docs/              Architecture, Kits, validation and release notes
 
 macOS Apple Silicon is the initial supported platform. Windows and Intel macOS are not release targets yet. Advanced transitions, speed ramps and keyframe effects are outside the first editing format. Seedance cancellation depends on provider state; requesting cancellation does not mean a running cloud task stopped or was refunded.
 
-Use [Issues](https://github.com/ItsToddx/reelbeam/issues) for reproducible bugs and proposals. Read [CONTRIBUTING](CONTRIBUTING.md) before changing the project format or SDK.
+Use [Issues](https://github.com/ItsToddx/frameo/issues) for reproducible bugs and proposals. Read [CONTRIBUTING](CONTRIBUTING.md) before changing the project format or SDK.
 
 ## Inspiration and dependencies
 
@@ -129,4 +141,4 @@ The implementation uses [Electron](https://www.electronjs.org/), [Pi](https://gi
 
 ## License
 
-Reelbeam and the Kit SDK are Apache-2.0. Third-party libraries, media tools and your source assets retain their own licenses.
+Frameo and the Kit SDK are Apache-2.0. Third-party libraries, media tools and your source assets retain their own licenses.

@@ -1,6 +1,6 @@
 {
-  "name": "reelbeam",
-  "version": "0.1.1",
+  "name": "frameo",
+  "version": "0.2.0",
   "private": true,
   "description": "An agent-powered desktop video studio",
   "type": "module",
@@ -24,7 +24,8 @@
     "check": "npm run typecheck && npm test && npm run build",
     "media:build": "sh scripts/build-media.sh",
     "format": "prettier --write apps packages tests scripts docs *.json *.ts *.md",
-    "format:check": "prettier --check apps packages tests scripts docs *.json *.ts *.md"
+    "format:check": "prettier --check apps packages tests scripts docs *.json *.ts *.md",
+    "test:desktop-ui": "tsx scripts/desktop-ui.ts"
   },
   "dependencies": {
     "@assistant-ui/react": "0.15.28",
@@ -66,7 +67,7 @@
   },
   "build": {
     "appId": "com.reelbeam.desktop",
-    "productName": "Reelbeam",
+    "productName": "Frameo",
     "directories": {
       "output": "release"
     },
@@ -84,7 +85,7 @@
       ],
       "identity": null
     },
-    "artifactName": "Reelbeam-${version}-${arch}.${ext}",
+    "artifactName": "Frameo-${version}-${arch}.${ext}",
     "npmRebuild": false,
     "extraResources": [
       {

@@ -151,7 +151,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     return service(db).snapshot();
   }
   async function openPath(path: string): Promise<ProjectSnapshot> {
-    if (!existsSync(join(path, 'project.sqlite'))) throw new Error('所选目录不是 Reelbeam 工程。');
+    if (!existsSync(join(path, 'project.sqlite'))) throw new Error('所选目录不是 Frameo 工程。');
     await stopAgent();
     const normalized = realpathSync(path);
     return adopt(projects.get(normalized) ?? new ProjectDatabase(normalized));
@@ -235,8 +235,8 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     async createProject(input) {
       requireModels();
       const result = await ports.dialog.save({
-        title: '创建 Reelbeam 工程',
-        defaultPath: join(ports.documents, input.name + '.reelbeam'),
+        title: '创建 Frameo 工程',
+        defaultPath: join(ports.documents, input.name + '.frameo'),
         buttonLabel: '创建工程',
       });
       if (result.canceled || !result.filePath) return null;
@@ -248,7 +248,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     },
     async openProject() {
       const result = await ports.dialog.open({
-        title: '打开 Reelbeam 工程',
+        title: '打开 Frameo 工程',
         properties: ['openDirectory'],
       });
       return result.canceled ? null : openPath(result.filePaths[0]);
@@ -469,7 +469,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const result = await ports.dialog.open({
         title: '导入创作 Kit',
         properties: ['openFile', 'openDirectory'],
-        filters: [{ name: 'Reelbeam Kit', extensions: ['json', 'reelbeamkit', 'zip'] }],
+        filters: [{ name: 'Frameo Kit', extensions: ['json', 'frameokit', 'reelbeamkit', 'zip'] }],
       });
       if (result.canceled) return kitList();
       const file = result.filePaths[0];
@@ -511,8 +511,8 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const data = new RecipeService(db, catalog).exportRecipeDefinition(input.recipeId);
       const result = await ports.dialog.save({
         title: '分享配方 Kit',
-        defaultPath: recipe.definition.descriptor.name + '.reelbeamkit',
-        filters: [{ name: 'Reelbeam Kit', extensions: ['reelbeamkit'] }],
+        defaultPath: recipe.definition.descriptor.name + '.frameokit',
+        filters: [{ name: 'Frameo Kit', extensions: ['frameokit'] }],
       });
       if (result.canceled || !result.filePath) return null;
       await writeFile(result.filePath, exportDeclaration(data));
@@ -565,8 +565,10 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       });
       if (answer.response !== 0) return null;
       const result = await ports.dialog.save({
-        defaultPath: db.read().project.name + '.reelbeamproject',
-        filters: [{ name: 'Reelbeam shared project', extensions: ['reelbeamproject'] }],
+        defaultPath: db.read().project.name + '.frameoproject',
+        filters: [
+          { name: 'Frameo shared project', extensions: ['frameoproject', 'reelbeamproject'] },
+        ],
       });
       if (result.canceled || !result.filePath) return null;
       await shareProject(db, result.filePath);
@@ -576,12 +578,14 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const source = await ports.dialog.open({
         title: '导入共享工程',
         properties: ['openFile'],
-        filters: [{ name: 'Reelbeam shared project', extensions: ['reelbeamproject'] }],
+        filters: [
+          { name: 'Frameo shared project', extensions: ['frameoproject', 'reelbeamproject'] },
+        ],
       });
       if (source.canceled) return null;
       const target = await ports.dialog.save({
         title: '保存为新工程',
-        defaultPath: '导入工程.reelbeam',
+        defaultPath: '导入工程.frameo',
       });
       if (target.canceled || !target.filePath) return null;
       await stopAgent();

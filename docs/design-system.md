@@ -1,4 +1,4 @@
-# Reelbeam design system
+# Frameo design system
 
 The desktop workbench uses a light, content-first interface. The agent, media canvas and timeline are views of one saved project. A creator moves from intent to a reviewed plan, execution, candidate selection and precise edits.
 

@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#25292a"/><stop offset="1" stop-color="#101213"/></linearGradient><linearGradient id="beam" x2="1" y2="1"><stop stop-color="#ffe1a7"/><stop offset="1" stop-color="#cb8443"/></linearGradient></defs>
-  <rect x="50" y="50" width="924" height="924" rx="210" fill="url(#bg)"/>
-  <g fill="none" stroke="url(#beam)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="512" cy="512" r="266"/>
-    <path d="M512 246L394 450M742 379H506M742 645L624 440M512 778L630 574M282 645H518M282 379L400 584"/>
+  <rect x="50" y="50" width="924" height="924" rx="210" fill="#18181b"/>
+  <g fill="none" stroke="white" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M296 384V296H384M640 296H728V384M728 640V728H640M384 728H296V640" stroke-width="60"/>
+    <path d="M414 610L610 414M450 414H610V574" stroke-width="52"/>
   </g>
 </svg>

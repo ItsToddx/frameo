@@ -4,6 +4,10 @@ Report a bug with the app version, macOS/architecture, reproducible steps, and a
 
 Run `npm run typecheck`, `npm test`, `npm run build`, and `npm run test:desktop` for changes affecting desktop behavior. Native media tests require access to VideoToolbox on macOS; in restricted environments run the tests on the host rather than interpreting an encoder permission error as a media success.
 
+Run `npm run format:check` before committing; `npm run format` applies the pinned formatter.
+
+Keep application policies and their owned ports in `packages/application`, with domain rules in `packages/core` and composition/adapters outside. Application objects may import plain Kit declarations, not runtime implementations. Add new provider or storage behavior through these ports.
+
 Keep editing rules in `packages/core`: the core must not import Electron, Pi, the Kit SDK or a database. Manual and agent edits use the same revision-checked command entry. Adapters perform boundary validation and connect storage or runtimes; the desktop entry composes those parts. Do not put raw IPC, database access or credentials in the renderer.
 
 Use integer timeline ticks and half-open ranges. A generation result is a candidate; adopting it is a separate edit. Preserve durable task IDs and do not automatically retry an uncertain paid submit. Every new native edit operation must have undo, preview, export and behavior tests before exposure to Kits.

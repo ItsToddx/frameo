@@ -2,16 +2,16 @@
 
 The repository separates contract evidence, native media evidence, desktop evidence and paid-model evidence.
 
-| Check | Proves |
-| --- | --- |
-| `npm run typecheck` | Strict TypeScript compatibility across the app, core and SDK. |
-| `npm test` | Public editing/SQLite behavior, Pi tool loops on a local stream, Seedance HTTP contracts, native Kit boundaries and actual FFmpeg outputs. |
-| `npm run build` | Production main/preload/workers and renderer compile. |
-| `npm run test:desktop` | Actual Electron IPC, mandatory model setup, import, trim/caption, undo/redo, composed playback, MP4 export and project reopen. |
-| `npm run test:desktop-failures` | Actual Electron failure messages, redacted keys, unknown submissions, cancellation guidance and reopening without network requests. |
+| Check                                                | Proves                                                                                                                                                       |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run typecheck`                                  | Strict TypeScript compatibility across the app, core and SDK.                                                                                                |
+| `npm test`                                           | Public editing/SQLite behavior, Pi tool loops on a local stream, Seedance HTTP contracts, native Kit boundaries and actual FFmpeg outputs.                   |
+| `npm run build`                                      | Production main/preload/workers and renderer compile.                                                                                                        |
+| `npm run test:desktop`                               | Actual Electron IPC, mandatory model setup, import, trim/caption, undo/redo, composed playback, MP4 export and project reopen.                               |
+| `npm run test:desktop-failures`                      | Actual Electron failure messages, redacted keys, unknown submissions, cancellation guidance and reopening without network requests.                          |
 | `npm run test:desktop-generated -- --project <path>` | Adoption and editing of an already generated project copy, real composed playback, captioned 120-frame export and reopening, with all cloud fetches blocked. |
-| SDK build | Kit authors can compile the public package independently. |
-| Paid account acceptance | Real Ark inference, Seedance task creation, polling and candidate download on the selected account. |
+| SDK build                                            | Kit authors can compile the public package independently.                                                                                                    |
+| Paid account acceptance                              | Real Ark inference, Seedance task creation, polling and candidate download on the selected account.                                                          |
 
 Tests contain no real keys. Provider fixtures deliberately simulate lost submit responses, rejected authentication, cancellation races, missing output and changed task IDs. These are protocol checks, not claims of an actual Seedance generation.
 

@@ -76,7 +76,7 @@ export interface RecipeReviewBinding {
   jobId?: string;
 }
 type BoundReview = Review & RecipeReviewBinding;
-const data = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const data = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 const reviewsFor = (
   state: PersistedState,
   run: PersistentRecipe,
