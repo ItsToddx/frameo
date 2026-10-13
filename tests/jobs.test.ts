@@ -9,7 +9,7 @@ import {JobRunner} from '../apps/desktop/src/adapters/runtime/jobs';
 import {ProjectDatabase} from '../apps/desktop/src/adapters/storage/database';
 import type {CredentialVault} from '../apps/desktop/src/adapters/storage/credentials';
 import type {Job,Settings} from '../apps/desktop/src/adapters/contracts/api';
-import {SeedanceError} from '../apps/desktop/src/adapters/runtime/seedance';
+import {SeedanceError,SeedanceProvider} from '../apps/desktop/src/adapters/runtime/seedance';
 import {hashFile} from '../apps/desktop/src/adapters/runtime/media';
 const vault={currentId:()=> 'account-original',get:()=> 'test-fixture-secret'} as unknown as CredentialVault;
 const settings:Settings={hasApiKey:true,arkBaseUrl:'https://ark.cn-beijing.volces.com/api/v3',agentModel:'test-agent',seedanceModel:'doubao-seedance-2-5-260628',generationCostLimit:2,maxModelCalls:12};
@@ -29,6 +29,30 @@ test('lost paid receipt persists unknown before any restart and cannot silently 
   const runner=new JobRunner(vault,()=>{},()=>true,{provider:()=>provider});const job=runner.createGeneration(db,input('lost'),settings);await wait(()=>db.read().jobs[0]?.status==='unknown');
   assert.equal(runner.createGeneration(db,input('lost'),settings).id,job.id);runner.recover(db);assert.throws(()=>runner.reconcile(db,job.id),/没有远端/);assert.equal(submissions,1);assert.equal(db.read().sequences[0].clips.length,0);await runner.stop();
 }));
+test('provider rejections and asynchronous account-limit failures persist without fabricating output or replaying submits',async t=>{
+  for(const scenario of [
+    {http:401,code:'Unauthorized',message:'Invalid API key test-fixture-secret',remoteId:undefined},
+    {http:404,code:'ModelNotOpen',message:'The selected model has not been activated',remoteId:undefined},
+    {http:200,code:'SetLimitExceeded',message:'The model usage limit has been reached; service is paused',remoteId:'cgt-terminal-failure'},
+  ])await t.test(scenario.code,async()=>fixture(async(db)=>{
+    const requests:{method:string;url:string}[]=[];let downloads=0;
+    const fetcher:typeof fetch=async(url,options)=>{
+      const method=options?.method??'GET';requests.push({method,url:String(url)});
+      if(scenario.http!==200)return Response.json({error:{code:scenario.code,message:scenario.message}},{status:scenario.http});
+      if(method==='POST')return Response.json({id:scenario.remoteId});
+      assert.ok(String(url).endsWith('/'+scenario.remoteId));return Response.json({id:scenario.remoteId,status:'failed',error:{code:scenario.code,message:scenario.message}});
+    };
+    const provider=new SeedanceProvider({baseUrl:settings.arkBaseUrl,apiKey:'test-fixture-secret',fetch:fetcher});
+    const runner=new JobRunner(vault,()=>{},()=>true,{provider:()=>provider,download:async()=>{downloads++;throw new Error('Failure must not download media');}});
+    let reopened:ProjectDatabase|undefined,recovery:JobRunner|undefined;
+    try{
+      const request=input('failure-'+scenario.code),created=runner.createGeneration(db,request,settings);await wait(()=>db.read().jobs[0].status==='failed');await runner.stop();
+      const failed=db.read().jobs[0];assert.equal(failed.remoteId,scenario.remoteId);assert.ok(failed.error);assert.ok(!failed.error.includes('test-fixture-secret'));assert.equal(failed.outputAssetId,undefined);assert.equal(downloads,0);assert.equal(db.read().assets.length,0);assert.equal(db.read().canvas.items.filter(item=>item.kind==='asset').length,0);assert.equal(db.read().sequences[0].clips.length,0);
+      reopened=new ProjectDatabase(db.directory);recovery=new JobRunner(vault,()=>{},()=>true,{provider:()=>provider});const count=requests.length;recovery.recover(reopened);recovery.drain();assert.equal(recovery.createGeneration(reopened,request,settings).id,created.id);await new Promise(resolve=>setTimeout(resolve,20));assert.equal(requests.length,count);assert.equal(reopened.read().jobs[0].status,'failed');assert.equal(reopened.read().jobs[0].remoteId,scenario.remoteId);assert.equal(requests.filter(request=>request.method==='POST').length,1);
+      if(scenario.remoteId){recovery.reconcile(reopened,created.id);await wait(()=>requests.length===count+1&&reopened!.read().jobs[0].status==='failed');assert.equal(requests.at(-1)?.method,'GET');assert.equal(requests.filter(request=>request.method==='POST').length,1);}else assert.throws(()=>recovery!.reconcile(reopened!,created.id),/没有远端/);
+    }finally{await runner.stop();await recovery?.stop();reopened?.close();}
+  }));
+});
 test('recover only polls the pinned remote task and finalization registers one candidate without edits',async()=>fixture(async(db)=>{
   let submissions=0,queries=0,archives=0;const runner=new JobRunner(vault,()=>{},()=>true,{...stagePorts,provider:job=>({submit:async()=>{submissions++;return {remoteId:'original-remote'};},status:async remoteId=>{queries++;assert.equal(remoteId,'original-remote');assert.equal(job.input.accountRef,'account-original');return {status:'succeeded',outputUrl:'https://example.com/test.mp4'};},cancel:async()=>({acknowledged:false,status:'succeeded'})}),archive:async(...args)=>{archives++;return archiveFixture(...args);}});
   const job:Job={id:'recover',requestId:'recover-request',kind:'seedance',status:'submitting',title:'Original',progress:0,createdAt:'x',updatedAt:'x',cancelRequested:false,input:{baseUrl:settings.arkBaseUrl,model:settings.seedanceModel,accountRef:'account-original'},remoteId:'original-remote'};db.transaction(s=>s.jobs.push(job));runner.recover(db);await wait(()=>db.read().jobs[0].status==='succeeded');runner.recover(db);assert.equal(submissions,0);assert.equal(queries,1);assert.equal(archives,1);assert.equal(db.read().assets.length,1);assert.equal(db.read().sequences[0].clips.length,0);assert.equal(db.read().canvas.items.filter(i=>i.kind==='asset').length,1);await runner.stop();

@@ -50,6 +50,7 @@ npm run typecheck
 npm test
 npm run build
 npm run test:desktop
+npm run test:desktop-failures
 npm run dist:mac
 ```
 

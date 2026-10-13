@@ -1,6 +1,6 @@
 {
   "name": "reelbeam",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "An agent-powered desktop video studio",
   "type": "module",
@@ -16,6 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:desktop": "tsx scripts/desktop-smoke.ts",
+    "test:desktop-failures": "tsx scripts/desktop-failures.ts",
+    "test:desktop-generated": "tsx scripts/desktop-generated.ts",
     "start": "electron .",
     "package": "npm run build && electron-builder --mac dir",
     "dist:mac": "npm run build && npm --prefix packages/kit-sdk run build && mkdir -p release && npm pack ./packages/kit-sdk --pack-destination release && node scripts/dist-mac.mjs",
