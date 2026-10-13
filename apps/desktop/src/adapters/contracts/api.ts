@@ -97,6 +97,7 @@ export interface DesktopApi {
   importKit(): Promise<KitInfo[]>;
   uninstallKit(id: Id): Promise<KitInfo[]>;
   exportRecipe(input: {recipeId: Id}): Promise<string|null>;
+  startRecipe(input: {kitId: Id; title: string; sequenceId?: Id}): Promise<ProjectSnapshot>;
   resumeRecipe(input: {recipeId: Id; redoStepId?: Id}): Promise<void>;
   exportProject(): Promise<string|null>;
   importProject(): Promise<ProjectSnapshot|null>;
