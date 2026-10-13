@@ -37,11 +37,17 @@ const toolsSchemas={
   propose_generation:Type.Object({prompt:Type.String({minLength:1,maxLength:20000}),duration:Type.Integer({minimum:4,maximum:30}),ratio:Type.Union([Type.Literal('16:9'),Type.Literal('9:16'),Type.Literal('1:1')]),
     referenceAssetId:Type.Optional(Type.String()),estimatedCost:Type.Number({minimum:0}),title:Type.String({maxLength:160}),description:Type.String({maxLength:4000})},{additionalProperties:false}),
   save_memory:Type.Object({scope:Type.Union([Type.Literal('project'),Type.Literal('user')]),content:Type.String({minLength:1,maxLength:4000})},{additionalProperties:false}),
+  capabilities_search:Type.Object({query:Type.Optional(Type.String({maxLength:1000}))},{additionalProperties:false}),
+  capabilities_describe:Type.Object({capabilityId:Type.String({minLength:1,maxLength:120})},{additionalProperties:false}),
+  invoke_kit:Type.Object({capabilityId:Type.String({minLength:1,maxLength:120}),input:Type.Record(Type.String(),Type.Unknown())},{additionalProperties:false}),
 };
 const toolDescriptions={read_project:'Read a bounded current project snapshot with stable IDs, sequence revisions and registered assets.',
   propose_edit:'Save a pending edit review containing exact target revision and edit commands. This does not apply changes.',
   propose_generation:'Save a pending paid Seedance video generation review. No task is submitted until the user accepts.',
-  save_memory:'Suggest a project or user preference. The host saves only content explicitly requested by the user; otherwise returns a suggestion.'};
+  save_memory:'Suggest a project or user preference. The host saves only content explicitly requested by the user; otherwise returns a suggestion.',
+  capabilities_search:'Search the enabled, trusted, compatible Kit capability catalog. This only returns capability metadata.',
+  capabilities_describe:'Get the declared input/output schemas, permissions and execution kind of one enabled Kit capability.',
+  invoke_kit:'Invoke a schema-validated enabled Kit read, edit or job tool. An edit/job returns a pending proposal for user review, never applied work or a paid cloud submission.'};
 
 /** Bound the model view without rewriting persisted history or splitting tool-call batches. */
 export function boundContext(messages:AgentMessage[],limit=60000):AgentMessage[] {
@@ -98,10 +104,12 @@ export class WorkerEngine {
     const definitions=run.context.agentDefinitions??agentDefinitions;
     const definition=run.agentDefinition?.role===role?run.agentDefinition:definitions.find(d=>d.role===role);
     if(role!=='coordinator'&&!definition)throw new Error(`Agent role unavailable: ${role}`);
-    const allowed=role==='coordinator'?Object.keys(toolsSchemas):definition!.tools;
+    const declared=role==='coordinator'?Object.keys(toolsSchemas):definition!.tools;
+    const allowed=[...new Set([...declared,'capabilities_search','capabilities_describe',...(declared.some(name=>!(name in toolsSchemas))?['invoke_kit']:[])])];
     const tools:AgentTool[]=allowed.filter((name):name is keyof typeof toolsSchemas=>name in toolsSchemas).map(name=>({name,label:name,description:toolDescriptions[name],parameters:toolsSchemas[name],executionMode:'sequential',
       execute:async(toolCallId,args,signal)=>{
         budget.check();signal?.throwIfAborted();
+        if(name==='invoke_kit'&&role!=='coordinator'&&!definition!.tools.includes('invoke_kit')&&!definition!.tools.includes((args as {capabilityId?:string}).capabilityId??''))throw new Error('This specialist did not declare the requested Kit tool');
         const result=await this.invoke({runId:run.runId,sessionId,rootRequestId:run.rootRequestId,role,toolCallId,name,args:args as Record<string,unknown>},signal);
         const text=JSON.stringify(result);if(text.length>120000)throw new Error('Host tool result exceeded context limit');
         return {content:[{type:'text',text:this.redact(text,run.settings.apiKey)}],details:this.redactValue(result,run.settings.apiKey)};

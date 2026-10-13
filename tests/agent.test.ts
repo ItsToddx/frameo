@@ -72,3 +72,24 @@ test('bounded model context preserves assistant/tool pairs and leaves persisted 
   const before=structuredClone(history);const bounded=boundContext(history);
   assert.deepEqual(history,before);assert.ok(JSON.stringify(bounded).length<60000);assert.equal(bounded.at(-1),history.at(-1));
 });
+test('a lost Pi worker exhausts the root request instead of granting a fresh budget',async()=>{
+  class FakeWorker extends EventEmitter implements WorkerProcess {send(){}kill(){this.emit('exit',0);}}
+  const worker=new FakeWorker(),runtime=new PiRuntime({workerPath:'fixture',spawn:()=>worker,onEvent:()=>{},onTool:async()=>({})});
+  const input=runInput('https://ark.cn-beijing.volces.com/api/v3');input.settings.maxModelCalls=3;
+  const pending=runtime.run(input);worker.emit('exit',9);const result=await pending;
+  assert.equal(result.status,'failed');assert.equal(result.budget.modelCalls,3);assert.equal(result.budget.toolCalls,24);assert.equal(result.budget.elapsedMs,120000);
+});
+test('real Pi discovers and invokes an explicitly declared native tool through the host bridge',async t=>{
+  const server=createServer(async(req,res)=>{
+    let body='';for await(const chunk of req)body+=chunk;JSON.parse(body);const n=++calls;
+    if(n===1)sse(res,{name:'capabilities_search',args:{query:'caption'}},'search-1');
+    else if(n===2)sse(res,{name:'capabilities_describe',args:{capabilityId:'fixture.caption'}},'describe-1');
+    else if(n===3)sse(res,{name:'invoke_kit',args:{capabilityId:'fixture.caption',input:{text:'Product'}}},'invoke-1');
+    else sse(res,'A caption review is pending.','complete-1');
+  });let calls=0;server.listen(0,'127.0.0.1');await once(server,'listening');t.after(()=>{server.closeAllConnections();server.close();});
+  const address=server.address();assert.ok(address&&typeof address!=='string');const input=runInput(`http://127.0.0.1:${address.port}/api/v3`);
+  input.role='editor';input.agentDefinition={descriptor:{id:'fixture.editor',name:'Fixture editor',kind:'agent',description:'Caption editor',permissions:['project.read','project.propose'],inputSchema:{type:'object'},outputSchema:{type:'object'}},role:'editor',systemPrompt:'Style captions using the fixture.caption tool.',tools:['fixture.caption']};
+  const requests:HostToolRequest[]=[];const engine=new WorkerEngine(()=>{},async request=>{requests.push(request);return request.name==='invoke_kit'?{reviewId:'pending-review',status:'pending'}:{capabilityId:'fixture.caption',kind:'edit',inputSchema:{type:'object'}};});
+  const result=await engine.run(input);assert.equal(result.status,'completed',result.error);
+  assert.deepEqual(requests.map(r=>r.name),['capabilities_search','capabilities_describe','invoke_kit']);assert.equal(requests[2].args.capabilityId,'fixture.caption');assert.equal(result.budget.modelCalls,4);
+});

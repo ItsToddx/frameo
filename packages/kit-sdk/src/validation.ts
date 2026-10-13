@@ -17,10 +17,11 @@ export const manifestSchema = z.object({
   source: z.string().min(1).max(2048), permissions: z.array(permission).max(10),
   dependencies: z.record(id, version),
   capabilities: z.array(z.object({id, kind: z.enum(['read','edit','job','provider','agent','recipe'])}).strict()).min(1).max(100),
+  entry:z.string().min(1).max(512).refine(value=>!value.startsWith('/')&&!value.includes('\\')&&!value.split('/').includes('..')&&/\.m?js$/.test(value),'Entry must be a relative JavaScript module without traversal').optional(),
 }).strict();
 const role = z.enum(['creative','visual','editor']);
 const agentSchema = z.object({descriptor: descriptorSchema, role,
-  systemPrompt: z.string().min(1).max(16000), tools: z.array(z.enum(['read_project','propose_edit','propose_generation','save_memory'])).max(4),
+  systemPrompt: z.string().min(1).max(16000), tools: z.array(id).max(40),
 }).strict();
 const pointer = z.string().regex(/^(?:\/(?:[^~]|~[01])*)*$/).max(1000);
 const ref = z.discriminatedUnion('from', [z.object({from:z.literal('input'),pointer}).strict(),
@@ -60,6 +61,7 @@ export function validateRecipe(recipe: RecipeDefinition): void {
 export function validateDeclarativeKit(input: unknown): DeclarativeKit {
   const parsed = z.object({manifest:manifestSchema, agents:z.array(agentSchema).max(30), recipes:z.array(recipeSchema).max(30)}).strict().parse(input);
   const declaration = parsed as DeclarativeKit;
+  if(declaration.manifest.entry)throw new Error('Declarative Kit import cannot execute a code entry');
   const declared = new Map(declaration.manifest.capabilities.map(c => [c.id,c.kind]));
   if (declared.size !== declaration.manifest.capabilities.length) throw new Error('Duplicate declared capability');
   const supplied = [...declaration.agents, ...declaration.recipes];

@@ -82,6 +82,11 @@ export class PiRuntime {
   private redact(text:string,key:string):string{return key?text.split(key).join('[redacted]'):text;}
   private finishFailure(error:string,status:'failed'|'stopped'='failed'):void {
     const active=this.active;if(!active)return;active.controller.abort();this.active=undefined;
-    void active.history.finally(()=>active.resolve({status,text:'',error,budget:emptyBudget,history:[]}));
+    const previous=active.run.previousBudget;
+    // A lost worker cannot prove how much was spent. Preserve the request gate conservatively.
+    const maxModelCalls=Math.min(previous?.maxModelCalls??12,active.run.settings.maxModelCalls??12,12);
+    const maxToolCalls=previous?.maxToolCalls??24,maxDurationMs=previous?.maxDurationMs??120000;
+    const budget={...emptyBudget,maxModelCalls,maxToolCalls,maxDurationMs,modelCalls:maxModelCalls,toolCalls:maxToolCalls,elapsedMs:maxDurationMs};
+    void active.history.finally(()=>active.resolve({status,text:'',error,budget,history:[]}));
   }
 }
