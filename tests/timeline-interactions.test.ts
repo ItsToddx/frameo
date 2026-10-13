@@ -2,20 +2,62 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Asset, Sequence } from '../packages/core/src/model';
 import { applyCommands } from '../packages/core/src/editor';
-import { ClipManipulation, TimelineDraft } from '../apps/desktop/src/renderer/timeline-interactions';
+import {
+  ClipManipulation,
+  TimelineDraft,
+} from '../apps/desktop/src/renderer/timeline-interactions';
 import { EditCoordinator } from '../apps/desktop/src/adapters/application/edit-coordinator';
 
 const asset: Asset = {
-  id: 'source', name: 'Source', kind: 'video', path: '/source.mp4', url: '',
-  hash: 'source', duration: 12, hasAudio: true, createdAt: '',
+  id: 'source',
+  name: 'Source',
+  kind: 'video',
+  path: '/source.mp4',
+  url: '',
+  hash: 'source',
+  duration: 12,
+  hasAudio: true,
+  createdAt: '',
 };
 const sequence = (): Sequence => ({
-  id: 'sequence', name: 'Sequence', revision: 4, width: 1280, height: 720, fps: 30,
+  id: 'sequence',
+  name: 'Sequence',
+  revision: 4,
+  width: 1280,
+  height: 720,
+  fps: 30,
   tracks: [{ id: 'video', name: 'Video', kind: 'video', locked: false, muted: false }],
   clips: [
-    { id: 'left', trackId: 'video', assetVersionId: 'source', start: 0, duration: 60, sourceStart: 0, audioGain: 1, muted: false },
-    { id: 'selected', trackId: 'video', assetVersionId: 'source', start: 90, duration: 90, sourceStart: 1, audioGain: 0.5, muted: true },
-    { id: 'right', trackId: 'video', assetVersionId: 'source', start: 240, duration: 60, sourceStart: 0, audioGain: 1, muted: false },
+    {
+      id: 'left',
+      trackId: 'video',
+      assetVersionId: 'source',
+      start: 0,
+      duration: 60,
+      sourceStart: 0,
+      audioGain: 1,
+      muted: false,
+    },
+    {
+      id: 'selected',
+      trackId: 'video',
+      assetVersionId: 'source',
+      start: 90,
+      duration: 90,
+      sourceStart: 1,
+      audioGain: 0.5,
+      muted: true,
+    },
+    {
+      id: 'right',
+      trackId: 'video',
+      assetVersionId: 'source',
+      start: 240,
+      duration: 60,
+      sourceStart: 0,
+      audioGain: 1,
+      muted: false,
+    },
   ],
   captions: [],
 });
@@ -50,7 +92,9 @@ test('trimming the start preserves the media end and audio sample offset without
   assert.equal(saved.clips[1].start + saved.clips[1].duration, 180);
   assert.equal(trim.atDeltaFrames(500).clip.duration, 1);
   initial.clips[1].sourceStart = 3;
-  const extended = new ClipManipulation(initial, [asset], 'selected', 'trim-start').atDeltaFrames(-50);
+  const extended = new ClipManipulation(initial, [asset], 'selected', 'trim-start').atDeltaFrames(
+    -50,
+  );
   assert.equal(extended.clip.start, 60);
   assert.equal(extended.clip.sourceStart, 2);
 });
@@ -66,18 +110,26 @@ test('end trims stop at source duration, keep at least one frame and allow longe
   applyCommands(initial, [shortAsset], [extended.command!]);
   assert.equal(trim.atDeltaFrames(-500).clip.duration, 1);
   const still = { ...asset, kind: 'image' as const, duration: 0 };
-  initial.clips.forEach(clip => { clip.sourceStart = 0; });
+  initial.clips.forEach((clip) => {
+    clip.sourceStart = 0;
+  });
   const imageTrim = new ClipManipulation(initial, [still], 'selected', 'trim-end');
   assert.equal(imageTrim.atDeltaFrames(500).clip.duration, 150);
   assert.equal(imageTrim.atDeltaFrames(500).clip.sourceStart, 0);
-  assert.equal(new ClipManipulation(initial, [still], 'selected', 'trim-start').atDeltaFrames(-30).clip.sourceStart, 0);
+  assert.equal(
+    new ClipManipulation(initial, [still], 'selected', 'trim-start').atDeltaFrames(-30).clip
+      .sourceStart,
+    0,
+  );
   initial.tracks[0].locked = true;
   assert.throws(() => new ClipManipulation(initial, [still], 'selected', 'move'), /锁定/);
 });
 
 const deferred = () => {
   let resolve!: (value: boolean) => void;
-  const promise = new Promise<boolean>(done => { resolve = done; });
+  const promise = new Promise<boolean>((done) => {
+    resolve = done;
+  });
   return { promise, resolve };
 };
 
@@ -87,7 +139,7 @@ test('an interrupted gesture waits for lease acquisition before releasing owners
   const initial = sequence();
   const draft = new TimelineDraft({
     currentSequence: () => initial,
-    onDraftChange: async dirty => {
+    onDraftChange: async (dirty) => {
       if (dirty) {
         const acquired = await acquisition.promise;
         if (acquired) leases.begin('project', initial.id, 'manual');
@@ -96,7 +148,9 @@ test('an interrupted gesture waits for lease acquisition before releasing owners
       leases.end('project', initial.id, 'manual');
       return true;
     },
-    onApply: async () => { throw new Error('An interrupted gesture cannot save'); },
+    onApply: async () => {
+      throw new Error('An interrupted gesture cannot save');
+    },
     onStateChange: () => {},
   });
   draft.begin(initial, 'gesture');
@@ -114,7 +168,7 @@ test('a failed save keeps the original draft and lease until successful revision
   let diskAvailable = false;
   const draft = new TimelineDraft({
     currentSequence: () => current,
-    onDraftChange: async dirty => {
+    onDraftChange: async (dirty) => {
       if (dirty) leases.begin('project', current.id, 'manual');
       else leases.end('project', current.id, 'manual');
       return true;
@@ -147,7 +201,10 @@ test('external revisions and failed lease acquisition cannot commit an old draft
   const draft = new TimelineDraft({
     currentSequence: () => current,
     onDraftChange: async () => true,
-    onApply: async () => { hostWrites++; return true; },
+    onApply: async () => {
+      hostWrites++;
+      return true;
+    },
     onStateChange: () => {},
   });
   draft.begin(current, 'gesture');
@@ -160,8 +217,11 @@ test('external revisions and failed lease acquisition cannot commit an old draft
 
   const denied = new TimelineDraft({
     currentSequence: () => current,
-    onDraftChange: async dirty => !dirty,
-    onApply: async () => { hostWrites++; return true; },
+    onDraftChange: async (dirty) => !dirty,
+    onApply: async () => {
+      hostWrites++;
+      return true;
+    },
     onStateChange: () => {},
   });
   denied.begin(current, 'gesture');
@@ -179,8 +239,8 @@ test('a save in progress excludes duplicate saves and discards, and release fail
   let hostWrites = 0;
   const draft = new TimelineDraft({
     currentSequence: () => current,
-    onDraftChange: async dirty => dirty || allowRelease,
-    onApply: async commands => {
+    onDraftChange: async (dirty) => dirty || allowRelease,
+    onApply: async (commands) => {
       hostWrites++;
       started.resolve(true);
       await commit.promise;
