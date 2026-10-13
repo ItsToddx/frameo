@@ -1,3 +1,5 @@
+// Built-in 1.0.0 declarations are fingerprinted by saved recipes and approvals.
+// Preserve their historical author and role text; current branding belongs to outer display/runtime composition.
 import {z} from 'zod';
 import type {AgentDefinition, CapabilityDescriptor, EditTool, KitManifest, RecipeDefinition, ToolContext} from '../packages/kit-sdk/src/index.js';
 
@@ -7,11 +9,11 @@ export function descriptor(id:string,name:string,kind:CapabilityDescriptor['kind
 }
 export const agentDefinitions:AgentDefinition[] = [
   {descriptor:descriptor('reelbeam.creative','Creative director','agent','Plans scripts, structure and shot intent.',['project.read','model.infer']),role:'creative',
-    systemPrompt:'You are Frameo’s creative director. Develop a concise script and shot plan from the user goal. Read the project before naming assets. Return concrete shot intent, duration, visual style, and reusable reference IDs. Never claim a video has been generated.',tools:['read_project','inspect_media']},
+    systemPrompt:'You are Reelbeam’s creative director. Develop a concise script and shot plan from the user goal. Read the project before naming assets. Return concrete shot intent, duration, visual style, and reusable reference IDs. Never claim a video has been generated.',tools:['read_project','inspect_media']},
   {descriptor:descriptor('reelbeam.visual','Visual producer','agent','Selects image references and prepares Seedance generation proposals.',['project.read','project.propose','model.infer','seedance.generate']),role:'visual',
-    systemPrompt:'You are Frameo’s visual producer. Use Seedance only. Read the project, inspect actual image references and generated frames, select registered reference image IDs, and propose exact prompts, durations, ratios and estimated costs for review. A generation proposal requires user acceptance and does not mean a cloud task exists. Reuse adopted assets instead of regenerating a whole sequence.',tools:['read_project','inspect_media','propose_generation']},
+    systemPrompt:'You are Reelbeam’s visual producer. Use Seedance only. Read the project, inspect actual image references and generated frames, select registered reference image IDs, and propose exact prompts, durations, ratios and estimated costs for review. A generation proposal requires user acceptance and does not mean a cloud task exists. Reuse adopted assets instead of regenerating a whole sequence.',tools:['read_project','inspect_media','propose_generation']},
   {descriptor:descriptor('reelbeam.editor','Film editor','agent','Prepares revision-aware timeline and caption changes.',['project.read','project.propose','model.infer']),role:'editor',
-    systemPrompt:'You are Frameo’s film editor. Read the current sequence revision and exact asset IDs. Inspect actual source frames and audio measurements before making quality claims. Prepare precise edit commands preserving unrelated clips, captions and music. Every edit is a proposal with expectedRevision. Imported and generated assets may be edited. Never invent assets or claim a proposal was accepted.',tools:['read_project','inspect_media','propose_edit']},
+    systemPrompt:'You are Reelbeam’s film editor. Read the current sequence revision and exact asset IDs. Inspect actual source frames and audio measurements before making quality claims. Prepare precise edit commands preserving unrelated clips, captions and music. Every edit is a proposal with expectedRevision. Imported and generated assets may be edited. Never invent assets or claim a proposal was accepted.',tools:['read_project','inspect_media','propose_edit']},
 ];
 export const productAdRecipe:RecipeDefinition={
   descriptor:descriptor('reelbeam.product-ad','Product film','recipe','Create a product ad through script, visual generation review, and timeline assembly.',['project.read','project.propose','model.infer','seedance.generate']),
@@ -40,7 +42,7 @@ export const captionStyleTool:EditTool={
 };
 export const seedanceDescriptor=descriptor('reelbeam.seedance','Seedance','provider','Generate video using Volcengine Ark Seedance; model access and an API key are required.',['seedance.generate']);
 function manifest(id:string,name:string,description:string,capabilities:CapabilityDescriptor[],dependencies:Record<string,string>={}):KitManifest {
-  return {schemaVersion:1,id,name,description,version:'1.0.0',author:'Frameo',license:'Apache-2.0',hostApi:'1',source:'builtin',
+  return {schemaVersion:1,id,name,description,version:'1.0.0',author:'Reelbeam',license:'Apache-2.0',hostApi:'1',source:'builtin',
     permissions:[...new Set(capabilities.flatMap(c=>c.permissions))],dependencies,capabilities:capabilities.map(({id,kind})=>({id,kind}))};
 }
 export const builtinManifests:KitManifest[]=[

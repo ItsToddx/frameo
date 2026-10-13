@@ -170,7 +170,9 @@ export function SettingsModal({
           </p>
         )}
         <div className="modal-actions">
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose} disabled={busy}>
+            取消
+          </Button>
           <Button type="submit" kind="accent" disabled={busy} testId="save-settings">
             {busy ? <LoaderCircle size={14} className="spin" /> : <Check size={14} />}保存配置
           </Button>
@@ -260,7 +262,9 @@ export function CreateModal({
           </p>
         )}
         <div className="modal-actions">
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose} disabled={busy}>
+            取消
+          </Button>
           <Button type="submit" kind="accent" disabled={busy} testId="confirm-create-project">
             <Plus size={14} />
             {kind === 'project' ? '选择位置并创建' : '创建作品'}
@@ -376,7 +380,9 @@ export function GenerateModal({
           </p>
         )}
         <div className="modal-actions">
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose} disabled={busy}>
+            取消
+          </Button>
           <Button type="submit" kind="accent" disabled={busy} testId="confirm-generation">
             <Aperture size={14} />
             确认预算并生成

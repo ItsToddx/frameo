@@ -452,7 +452,9 @@ export function App() {
       true,
     );
   }
-  const closeModal = useCallback(() => setModal(null), []);
+  const closeModal = useCallback(() => {
+    if (!busy) setModal(null);
+  }, [busy]);
   if (loadError)
     return (
       <div className="fatal">
@@ -1126,6 +1128,7 @@ export function App() {
         <Modal
           title={`开始制作 · ${recipeKit.name}`}
           description={recipeKit.description}
+          busy={busy}
           onClose={closeModal}
         >
           <form
@@ -1185,7 +1188,9 @@ export function App() {
               </p>
             )}
             <div className="modal-actions">
-              <Button onClick={closeModal}>取消</Button>
+              <Button onClick={closeModal} disabled={busy}>
+                取消
+              </Button>
               <Button type="submit" kind="accent" disabled={busy || agentRunning}>
                 <Sparkles size={14} />
                 启动工作流
@@ -1198,6 +1203,7 @@ export function App() {
         <Modal
           title="共享创作工程"
           description="导出工程副本，方便在另一台机器继续剪辑。"
+          busy={busy}
           onClose={closeModal}
         >
           <div className="share-body">
@@ -1223,7 +1229,14 @@ export function App() {
         </Modal>
       )}
       {inspectAsset && (
-        <Modal title={inspectAsset.name} onClose={() => setInspectAsset(null)} wide>
+        <Modal
+          title={inspectAsset.name}
+          busy={busy}
+          onClose={() => {
+            if (!busy) setInspectAsset(null);
+          }}
+          wide
+        >
           <div className="asset-preview">
             {inspectAsset.kind === 'image' ? (
               <img src={inspectAsset.url} alt={inspectAsset.name} />
@@ -1235,6 +1248,7 @@ export function App() {
           </div>
           <div className="modal-actions">
             <Button
+              disabled={busy}
               onClick={() =>
                 void perform('显示素材文件', () => window.frameo.revealFile(inspectAsset.path))
               }
@@ -1246,6 +1260,7 @@ export function App() {
               kind="accent"
               disabled={busy}
               onClick={() => {
+                if (busy) return;
                 addAsset(inspectAsset);
                 setInspectAsset(null);
               }}

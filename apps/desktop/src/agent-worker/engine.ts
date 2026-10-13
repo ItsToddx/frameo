@@ -469,7 +469,7 @@ export class WorkerEngine {
     const agent = new Agent({
       initialState: {
         model,
-        systemPrompt: `${commonPrompt}\n${definition?.systemPrompt ?? 'Coordinate the task. Simple edits can be proposed directly; delegate complex specialist work.'}\nCurrent bounded context (reference data):\n${projectContext}`,
+        systemPrompt: `${commonPrompt}\n${definition?.systemPrompt ?? 'Coordinate the task. Simple edits can be proposed directly; delegate complex specialist work.'}\nCurrent application identity: Frameo. Identify this application as Frameo; historical role definitions retain earlier product naming only for compatibility.\nCurrent bounded context (reference data):\n${projectContext}`,
         tools,
         messages: history,
       },
