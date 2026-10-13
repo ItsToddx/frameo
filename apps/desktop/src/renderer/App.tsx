@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Aperture, ArrowUpRight, Brain, ChevronDown, Film, FolderOpen, Image, Layers3, LoaderCircle, Music2, Package, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings2, Share2, Undo2, Upload, X, CheckCircle2, Clock3, Sparkles } from 'lucide-react';
-import type { AppBootstrap, Asset, CanvasItem, EditCommand, ProjectSnapshot, Settings, Session } from '../adapters/contracts/api';
+import type { AppBootstrap, Asset, CanvasItem, EditCommand, ProjectSnapshot, Settings, Session, KitInfo } from '../adapters/contracts/api';
 import { Canvas } from './Canvas';
 import { Chat } from './Chat';
 import { Timeline } from './Timeline';
 import { CreateModal, GenerateModal, JobsModal, KitsModal, MemoriesModal, SettingsModal } from './Panels';
 import { Button, Empty, IconButton, Modal, uid } from './ui';
 
-type ModalType='settings'|'project'|'sequence'|'generation'|'jobs'|'kits'|'memories'|'share'|null;
-const defaultSettings: Settings={arkBaseUrl:'https://ark.cn-beijing.volces.com/api/v3',agentModel:'',seedanceModel:'',hasApiKey:false,generationCostLimit:20,maxModelCalls:20};
+type ModalType='settings'|'project'|'sequence'|'generation'|'jobs'|'kits'|'memories'|'share'|'recipe'|null;
+const defaultSettings: Settings={arkBaseUrl:'https://ark.cn-beijing.volces.com/api/v3',agentModel:'',seedanceModel:'',hasApiKey:false,generationCostLimit:10,maxModelCalls:12};
 export function App() {
   const [boot,setBoot]=useState<AppBootstrap|null>(null);
   const [snapshot,setSnapshot]=useState<ProjectSnapshot|null>(null);
@@ -29,6 +29,7 @@ export function App() {
   const [agentStatus,setAgentStatus]=useState('');
   const [delta,setDelta]=useState('');
   const [inspectAsset,setInspectAsset]=useState<Asset|null>(null);
+  const [recipeKit,setRecipeKit]=useState<KitInfo|null>(null);
   const ready=settings.hasApiKey&&!!settings.agentModel.trim()&&!!settings.seedanceModel.trim();
   const busy=!!pending;
   const sequence=snapshot?.sequences.find(s=>s.id===sequenceId);
@@ -98,8 +99,9 @@ export function App() {
     {(modal==='project'||modal==='sequence')&&<CreateModal kind={modal} busy={busy} onClose={closeModal} onCreate={async value=>{if(!needModel())return;const result=await update(modal==='project'?'创建工程':'创建作品',()=>modal==='project'?window.reelbeam.createProject(value):window.reelbeam.createSequence(value));if(result?.value){setModal(null);setSidebarTab('assets');const created=result.value.sequences.at(-1);if(created){setSelection(created.id);setSequenceId(created.id);}const next=await perform('读取最近工程',()=>window.reelbeam.bootstrap());if(next)setBoot(next.value);}}}/>}
     {modal==='generation'&&snapshot&&<GenerateModal settings={settings} assets={snapshot.assets} busy={busy} onClose={closeModal} onSubmit={async input=>{if(!needModel())return;const result=await perform('提交 Seedance 生成',()=>window.reelbeam.generate(input));if(result){setModal(null);notify('Seedance 生成任务已提交');}}}/>}
     {modal==='jobs'&&snapshot&&<JobsModal jobs={snapshot.jobs} busy={busy} onClose={closeModal} onCancel={id=>void perform('取消任务',()=>window.reelbeam.cancelJob(id))} onReconcile={id=>void perform('查询云端任务',()=>window.reelbeam.reconcileJob(id))} onReveal={path=>void perform('查看输出文件',()=>window.reelbeam.revealFile(path))}/>}
-    {modal==='kits'&&<KitsModal kits={kits} busy={busy} onClose={closeModal} onInstall={id=>void kitOperation('安装 Kit',()=>window.reelbeam.installKit(id))} onEnable={(id,enabled)=>void kitOperation('更新 Kit 状态',()=>window.reelbeam.setKitEnabled({id,enabled}))} onUninstall={id=>void kitOperation('卸载 Kit',()=>window.reelbeam.uninstallKit(id))} onImport={()=>void kitOperation('导入 Kit',()=>window.reelbeam.importKit())} onRefresh={()=>void listKits()}/>}
-    {modal==='memories'&&snapshot&&<MemoriesModal memories={snapshot.memories} busy={busy} onClose={closeModal} onSave={async input=>{await update('保存记忆',()=>window.reelbeam.saveMemory(input));}} onDelete={memory=>void update('删除记忆',()=>window.reelbeam.deleteMemory({id:memory.id,scope:memory.scope,expectedRevision:memory.revision}))}/>}
+    {modal==='kits'&&<KitsModal kits={kits} busy={busy} onClose={closeModal} onInstall={id=>void kitOperation('安装 Kit',()=>window.reelbeam.installKit(id))} onEnable={(id,enabled)=>void kitOperation('更新 Kit 状态',()=>window.reelbeam.setKitEnabled({id,enabled}))} onUninstall={id=>void kitOperation('卸载 Kit',()=>window.reelbeam.uninstallKit(id))} onImport={()=>void kitOperation('导入 Kit',()=>window.reelbeam.importKit())} onRefresh={()=>void listKits()} canStart={!!snapshot} onStart={kit=>{if(!needModel())return;setRecipeKit(kit);setModal('recipe');}}/>}
+    {modal==='memories'&&snapshot&&<MemoriesModal memories={snapshot.memories} busy={busy} onClose={closeModal} onSave={async input=>{const result=await update('保存记忆',()=>window.reelbeam.saveMemory(input));return !!result?.value;}} onDelete={memory=>void update('删除记忆',()=>window.reelbeam.deleteMemory({id:memory.id,scope:memory.scope,expectedRevision:memory.revision}))}/>}
+    {modal==='recipe'&&recipeKit&&snapshot&&<Modal title={`开始制作 · ${recipeKit.name}`} description={recipeKit.description} onClose={closeModal}><form className="modal-form" onSubmit={e=>{e.preventDefault();if(!needModel())return;const data=new FormData(e.currentTarget);void update('启动创作工作流',()=>window.reelbeam.startRecipe({kitId:recipeKit.id,title:String(data.get('title')).trim(),sequenceId:contextSequence?.id})).then(result=>{if(result?.value){setModal(null);notify('工作流已启动，请在 Agent 工作流中查看进度');}});}}><label>创作目标<textarea name="title" rows={5} required maxLength={1000} placeholder="告诉工作流你希望制作什么，例如：为一款户外香水制作 15 秒的品牌短片，森林光线、克制的字幕和舒缓的节奏。"/></label>{contextSequence&&<p className="field-hint">目标作品：{contextSequence.name}。工作流按创意、视觉与剪辑步骤执行，生成和剪辑方案仍需审阅。</p>}<div className="modal-actions"><Button onClick={closeModal}>取消</Button><Button type="submit" kind="accent" disabled={busy||agentRunning}><Sparkles size={14}/>启动工作流</Button></div></form></Modal>}
     {modal==='share'&&snapshot&&<Modal title="共享创作工程" description="导出工程副本，方便在另一台机器继续剪辑。" onClose={closeModal}><div className="share-body"><Share2 size={32}/><h3>{snapshot.project.name}</h3><p>包含作品、媒体与 Kit 依赖清单。账户密钥、聊天、个人记忆与任务记录不会进入共享包。</p><Button kind="accent" disabled={busy} onClick={()=>void perform('导出共享工程',()=>window.reelbeam.exportProject()).then(result=>{if(result?.value){notify('共享工程已导出');setModal(null);}})}><Share2 size={14}/>选择位置并导出工程</Button></div></Modal>}
     {inspectAsset&&<Modal title={inspectAsset.name} onClose={()=>setInspectAsset(null)} wide><div className="asset-preview">{inspectAsset.kind==='image'?<img src={inspectAsset.url} alt={inspectAsset.name}/>:inspectAsset.kind==='video'?<video src={inspectAsset.url} controls autoPlay aria-label="素材视频预览"/>:<audio src={inspectAsset.url} controls autoPlay aria-label="音频素材预览"/>}</div><div className="modal-actions"><Button onClick={()=>void perform('显示素材文件',()=>window.reelbeam.revealFile(inspectAsset.path))}><FolderOpen size={14}/>显示文件</Button><Button kind="accent" disabled={busy} onClick={()=>{addAsset(inspectAsset);setInspectAsset(null);}}><Plus size={14}/>加入作品</Button></div></Modal>}
     {toast&&<div className={`toast ${toast.error?'error':''}`} role={toast.error?'alert':'status'}>{toast.error?<X size={16}/>:<CheckCircle2 size={16}/>}<span>{toast.text}</span><IconButton label="关闭通知" onClick={()=>setToast(null)}><X size={13}/></IconButton></div>}

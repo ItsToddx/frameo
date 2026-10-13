@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant, applyNodeChanges, useReactFlow, useNodesInitialized, type Node, type NodeProps } from '@xyflow/react';
+import { ReactFlow, ReactFlowProvider, Background, BackgroundVariant, applyNodeChanges, useReactFlow, type Node, type NodeProps } from '@xyflow/react';
 import { Aperture, Film, Image, Music2, Maximize, Plus, Minus, X, ArrowDownToLine, LayoutGrid, MousePointer2 } from 'lucide-react';
 import type { Asset, CanvasItem, ProjectSnapshot, Sequence } from '../adapters/contracts/api';
 import { Button, IconButton, timecode } from './ui';
@@ -25,23 +25,36 @@ export function Canvas(props: {snapshot: ProjectSnapshot; selection: string|null
 function CanvasInner({snapshot,selection,timelineOpen,onSelect,onSave,onHide,onAdd,onGenerate,onImport,busy}: Parameters<typeof Canvas>[0]) {
   const [nodes,setNodes] = useState<CardNode[]>([]);
   const dragging = useRef(false);
+  const container = useRef<HTMLDivElement>(null);
   const flow = useReactFlow();
-  const initialized = useNodesInitialized();
+  const fitCanvas = () => {
+    const bounds = container.current;
+    if(!bounds||!snapshot.canvas.items.length)return;
+    const items = snapshot.canvas.items;
+    const left = Math.min(...items.map(item=>item.x));
+    const top = Math.min(...items.map(item=>item.y));
+    const width = Math.max(...items.map(item=>item.x+260))-left;
+    const height = Math.max(...items.map(item=>item.y+(item.kind==='sequence'?235:210)))-top;
+    const availableHeight=Math.max(120,bounds.clientHeight-160);
+    const zoom=Math.min(1,Math.max(0.25,Math.min((bounds.clientWidth-90)/width,availableHeight/height)));
+    void flow.setViewport({x:(bounds.clientWidth-width*zoom)/2-left*zoom,y:100+(availableHeight-height*zoom)/2-top*zoom,zoom},{duration:150});
+  };
+  const fitRef = useRef(fitCanvas);fitRef.current=fitCanvas;
   useEffect(() => {
     if(dragging.current) return;
     setNodes(snapshot.canvas.items.map(item => ({id:item.id,type:'card',position:{x:item.x,y:item.y},selected:item.refId===selection,style:{width:260},data:{item,asset:snapshot.assets.find(a => a.id===item.refId),sequence:snapshot.sequences.find(s=>s.id===item.refId),selected:item.refId===selection,onOpen:onSelect,onHide,onAdd}})));
   },[snapshot,selection,onSelect,onHide,onAdd]);
   useEffect(() => {
-    if(!initialized)return;
-    const timer = setTimeout(() => {void flow.fitView({padding:0.25,maxZoom:1,duration:150});},80);
+    if(!flow.viewportInitialized)return;
+    const timer = setTimeout(() => fitRef.current(),80);
     return () => clearTimeout(timer);
-  },[initialized,snapshot.project.id,snapshot.canvas.items.length,timelineOpen,flow]);
-  return <div className="canvas-shell" data-testid="canvas">
+  },[flow.viewportInitialized,snapshot.project.id,snapshot.canvas.items.length,timelineOpen]);
+  return <div ref={container} className="canvas-shell" data-testid="canvas">
     <div className="canvas-topline"><div><span className="eyebrow">创作画布</span><h2>{snapshot.project.name}</h2><p>整理素材，让每一个镜头各就其位。</p></div><div className="canvas-actions"><Button onClick={onImport} disabled={busy}><Plus size={14}/>导入素材</Button><Button kind="accent" onClick={onGenerate} disabled={busy}><Aperture size={14}/>生成视频</Button></div></div>
     <ReactFlow nodes={nodes} nodeTypes={nodeTypes} onNodesChange={changes=>setNodes(prev=>applyNodeChanges(changes,prev))} onNodeClick={(_,node)=>onSelect(node.data.item)} onNodeDragStart={()=>{dragging.current=true;}} onNodeDragStop={(_,node)=>{dragging.current=false;void onSave(snapshot.canvas.items.map(item=>item.id===node.id?{...item,x:node.position.x,y:node.position.y}:item));}} fitView fitViewOptions={{padding:0.4,maxZoom:1}} minZoom={0.25} maxZoom={1.6} panOnScroll nodesDraggable={!busy} selectionOnDrag={false} nodesConnectable={false} deleteKeyCode={null} proOptions={{hideAttribution:true}}>
       <Background variant={BackgroundVariant.Dots} color="#373731" gap={24} size={1}/>
     </ReactFlow>
     {!snapshot.canvas.items.length&&<div className="canvas-empty"><div className="canvas-empty-art"><LayoutGrid size={35}/><span><Image size={17}/></span><span><Film size={17}/></span></div><h3>你的故事，从这里开始</h3><p>导入参考素材，或用 Seedance 生成第一个镜头。<br/>选中作品，即可展开时间线。</p><Button onClick={onImport} disabled={busy}><Plus size={15}/>导入素材</Button></div>}
-    <div className="canvas-controls"><span><MousePointer2 size={13}/>拖动卡片 · 滚动平移</span><div><IconButton label="缩小画布" onClick={()=>void flow.zoomOut()}><Minus size={15}/></IconButton><IconButton label="放大画布" onClick={()=>void flow.zoomIn()}><Plus size={15}/></IconButton><IconButton label="适应画布" onClick={()=>void flow.fitView({padding:0.35,maxZoom:1})}><Maximize size={15}/></IconButton></div>{busy&&<span className="saving-dot">保存中</span>}</div>
+    <div className="canvas-controls"><span><MousePointer2 size={13}/>拖动卡片 · 滚动平移</span><div><IconButton label="缩小画布" onClick={()=>void flow.zoomOut()}><Minus size={15}/></IconButton><IconButton label="放大画布" onClick={()=>void flow.zoomIn()}><Plus size={15}/></IconButton><IconButton label="适应画布" onClick={fitCanvas}><Maximize size={15}/></IconButton></div>{busy&&<span className="saving-dot">保存中</span>}</div>
   </div>;
 }
