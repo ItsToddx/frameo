@@ -3,7 +3,7 @@ import type {AgentDefinition,AgentRole} from '../../../../packages/kit-sdk/src/i
 import type {ProjectSnapshot} from '../adapters/contracts/api.js';
 
 export type WorkerRole='coordinator'|AgentRole;
-export type HostToolName='read_project'|'propose_edit'|'propose_generation'|'save_memory'|'capabilities_search'|'capabilities_describe'|'invoke_kit';
+export type HostToolName='read_project'|'propose_edit'|'propose_generation'|'save_memory'|'capabilities_search'|'capabilities_describe'|'invoke_kit'|'inspect_media';
 export interface WorkerRun {
   runId:string;sessionId:string;rootRequestId:string;text:string;role?:WorkerRole;
   context:{snapshot:ProjectSnapshot;sequenceId?:string;clipId?:string;memories?:string[];

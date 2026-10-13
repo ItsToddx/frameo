@@ -12,7 +12,7 @@ type Invoke=(request:HostToolRequest,signal?:AbortSignal)=>Promise<unknown>;
 export function arkModel(baseUrl:string,modelId:string):Model<'openai-completions'> {
   if(!modelId.trim())throw new Error('Set an Ark chat model or endpoint ID in Settings');
   return {id:modelId.trim(),name:modelId.trim(),api:'openai-completions',provider:'reelbeam-ark',
-    baseUrl:normalizeArkBaseUrl(baseUrl),reasoning:false,input:['text'],
+    baseUrl:normalizeArkBaseUrl(baseUrl),reasoning:false,input:['text','image'],
     cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:128000,maxTokens:4096,
     compat:{supportsStore:false,supportsDeveloperRole:false,supportsReasoningEffort:false,supportsStrictMode:false,maxTokensField:'max_tokens'}};
 }
@@ -29,7 +29,8 @@ Use registered IDs and current sequence revisions. Read the project before an ed
 Do not claim a task succeeded, a film was exported, or changes were applied without a host receipt. Show concise creative reasoning and useful next actions in the user's language.
 You cannot accept reviews, execute arbitrary code, read arbitrary files, or call shell tools. Never invent asset IDs, clip IDs, costs, or a saved result.
 save_memory is a suggestion unless the user explicitly asked to remember that particular content. Do not store credentials. Delegate only scoped creative, visual, or editing work.
-If output contains a review ID, explain that the user should review it. A review is pending even if you supplied all parameters.`;
+If output contains a review ID, explain that the user should review it. A review is pending even if you supplied all parameters.
+Inspect actual assets with inspect_media before making claims about their appearance, captions, composition or sound. Cite the asset version and sampled source time. A single frame does not prove motion continuity or a full film's quality. Audio RMS/peak measurements describe only the sampled source interval; they do not establish intelligibility, music quality, lip sync or the final timeline mix. Say when content has not been inspected. Never infer media quality only from the generation prompt or file metadata.`;
 const toolsSchemas={
   read_project:Type.Object({sequenceId:Type.Optional(Type.String())},{additionalProperties:false}),
   propose_edit:Type.Object({sequenceId:Type.String(),expectedRevision:Type.Integer({minimum:0}),title:Type.String({maxLength:160}),description:Type.String({maxLength:4000}),
@@ -40,6 +41,7 @@ const toolsSchemas={
   capabilities_search:Type.Object({query:Type.Optional(Type.String({maxLength:1000}))},{additionalProperties:false}),
   capabilities_describe:Type.Object({capabilityId:Type.String({minLength:1,maxLength:120})},{additionalProperties:false}),
   invoke_kit:Type.Object({capabilityId:Type.String({minLength:1,maxLength:120}),input:Type.Record(Type.String(),Type.Unknown())},{additionalProperties:false}),
+  inspect_media:Type.Object({assetVersionId:Type.String({minLength:1,maxLength:200}),timeSeconds:Type.Optional(Type.Number({minimum:0}))},{additionalProperties:false}),
 };
 const toolDescriptions={read_project:'Read a bounded current project snapshot with stable IDs, sequence revisions and registered assets.',
   propose_edit:'Save a pending edit review containing exact target revision and edit commands. This does not apply changes.',
@@ -47,11 +49,13 @@ const toolDescriptions={read_project:'Read a bounded current project snapshot wi
   save_memory:'Suggest a project or user preference. The host saves only content explicitly requested by the user; otherwise returns a suggestion.',
   capabilities_search:'Search the enabled, trusted, compatible Kit capability catalog. This only returns capability metadata.',
   capabilities_describe:'Get the declared input/output schemas, permissions and execution kind of one enabled Kit capability.',
-  invoke_kit:'Invoke a schema-validated enabled Kit read, edit or job tool. An edit/job returns a pending proposal for user review, never applied work or a paid cloud submission.'};
+  invoke_kit:'Invoke a schema-validated enabled Kit read, edit or job tool. An edit/job returns a pending proposal for user review, never applied work or a paid cloud submission.',
+  inspect_media:'Inspect an actual registered asset at a source time in seconds. Returns a bounded real JPEG frame and factual metadata, and up to three seconds of local source audio RMS/peak measurements. Frame content is sent to the configured vision-capable model during the next inference; audio bytes stay local.'};
 
 /** Bound the model view without rewriting persisted history or splitting tool-call batches. */
 export function boundContext(messages:AgentMessage[],limit=60000):AgentMessage[] {
-  const size=(value:unknown)=>JSON.stringify(value).length;
+  // Image bytes are encoded as multimodal content, not as text tokens. Budget each bounded image conservatively.
+  const size=(value:unknown)=>JSON.stringify(value,(_key,v)=>v&&typeof v==='object'&&v.type==='image'?{type:'image',mimeType:v.mimeType,data:'x'.repeat(4000)}:v).length;
   if(size(messages)<=limit)return messages;
   const groups:AgentMessage[][]=[];
   for(const message of messages) {
@@ -111,6 +115,12 @@ export class WorkerEngine {
         budget.check();signal?.throwIfAborted();
         if(name==='invoke_kit'&&role!=='coordinator'&&!definition!.tools.includes('invoke_kit')&&!definition!.tools.includes((args as {capabilityId?:string}).capabilityId??''))throw new Error('This specialist did not declare the requested Kit tool');
         const result=await this.invoke({runId:run.runId,sessionId,rootRequestId:run.rootRequestId,role,toolCallId,name,args:args as Record<string,unknown>},signal);
+        if(name==='inspect_media') {
+          const parsed=z.object({value:z.record(z.string(),z.unknown()),image:z.object({data:z.string().max(Math.ceil(128*1024/3)*4).regex(/^[A-Za-z0-9+/]+=*$/),mimeType:z.literal('image/jpeg')}).strict().optional()}).strict().parse(result);
+          const details=this.redactValue(parsed.value,run.settings.apiKey),text=JSON.stringify(details);
+          if(text.length>16000)throw new Error('Inspection metadata exceeds context limit');
+          return {content:[{type:'text',text},...(parsed.image?[{type:'image' as const,data:parsed.image.data,mimeType:parsed.image.mimeType}]:[])],details};
+        }
         const text=JSON.stringify(result);if(text.length>120000)throw new Error('Host tool result exceeded context limit');
         return {content:[{type:'text',text:this.redact(text,run.settings.apiKey)}],details:this.redactValue(result,run.settings.apiKey)};
       }}));
