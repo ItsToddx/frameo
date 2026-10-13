@@ -66,6 +66,8 @@ npm run dist:mac
 
 已有工程、共享包和内置 Kit 引用保持兼容；改名不会重发付费任务。
 
+从旧版升级时，macOS 可能无法用新应用身份读取旧密钥，请在设置中重新输入。保存新密钥时会保留原加密文件备份；旧任务的账户绑定不会被替换为新密钥。
+
 ## 创作套件
 
 **Every Kit. A new way to create. 一个 Kit，多一种创作可能。**
@@ -75,6 +77,8 @@ npm run dist:mac
 原生代码 Kit 在后台进程执行，具有当前系统账户的权限；进程隔离用于故障恢复，不能当作恶意代码沙箱。安装时查看来源与权限，只启用受信任的包。
 
 ## 参考与许可
+
+浅色设计系统参考 [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) 与 [shadcn/ui](https://github.com/shadcn-ui/ui)，使用源码维护的 Radix 控件；对话实际接入 [assistant-ui](https://github.com/assistant-ui/assistant-ui) 的 ExternalStoreRuntime。
 
 README 的组织方式参考 [Hyperframes](https://github.com/heygen-com/hyperframes)。产品交互参考 MiniMax Design、ChatCut、Toonflow，专业 Agent 分工参考 ViMax；实际栈为 Electron、Pi、React Flow、SQLite 与 FFmpeg。第一版不接入 ComfyUI。
 

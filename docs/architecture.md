@@ -42,7 +42,7 @@ Pi and native Kits run in background workers. Specialists share a persisted requ
 
 Projects retain `project.sqlite`, `media/`, `cache/`, `sessions/` and `snapshots/`, with format version 1. Opening an existing project first snapshots SQLite and retains three backups. Shared archives omit credentials, personal memory, chats, tasks and approvals, and acquire a new project identity on import.
 
-Frameo accepts legacy project directories and shared archives. Built-in capability identifiers remain stable so authored workflows keep their references. The profile selector reuses a prior desktop profile when no Frameo profile exists; credentials stay encrypted in that profile. Renaming does not rewrite source files or generation orders.
+Frameo accepts legacy project directories and shared archives. Built-in capability identifiers remain stable so authored workflows keep their references. The profile selector reuses a prior desktop profile when no Frameo profile exists; credentials stay encrypted in that profile. If the new app identity cannot decrypt the legacy vault, explicit replacement preserves its ciphertext backup and creates a new account reference; old task account references are never remapped. Renaming does not rewrite source files or generation orders.
 
 Interrupted worker reservations remain conservative and orphan steps become interrupted. Active paid work is never replayed. Existing remote IDs can be reconciled; verified staged output can be finalized without a fresh paid call or an expiring provider URL. A generated candidate enters the timeline only after explicit adoption.
 

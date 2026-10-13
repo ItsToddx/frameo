@@ -33,6 +33,10 @@ Try a request such as:
 
 Ark bills model requests to your own account. The app stores the key using macOS credential encryption, outside projects. A user-entered budget is a submission guard and estimate, not a guarantee of the provider's final bill.
 
+### Upgrading an existing profile
+
+Existing projects and shared archives remain readable, and built-in workflow identities stay fixed. macOS may require re-entering the API key under the new application identity. Explicitly saving a replacement preserves an unreadable old encrypted vault as a backup; it never remaps old tasks to the new account or replays their paid submissions.
+
 ## What you can do
 
 | Workspace | Behavior                                                                                                                            |
@@ -119,7 +123,8 @@ Tests use temporary projects and fake account strings in an isolated profile. Pi
 
 ```text
 apps/desktop/src/   Electron shell, isolated preload, React workbench and adapters
-packages/core/     Framework-independent editing and sequence rules
+packages/core/         Domain editing, generation and recipe rules
+packages/application/  Portable use cases, owned contracts and ports
 packages/kit-sdk/  Public Kit contracts, validation and registration
 kits/              Built-in capabilities and independent examples
 resources/         Native media tools and redistribution notices
@@ -136,6 +141,8 @@ Use [Issues](https://github.com/ItsToddx/frameo/issues) for reproducible bugs an
 ## Inspiration and dependencies
 
 README organization is inspired by [Hyperframes](https://github.com/heygen-com/hyperframes). Workspace and interaction ideas draw from MiniMax Design, ChatCut and Toonflow; specialist roles from ViMax; canvas interaction from React Flow. These are design references, not claims of integrating their applications or copying private code.
+
+The light design system follows guidance from [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) and [shadcn/ui](https://github.com/shadcn-ui/ui), with source-owned Radix primitives. Conversations use the actual [assistant-ui](https://github.com/assistant-ui/assistant-ui) ExternalStoreRuntime over desktop IPC.
 
 The implementation uses [Electron](https://www.electronjs.org/), [Pi](https://github.com/badlogic/pi-mono), [React Flow](https://reactflow.dev/), SQLite and [FFmpeg](https://ffmpeg.org/). Generation follows [Ark's Seedance API](https://docs.volcengine.com/docs/ark/create-video-generation-task-api?lang=zh). Hyperframes motion rendering is a separately evaluated extension; it does not replace the sequence model. See [third-party notices](THIRD_PARTY_NOTICES.md).
 

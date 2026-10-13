@@ -23,7 +23,19 @@ Release acceptance additionally checks the packaged application, clean-profile f
 
 Implementation review used the initial repository commit as a fixed baseline and checked both documented standards and the supplied desktop requirements. Fixes include aborted preparation, crash-safe shared budgets, exact recipe approvals, core-owned idempotent undo/redo, confined session files, registered-only media access, and explicit memory confirmation. A small duplicate proposal-construction helper remains a refactoring opportunity; it does not create another write path.
 
-## Current preview evidence
+## Frameo 0.2.0 evidence
+
+The rebuilt macOS Apple Silicon package was checked locally on 2026-10-13:
+
+- Strict typecheck, production build, standalone SDK build, formatting check and all 153 tests pass. Runtime dependency audit reports zero vulnerabilities.
+- The final ZIP was extracted into a clean temporary directory and its ad-hoc signature passed strict verification. Release checksums and DMG integrity passed.
+- The extracted application passed all four desktop suites: native import/edit/undo/preview/export/reopen and Kit/workflow reviews; model-failure and unknown-submit handling; generated-media adoption and captioned 120-frame export; modal focus, IME/draft/history behavior, exact UI review adoption, frame keyboard movement, busy dismissal and 1120×760 / 1520×1000 layout.
+- Old 1.0.0 built-in fingerprints match the v0.1.1 baseline. Frozen recipes resume after reopen; changed capability content still invalidates approval. No frozen task/account identity is rewritten.
+- A synthetic profile created by the old packaged application was opened by Frameo. Its old ciphertext is unreadable under the new app identity; explicitly saving a replacement now succeeds and retains an encrypted backup. Unit tests verify byte preservation, rollback on failed installation, unavailable-Keychain refusal, readable account retention and absence of account remapping.
+- Code review found two issues: legacy builtin fingerprint changes and incomplete busy dismissal. Both are fixed and re-reviewed. A further real-package fake-key upgrade check exposed the vault replacement issue; that is fixed and verified too. The Standards review found no actionable introduced violation.
+- No new paid inference occurred during this refactor. The real-generated-media check uses a copy of the previously authorized result. Paid chat inference and Apple Developer ID signing/notarization remain outside this acceptance.
+
+## Earlier v0.1.1 evidence
 
 The macOS Apple Silicon release was built and checked locally on 2026-10-13:
 

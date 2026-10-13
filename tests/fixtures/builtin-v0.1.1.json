@@ -11,9 +11,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "seedance.generate"
-      ],
+      "permissions": ["seedance.generate"],
       "dependencies": {},
       "capabilities": [
         {
@@ -32,10 +30,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "project.read",
-        "project.propose"
-      ],
+      "permissions": ["project.read", "project.propose"],
       "dependencies": {},
       "capabilities": [
         {
@@ -54,10 +49,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "project.read",
-        "model.infer"
-      ],
+      "permissions": ["project.read", "model.infer"],
       "dependencies": {},
       "capabilities": [
         {
@@ -76,12 +68,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer",
-        "seedance.generate"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
       "dependencies": {},
       "capabilities": [
         {
@@ -100,11 +87,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer"],
       "dependencies": {},
       "capabilities": [
         {
@@ -123,12 +106,7 @@
       "license": "Apache-2.0",
       "hostApi": "1",
       "source": "builtin",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer",
-        "seedance.generate"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
       "dependencies": {
         "reelbeam.creative-kit": "1.0.0",
         "reelbeam.visual-kit": "1.0.0",
@@ -150,10 +128,7 @@
         "name": "Creative director",
         "kind": "agent",
         "description": "Plans scripts, structure and shot intent.",
-        "permissions": [
-          "project.read",
-          "model.infer"
-        ],
+        "permissions": ["project.read", "model.infer"],
         "inputSchema": {
           "type": "object"
         },
@@ -163,10 +138,7 @@
       },
       "role": "creative",
       "systemPrompt": "You are Reelbeam’s creative director. Develop a concise script and shot plan from the user goal. Read the project before naming assets. Return concrete shot intent, duration, visual style, and reusable reference IDs. Never claim a video has been generated.",
-      "tools": [
-        "read_project",
-        "inspect_media"
-      ]
+      "tools": ["read_project", "inspect_media"]
     },
     {
       "descriptor": {
@@ -174,12 +146,7 @@
         "name": "Visual producer",
         "kind": "agent",
         "description": "Selects image references and prepares Seedance generation proposals.",
-        "permissions": [
-          "project.read",
-          "project.propose",
-          "model.infer",
-          "seedance.generate"
-        ],
+        "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
         "inputSchema": {
           "type": "object"
         },
@@ -189,11 +156,7 @@
       },
       "role": "visual",
       "systemPrompt": "You are Reelbeam’s visual producer. Use Seedance only. Read the project, inspect actual image references and generated frames, select registered reference image IDs, and propose exact prompts, durations, ratios and estimated costs for review. A generation proposal requires user acceptance and does not mean a cloud task exists. Reuse adopted assets instead of regenerating a whole sequence.",
-      "tools": [
-        "read_project",
-        "inspect_media",
-        "propose_generation"
-      ]
+      "tools": ["read_project", "inspect_media", "propose_generation"]
     },
     {
       "descriptor": {
@@ -201,11 +164,7 @@
         "name": "Film editor",
         "kind": "agent",
         "description": "Prepares revision-aware timeline and caption changes.",
-        "permissions": [
-          "project.read",
-          "project.propose",
-          "model.infer"
-        ],
+        "permissions": ["project.read", "project.propose", "model.infer"],
         "inputSchema": {
           "type": "object"
         },
@@ -215,11 +174,7 @@
       },
       "role": "editor",
       "systemPrompt": "You are Reelbeam’s film editor. Read the current sequence revision and exact asset IDs. Inspect actual source frames and audio measurements before making quality claims. Prepare precise edit commands preserving unrelated clips, captions and music. Every edit is a proposal with expectedRevision. Imported and generated assets may be edited. Never invent assets or claim a proposal was accepted.",
-      "tools": [
-        "read_project",
-        "inspect_media",
-        "propose_edit"
-      ]
+      "tools": ["read_project", "inspect_media", "propose_edit"]
     }
   ],
   "recipe": {
@@ -228,12 +183,7 @@
       "name": "Product film",
       "kind": "recipe",
       "description": "Create a product ad through script, visual generation review, and timeline assembly.",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer",
-        "seedance.generate"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
       "inputSchema": {
         "type": "object"
       },
@@ -262,9 +212,7 @@
         "title": "Prepare Seedance shots",
         "capabilityId": "reelbeam.visual",
         "role": "visual",
-        "dependsOn": [
-          "script"
-        ],
+        "dependsOn": ["script"],
         "input": {
           "plan": {
             "from": "step",
@@ -280,10 +228,7 @@
         "title": "Assemble and caption",
         "capabilityId": "reelbeam.editor",
         "role": "editor",
-        "dependsOn": [
-          "script",
-          "visuals"
-        ],
+        "dependsOn": ["script", "visuals"],
         "input": {
           "plan": {
             "from": "step",
@@ -314,9 +259,7 @@
       "name": "Seedance",
       "kind": "provider",
       "description": "Generate video using Volcengine Ark Seedance; model access and an API key are required.",
-      "permissions": [
-        "seedance.generate"
-      ],
+      "permissions": ["seedance.generate"],
       "inputSchema": {
         "type": "object"
       },
@@ -329,10 +272,7 @@
       "name": "Caption styling",
       "kind": "edit",
       "description": "Propose a uniform style for selected captions.",
-      "permissions": [
-        "project.read",
-        "project.propose"
-      ],
+      "permissions": ["project.read", "project.propose"],
       "inputSchema": {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
@@ -356,19 +296,10 @@
           },
           "position": {
             "type": "string",
-            "enum": [
-              "top",
-              "center",
-              "bottom"
-            ]
+            "enum": ["top", "center", "bottom"]
           }
         },
-        "required": [
-          "captionIds",
-          "fontSize",
-          "color",
-          "position"
-        ],
+        "required": ["captionIds", "fontSize", "color", "position"],
         "additionalProperties": false
       },
       "outputSchema": {
@@ -380,10 +311,7 @@
       "name": "Creative director",
       "kind": "agent",
       "description": "Plans scripts, structure and shot intent.",
-      "permissions": [
-        "project.read",
-        "model.infer"
-      ],
+      "permissions": ["project.read", "model.infer"],
       "inputSchema": {
         "type": "object"
       },
@@ -396,12 +324,7 @@
       "name": "Visual producer",
       "kind": "agent",
       "description": "Selects image references and prepares Seedance generation proposals.",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer",
-        "seedance.generate"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
       "inputSchema": {
         "type": "object"
       },
@@ -414,11 +337,7 @@
       "name": "Film editor",
       "kind": "agent",
       "description": "Prepares revision-aware timeline and caption changes.",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer"],
       "inputSchema": {
         "type": "object"
       },
@@ -431,12 +350,7 @@
       "name": "Product film",
       "kind": "recipe",
       "description": "Create a product ad through script, visual generation review, and timeline assembly.",
-      "permissions": [
-        "project.read",
-        "project.propose",
-        "model.infer",
-        "seedance.generate"
-      ],
+      "permissions": ["project.read", "project.propose", "model.infer", "seedance.generate"],
       "inputSchema": {
         "type": "object"
       },

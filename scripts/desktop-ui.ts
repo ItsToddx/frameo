@@ -183,6 +183,19 @@ try {
   await page.locator('.sequence-list-row').first().click();
   await page.getByTestId('timeline-clip').click();
   await page.screenshot({ path: join(directory, 'editor.png') });
+  await page.getByTestId('timeline-clip').focus();
+  await page.keyboard.press('ArrowRight');
+  await page.getByTestId('save-timeline-draft').click();
+  assert.equal(
+    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].clips[0].start,
+    1,
+  );
+  await page.getByRole('button', { name: '撤销剪辑', exact: true }).click();
+  assert.equal(
+    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].clips[0].start,
+    0,
+  );
+
   await page.locator('.inspector-form input[name="duration"]').fill('4');
   assert.equal(await page.getByTestId('discard-timeline-draft').isVisible(), true);
   await page.getByTestId('discard-timeline-draft').click();
@@ -205,6 +218,62 @@ try {
     (await compose.boundingBox())!.height > 30,
     'Composer remains reachable at minimum size',
   );
+  const fieldBounds = await page.locator('.inspector-form input[name="duration"]').boundingBox();
+  const stageBounds = await page.locator('.editor-stage').boundingBox();
+  assert.ok(
+    fieldBounds &&
+      stageBounds &&
+      fieldBounds.y + fieldBounds.height <= stageBounds.y + stageBounds.height,
+    'Compact inspector keeps timing fields visible',
+  );
+  await app.evaluate(({ dialog }) => {
+    dialog.showSaveDialog = (() =>
+      new Promise((resolve) => {
+        (
+          globalThis as unknown as {
+            uiSaveResolve: (value: { canceled: boolean; filePath: string }) => void;
+          }
+        ).uiSaveResolve = resolve;
+      })) as typeof dialog.showSaveDialog;
+  });
+  await page.getByRole('button', { name: '新建工程', exact: true }).click();
+  await page.getByTestId('project-name-input').fill('保留待保存的工程名称');
+  await page.getByTestId('confirm-create-project').click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector<HTMLButtonElement>('[data-testid="confirm-create-project"]')?.disabled,
+  );
+  await page.keyboard.press('Escape');
+  assert.equal(
+    await page.getByRole('dialog').isVisible(),
+    true,
+    'Busy Escape cannot unmount the form',
+  );
+  assert.equal(await page.getByRole('button', { name: '取消', exact: true }).isDisabled(), true);
+  assert.equal(
+    await page.getByRole('button', { name: '关闭窗口', exact: true }).isDisabled(),
+    true,
+  );
+  await page.mouse.click(30, 100);
+  assert.equal(
+    await page.getByRole('dialog').isVisible(),
+    true,
+    'Busy outside interaction cannot close the form',
+  );
+  await app.evaluate(() => {
+    (
+      globalThis as unknown as {
+        uiSaveResolve: (value: { canceled: boolean; filePath: string }) => void;
+      }
+    ).uiSaveResolve({ canceled: true, filePath: '' });
+  });
+  await page.waitForFunction(
+    () =>
+      !document.querySelector<HTMLButtonElement>('[data-testid="confirm-create-project"]')
+        ?.disabled,
+  );
+  assert.equal(await page.getByTestId('project-name-input').inputValue(), '保留待保存的工程名称');
+  await page.getByRole('button', { name: '关闭窗口', exact: true }).click();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   assert.equal(
     await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches),
@@ -222,6 +291,9 @@ try {
         historyScrollPreserved: true,
         exactReviewApplied: true,
         draftDiscard: true,
+        frameKeyboardMoveAndUndo: true,
+        busyDismissalAndRetainedInputs: true,
+        compactTimingFieldsVisible: true,
         desktopSizes: [
           [1520, 1000],
           [1120, 760],
