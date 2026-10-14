@@ -182,6 +182,18 @@ try {
   );
   assert.equal(await page.getByTestId('timeline').count(), 0, 'Adoption stays on the board');
   await page.getByTestId('sequence-card').getByText('1 clip', { exact: true }).waitFor();
+  await page.waitForFunction(
+    () => {
+      const asset = document.querySelector('[data-testid="asset-card"]')!.getBoundingClientRect();
+      const sequence = document
+        .querySelector('[data-testid="sequence-card"]')!
+        .getBoundingClientRect();
+      return asset.left > sequence.right;
+    },
+    undefined,
+    { timeout: 2000 },
+  );
+
   const composer = page.getByTestId('agent-prompt');
   await composer.fill('Keep this idea in the conversation');
   await page.screenshot({ path: join(directory, 'pre-reference.png') });
@@ -312,6 +324,7 @@ try {
         forgedFileRejected: true,
         cardMoveReopen: true,
         dragAdoption: true,
+        adoptionRestoresCardLayout: true,
         referenceDropPreservesDraft: true,
         inlineExactApproval: true,
         adoptionUndo: true,

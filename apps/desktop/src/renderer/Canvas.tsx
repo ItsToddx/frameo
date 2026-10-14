@@ -166,7 +166,7 @@ function CanvasInner({
   const { t } = useI18n();
   const [nodes, setNodes] = useState<CardNode[]>([]);
   const [fileDrag, setFileDrag] = useState(false);
-  const dragging = useRef(false);
+  const [dragging, setDragging] = useState(false);
   const container = useRef<HTMLElement>(null);
   const hadEditor = useRef(false);
   const fittedProject = useRef<string | null>(null);
@@ -205,7 +205,7 @@ function CanvasInner({
         return {
           id: item.id,
           type: 'card',
-          position: dragging.current && current ? current.position : { x: item.x, y: item.y },
+          position: dragging && current ? current.position : { x: item.x, y: item.y },
           // Keep measured dimensions so selecting a card never hides it between clicks.
           measured: current?.measured,
           selected: item.refId === selection,
@@ -217,7 +217,7 @@ function CanvasInner({
             thumbnail: cover?.thumbnailUrl || (cover?.kind === 'image' ? cover.url : undefined),
             selected: item.refId === selection,
             busy,
-            dropTarget: dragging.current ? (current?.data.dropTarget ?? false) : false,
+            dropTarget: dragging ? (current?.data.dropTarget ?? false) : false,
             onSelect,
             onHide,
             onAdd,
@@ -227,7 +227,7 @@ function CanvasInner({
         };
       });
     });
-  }, [snapshot, selection, onSelect, onHide, onAdd, onInspect, onEdit, busy]);
+  }, [snapshot, selection, onSelect, onHide, onAdd, onInspect, onEdit, busy, dragging]);
   useEffect(() => {
     if (
       !flow.viewportInitialized ||
@@ -300,7 +300,7 @@ function CanvasInner({
           else if (node.data.asset) onInspect(node.data.asset);
         }}
         onNodeDragStart={() => {
-          dragging.current = true;
+          setDragging(true);
         }}
         onNodeDrag={(_, node) => {
           const target = targetFor(node);
@@ -312,26 +312,16 @@ function CanvasInner({
           );
         }}
         onNodeDragStop={(_, node) => {
-          dragging.current = false;
           const target = targetFor(node);
           if (target && node.data.asset) {
+            setDragging(false);
             onAdd(node.data.asset, target.data.sequence!.id);
-            setNodes((previous) =>
-              previous.map((item) => ({
-                ...item,
-                position:
-                  item.id === node.id
-                    ? { x: node.data.item.x, y: node.data.item.y }
-                    : item.position,
-                data: { ...item.data, dropTarget: false },
-              })),
-            );
           } else {
             void onSave(
               snapshot.canvas.items.map((item) =>
                 item.id === node.id ? { ...item, x: node.position.x, y: node.position.y } : item,
               ),
-            );
+            ).finally(() => setDragging(false));
           }
         }}
         minZoom={0.25}

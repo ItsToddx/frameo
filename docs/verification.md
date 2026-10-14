@@ -25,6 +25,15 @@ Release acceptance additionally checks the packaged application, clean-profile f
 
 Implementation review used the initial repository commit as a fixed baseline and checked both documented standards and the supplied desktop requirements. Fixes include aborted preparation, crash-safe shared budgets, exact recipe approvals, core-owned idempotent undo/redo, confined session files, registered-only media access, and explicit memory confirmation. A small duplicate proposal-construction helper remains a refactoring opportunity; it does not create another write path.
 
+## Framo 0.4.1 evidence
+
+Final macOS Apple Silicon release acceptance on 2026-10-14:
+
+- The drag phase now triggers React reconciliation when it ends. Adoption restores the saved card layout; a regular move keeps its position until saving finishes. Measured dimensions and live metadata remain intact.
+- Source typecheck, production/SDK builds, formatting and all 167 tests pass. A clean extraction of the final ZIP passes all six native desktop suites. Canvas acceptance additionally checks that the source card returns to its saved layout after adoption.
+- Strict ad-hoc signature, DMG integrity and the four release checksums pass. Both targeted review axes report no new finding. The README image is the final packaged application using synthetic acceptance data.
+- No new paid model calls occurred. The unchanged Kit SDK remains 0.3.0; Developer ID signing/notarization and real paid chat acceptance remain outside this preview verification.
+
 ## Framo 0.4.0 evidence
 
 The canvas and conversation update and final macOS Apple Silicon ZIP were checked on 2026-10-14:
