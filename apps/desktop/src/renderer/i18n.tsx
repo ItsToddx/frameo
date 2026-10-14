@@ -13,8 +13,14 @@ interface LanguageContext {
   setLocale: (locale: Locale) => void;
 }
 const Context = createContext<LanguageContext | null>(null);
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('en');
+export function I18nProvider({
+  children,
+  initialLocale = 'en',
+}: {
+  children: ReactNode;
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocale] = useState<Locale>(initialLocale);
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
