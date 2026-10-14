@@ -7,7 +7,8 @@ import { I18nProvider, type Locale } from '../apps/desktop/src/renderer/i18n';
 import { TooltipProvider } from '../apps/desktop/src/renderer/components/ui/tooltip';
 import { startRun } from '../packages/core/src/recipe';
 import type { RecipeRun } from '../apps/desktop/src/adapters/contracts/api';
-import { presentKit } from '../apps/desktop/src/localization/panels';
+import { presentJobTitle, presentKit } from '../apps/desktop/src/localization/panels';
+import { LanguagePicker } from '../apps/desktop/src/renderer/ui';
 
 function renderRecipes(locale: Locale, recipes: RecipeRun[]) {
   return renderToStaticMarkup(
@@ -86,6 +87,35 @@ test('workflow review translates controls and states while keeping authored name
     assert.match(html, /&quot;budget&quot;: 12\.5/);
   }
   assert.deepEqual(run, before);
+});
+
+test('language choices have a visible associated label in either locale', () => {
+  for (const [locale, label] of [
+    ['en', 'Language'],
+    ['zh-CN', '语言'],
+  ] as const) {
+    const html = renderToStaticMarkup(
+      createElement(I18nProvider, {
+        initialLocale: locale,
+        children: createElement(LanguagePicker),
+      }),
+    );
+    assert.match(
+      html,
+      new RegExp(`<label[^>]*><span>${label}</span><select[^>]*data-testid="language-select"`),
+    );
+  }
+});
+
+test('prompt-derived task titles stay exact in both languages while system preview and export titles translate', () => {
+  for (const kind of ['seedance', 'motion']) {
+    for (const locale of ['en', 'zh-CN'] as const) {
+      assert.equal(presentJobTitle(locale, { kind, title: '导出 城市' }), '导出 城市');
+    }
+  }
+  assert.equal(presentJobTitle('en', { kind: 'export', title: '导出 城市' }), 'Export 城市');
+  assert.equal(presentJobTitle('en', { kind: 'preview', title: '合成预览' }), 'Composite preview');
+  assert.equal(presentJobTitle('zh-CN', { kind: 'export', title: 'Export 城市' }), '导出 城市');
 });
 
 test('built-in Kit presentation translates only known built-in IDs and leaves canonical and custom content intact', () => {

@@ -23,12 +23,26 @@ database.transaction((state) => {
     color: '#ffffff',
     position: 'bottom',
   });
-  state.sessions[0].messages.push({
-    id: 'locale-message',
-    role: 'assistant',
-    text: 'Original model 内容',
-    createdAt: '2026-10-14T00:00:00Z',
-  });
+  state.sessions[0].messages.push(
+    {
+      id: 'locale-message',
+      role: 'assistant',
+      text: 'Original model 内容',
+      createdAt: '2026-10-14T00:00:00Z',
+    },
+    {
+      id: 'locale-matching-assistant',
+      role: 'assistant',
+      text: 'The user stopped this request.',
+      createdAt: '2026-10-14T00:00:00Z',
+    },
+    {
+      id: 'locale-tool-message',
+      role: 'tool',
+      text: 'The user stopped this request.',
+      createdAt: '2026-10-14T00:00:00Z',
+    },
+  );
 });
 database.close();
 const environment: NodeJS.ProcessEnv = {
@@ -104,6 +118,7 @@ try {
   });
   assert.equal(/\p{Script=Han}/u.test(blocked), false, blocked);
   await page.getByRole('button', { name: 'Models and app settings', exact: true }).click();
+  assert.equal(await page.locator(':focus').getAttribute('data-testid'), 'agent-model-input');
   await page.getByTestId('agent-model-input').fill('unsubmitted model draft');
   await page.getByTestId('api-key-input').fill('unsubmitted fake key');
   await change('zh-CN');
@@ -140,6 +155,12 @@ try {
   );
   assert.equal(/\p{Script=Han}/u.test(nativeDialog.title), false, nativeDialog.title);
   const composer = page.getByTestId('agent-prompt');
+  const toolNotice = page.locator('[data-message-id="locale-tool-message"] .message-text');
+  const matchingAssistant = page.locator(
+    '[data-message-id="locale-matching-assistant"] .message-text',
+  );
+  assert.equal(await toolNotice.innerText(), 'The user stopped this request.');
+  assert.equal(await matchingAssistant.innerText(), 'The user stopped this request.');
   await composer.fill('Retain bilingual draft 中英文');
   await page.locator('.sequence-list-row').first().click();
   await page.getByTestId('timeline').waitFor();
@@ -148,9 +169,14 @@ try {
   await caption.fill('Unsaved caption 草稿');
   await page.getByTestId('save-timeline-draft').waitFor();
   await change('zh-CN');
+  // Observe the mounted chat directly, without requesting a freshly projected snapshot.
+  assert.equal(await toolNotice.innerText(), '用户已停止此请求。');
+  assert.equal(await matchingAssistant.innerText(), 'The user stopped this request.');
   assert.equal(await composer.inputValue(), 'Retain bilingual draft 中英文');
   assert.equal(await caption.inputValue(), 'Unsaved caption 草稿');
   await change('en');
+  assert.equal(await toolNotice.innerText(), 'The user stopped this request.');
+  assert.equal(await matchingAssistant.innerText(), 'The user stopped this request.');
   assert.equal(await caption.inputValue(), 'Unsaved caption 草稿');
   await page.getByTestId('save-timeline-draft').click();
   assert.equal(
@@ -194,6 +220,8 @@ try {
         composerDraftRetained: true,
         timelineDraftRetainedAndSaved: true,
         userAndModelContentPreserved: true,
+        toolNoticesFollowLanguageWithoutSnapshot: true,
+        initialFormFocusPreserved: true,
         compactEnglish: true,
         cloudCalls: fetches,
       },

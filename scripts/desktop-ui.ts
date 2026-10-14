@@ -273,6 +273,13 @@ try {
     await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches),
     true,
   );
+  await page.getByTestId('language-select').selectOption('en');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  await app.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0].setSize(1520, 1000);
+  });
+  await page.waitForTimeout(200);
+  await page.screenshot({ path: join(directory, 'workbench-en.png'), fullPage: true });
   assert.deepEqual(errors, []);
   await writeFile(
     join(directory, 'evidence.json'),
@@ -293,6 +300,7 @@ try {
           [1120, 760],
         ],
         reducedMotion: true,
+        englishWorkbenchScreenshot: true,
         cloudCalls: 0,
       },
       null,

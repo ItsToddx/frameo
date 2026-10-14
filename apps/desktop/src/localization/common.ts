@@ -2,6 +2,7 @@ import type { Catalog } from './types';
 export const common = {
   'dialog.close': { en: 'Close dialog', zh: '关闭窗口' },
   'language.label': { en: 'Interface language', zh: '界面语言' },
+  'language.shortLabel': { en: 'Language', zh: '语言' },
   'job.queued': { en: 'Queued', zh: '等待执行' },
   'job.submitting': { en: 'Submitting', zh: '提交云端' },
   'job.running': { en: 'Running', zh: '执行中' },

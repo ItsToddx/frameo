@@ -93,7 +93,8 @@ export function LanguagePicker({ disabled = false }: { disabled?: boolean }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   return (
-    <span className="language-picker">
+    <label className="language-picker">
+      <span>{t('language.shortLabel')}</span>
       <select
         className="language-select"
         aria-label={t('language.label')}
@@ -118,7 +119,7 @@ export function LanguagePicker({ disabled = false }: { disabled?: boolean }) {
         <option value="zh-CN">简体中文</option>
       </select>
       {error && <span role="alert">{hostText(error)}</span>}
-    </span>
+    </label>
   );
 }
 export function Modal({
@@ -161,7 +162,7 @@ export function Modal({
         onOpenAutoFocus={(event) => {
           const element = event.currentTarget as HTMLElement;
           const field = element.querySelector<HTMLElement>(
-            'input:not(:disabled),textarea:not(:disabled),select:not(:disabled)',
+            'input:not(:disabled),textarea:not(:disabled),select:not(:disabled):not(.language-select)',
           );
           if (field) {
             event.preventDefault();

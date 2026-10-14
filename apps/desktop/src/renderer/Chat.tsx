@@ -425,7 +425,9 @@ function ChatMessage() {
 }
 
 function MarkdownPart({ text }: TextMessagePartProps) {
-  return <ChatMarkdown text={text} />;
+  const { hostText } = useI18n();
+  const hostRole = useAuiState((state) => state.message.metadata.custom.hostRole);
+  return <ChatMarkdown text={hostRole === 'tool' ? hostText(text) : text} />;
 }
 
 function ChatComposer({

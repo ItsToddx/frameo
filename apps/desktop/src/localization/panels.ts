@@ -1,4 +1,5 @@
 import type { Catalog, Locale } from './types';
+import { localizeHostText } from './host-text';
 export const panels = {
   'recipes.empty.title': { en: 'No workflow records yet', zh: '还没有工作流记录' },
   'recipes.empty.description': {
@@ -316,4 +317,10 @@ export function presentKit(
     name: panels[`builtin.${builtin}.name`].zh,
     description: panels[`builtin.${builtin}.description`].zh,
   };
+}
+
+export function presentJobTitle(locale: Locale, job: { kind: string; title: string }): string {
+  return job.kind === 'preview' || job.kind === 'export'
+    ? localizeHostText(job.title, locale)
+    : job.title;
 }

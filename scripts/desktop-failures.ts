@@ -7,7 +7,8 @@ import { ProjectDatabase } from '../apps/desktop/src/adapters/storage/database';
 import { JobRunner } from '../apps/desktop/src/adapters/runtime/jobs';
 import { SeedanceProvider } from '../apps/desktop/src/adapters/runtime/seedance';
 import type { CredentialVault } from '../apps/desktop/src/adapters/storage/credentials';
-import type { Settings } from '../apps/desktop/src/adapters/contracts/api';
+import type { Job, Settings } from '../apps/desktop/src/adapters/contracts/api';
+import { localizeHostText, translate, type Locale } from '../apps/desktop/src/localization';
 
 // No real credentials or model requests. Optional --source arguments copy existing
 // terminal-failure projects for a read-only UI check; originals are never opened.
@@ -156,6 +157,30 @@ const expected = database.read().jobs;
 assert.equal(database.read().assets.length, 0);
 assert.equal(database.read().sequences[0].clips.length, 0);
 database.close();
+function taskIdentity(job: Job) {
+  return {
+    id: job.id,
+    requestId: job.requestId,
+    status: job.status,
+    remoteId: job.remoteId,
+    title: job.title,
+    error: job.error,
+    cancelRequested: job.cancelRequested,
+    input: job.input,
+  };
+}
+function assertPersistedCanonicalFailures() {
+  const persisted = new ProjectDatabase(project);
+  try {
+    const state = persisted.read();
+    assert.deepEqual(state.jobs.map(taskIdentity), expected.map(taskIdentity));
+    assert.equal(state.assets.length, 0);
+    assert.equal(state.sequences[0].clips.length, 0);
+    assert.ok(!JSON.stringify(state.jobs).includes(fixtureKey));
+  } finally {
+    persisted.close();
+  }
+}
 const environment: NodeJS.ProcessEnv = {
   ...process.env,
   FRAMO_USER_DATA: join(directory, 'profile'),
@@ -193,8 +218,12 @@ try {
   await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  async function inspect() {
-    await page.getByTestId('jobs-button').click();
+  async function changeLanguage(locale: Locale) {
+    await page.getByRole('dialog').getByTestId('language-select').selectOption(locale);
+    await page.waitForFunction((locale) => document.documentElement.lang === locale, locale);
+  }
+  async function inspect(locale: Locale) {
+    if (!(await page.getByRole('dialog').count())) await page.getByTestId('jobs-button').click();
     const rows = page.locator('.job-row');
     await rows.first().waitFor();
     assert.equal(await rows.count(), expected.length);
@@ -203,48 +232,94 @@ try {
       assert.equal(await row.locator('strong').innerText(), job.title);
       assert.equal(
         await row.locator('.badge').innerText(),
-        job.status === 'unknown' ? '状态待确认' : '失败',
+        job.status === 'unknown'
+          ? locale === 'en'
+            ? 'Awaiting confirmation'
+            : '状态待确认'
+          : locale === 'en'
+            ? 'Failed'
+            : '失败',
       );
-      assert.ok((await row.locator('.error-message').innerText()).includes(job.error!));
+      assert.equal(
+        await row.locator('.error-message').innerText(),
+        localizeHostText(job.error!, locale),
+      );
       assert.equal(await row.locator('.progress').count(), 0);
       assert.equal(
-        await row.getByRole('button', { name: '查询任务 ' + job.title, exact: true }).count(),
+        await row
+          .getByRole('button', {
+            name: translate(locale, 'jobs.reconcile', { title: job.title }),
+            exact: true,
+          })
+          .count(),
         job.remoteId ? 1 : 0,
       );
       assert.equal(
-        await row.getByRole('button', { name: '查看输出 ' + job.title, exact: true }).count(),
+        await row
+          .getByRole('button', {
+            name: translate(locale, 'jobs.reveal', { title: job.title }),
+            exact: true,
+          })
+          .count(),
         0,
       );
       if (job.cancelRequested && !job.remoteId)
-        assert.ok((await row.locator('.field-hint').innerText()).includes('缺少云端任务 ID'));
+        assert.equal(
+          await row.locator('.field-hint').innerText(),
+          translate(locale, 'jobs.cancelUnknown'),
+        );
     }
     const state = await page.evaluate(() => window.framo.snapshot());
     assert.equal(state.assets.length, 0);
     assert.equal(state.sequences[0].clips.length, 0);
     assert.deepEqual(
-      state.jobs.map((j) => ({ id: j.id, status: j.status, remoteId: j.remoteId, error: j.error })),
-      expected.map((j) => ({ id: j.id, status: j.status, remoteId: j.remoteId, error: j.error })),
+      state.jobs.map(taskIdentity),
+      expected.map((job) =>
+        taskIdentity({
+          ...job,
+          error: job.error ? localizeHostText(job.error, locale) : undefined,
+        }),
+      ),
     );
     assert.ok(!(await page.locator('body').innerText()).includes(fixtureKey));
   }
   await page.getByTestId('welcome-create').waitFor();
   await page.getByRole('main').getByRole('button', { name: '打开工程', exact: true }).click();
   await page.getByTestId('jobs-button').waitFor();
-  await inspect();
+  await inspect('zh-CN');
+  await changeLanguage('en');
+  await inspect('en');
   const unknown = expected.find((job) => job.status === 'unknown')!,
     unknownRow = page
       .locator('.job-row')
       .filter({ has: page.locator('strong', { hasText: unknown.title }) });
-  await unknownRow.getByRole('button', { name: '取消任务 ' + unknown.title, exact: true }).click();
+  await unknownRow
+    .getByRole('button', {
+      name: translate('en', 'jobs.cancel', { title: unknown.title }),
+      exact: true,
+    })
+    .click();
   await unknownRow.locator('.field-hint').waitFor();
-  assert.ok((await unknownRow.locator('.field-hint').innerText()).includes('缺少云端任务 ID'));
+  assert.equal(
+    await unknownRow.locator('.field-hint').innerText(),
+    translate('en', 'jobs.cancelUnknown'),
+  );
   unknown.cancelRequested = true;
+  await inspect('en');
+  await page.screenshot({ path: join(directory, 'failures-en.png'), fullPage: true });
+  await changeLanguage('zh-CN');
+  await inspect('zh-CN');
   await page.screenshot({ path: join(directory, 'failures.png'), fullPage: true });
   await page.evaluate(() => window.framo.closeProject());
+  assertPersistedCanonicalFailures();
   await page.reload();
   await page.getByTestId('welcome-create').waitFor();
   await page.getByRole('main').getByRole('button', { name: '打开工程', exact: true }).click();
-  await inspect();
+  await inspect('zh-CN');
+  await changeLanguage('en');
+  await inspect('en');
+  await page.evaluate(() => window.framo.closeProject());
+  assertPersistedCanonicalFailures();
   assert.equal(
     await app.evaluate(
       () => (globalThis as unknown as { failureCheckFetches: number }).failureCheckFetches,
@@ -263,6 +338,8 @@ try {
     keyRedacted: true,
     unknownCancellationRequiresConsoleReconciliation: true,
     exactFailuresAndTaskIdsSurviveReopen: true,
+    failurePresentationInBothLanguages: true,
+    persistedCanonicalErrorsPreserved: true,
     reopenNetworkCalls: 0,
   };
   await writeFile(join(directory, 'evidence.json'), JSON.stringify(evidence, null, 2));

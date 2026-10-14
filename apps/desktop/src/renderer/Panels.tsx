@@ -30,7 +30,7 @@ import type {
 import { Button, Empty, IconButton, Modal, jobLabels, roleLabels, uid } from './ui';
 import { useI18n } from './i18n';
 import type { MessageKey } from '../localization';
-import { presentKit } from '../localization/panels';
+import { presentJobTitle, presentKit } from '../localization/panels';
 
 export function SettingsModal({
   settings,
@@ -405,7 +405,7 @@ export function JobsModal({
   onClose: () => void;
   busy: boolean;
 }) {
-  const { t, date, hostText } = useI18n();
+  const { locale, t, date, hostText } = useI18n();
   return (
     <Modal
       title={t('jobs.title')}
@@ -420,89 +420,92 @@ export function JobsModal({
             {t('jobs.empty.description')}
           </Empty>
         )}
-        {[...jobs].reverse().map((job) => (
-          <article className="job-row" key={job.id}>
-            <div className="job-icon">
-              {job.kind === 'seedance' ? <Aperture size={20} /> : <Download size={20} />}
-            </div>
-            <div className="job-body">
-              <div className="row-heading">
-                <strong>{hostText(job.title)}</strong>
-                <span className={`badge ${job.status}`}>{t(jobLabels[job.status])}</span>
+        {[...jobs].reverse().map((job) => {
+          const title = presentJobTitle(locale, job);
+          return (
+            <article className="job-row" key={job.id}>
+              <div className="job-icon">
+                {job.kind === 'seedance' ? <Aperture size={20} /> : <Download size={20} />}
               </div>
-              <p>
-                {job.kind === 'seedance'
-                  ? t('jobs.kind.seedance')
-                  : job.kind === 'preview'
-                    ? t('jobs.kind.preview')
-                    : job.kind === 'motion'
-                      ? t('jobs.kind.motion')
-                      : t('jobs.kind.export')}{' '}
-                · {date(job.createdAt, { dateStyle: 'medium', timeStyle: 'medium' })}
-                {job.estimatedCost !== undefined &&
-                  ` · ${t('jobs.budget', { budget: job.estimatedCost.toFixed(2) })}`}
-              </p>
-              {['queued', 'submitting', 'running', 'reconciling', 'finalizing'].includes(
-                job.status,
-              ) && (
-                <div
-                  className={`progress ${job.kind === 'seedance' && job.status === 'running' ? 'indeterminate' : ''}`}
-                >
-                  <span style={{ width: `${Math.max(2, Math.min(100, job.progress * 100))}%` }} />
+              <div className="job-body">
+                <div className="row-heading">
+                  <strong>{title}</strong>
+                  <span className={`badge ${job.status}`}>{t(jobLabels[job.status])}</span>
                 </div>
-              )}
-              {job.error && <p className="error-message">{hostText(job.error)}</p>}
-              {job.kind === 'seedance' && (
-                <details className="job-details">
-                  <summary>{t('jobs.details')}</summary>
-                  <dl>
-                    <dt>{t('jobs.model')}</dt>
-                    <dd>{String(job.input.model || 'Seedance')}</dd>
-                    <dt>{t('jobs.id')}</dt>
-                    <dd>{job.remoteId || t('jobs.noRemoteId')}</dd>
-                  </dl>
-                </details>
-              )}
-              {job.cancelRequested && job.status !== 'cancelled' && (
-                <p className="field-hint">
-                  {job.kind !== 'seedance'
-                    ? t('jobs.cancelLocal')
-                    : job.remoteId
-                      ? t('jobs.cancelRemote')
-                      : t('jobs.cancelUnknown')}
+                <p>
+                  {job.kind === 'seedance'
+                    ? t('jobs.kind.seedance')
+                    : job.kind === 'preview'
+                      ? t('jobs.kind.preview')
+                      : job.kind === 'motion'
+                        ? t('jobs.kind.motion')
+                        : t('jobs.kind.export')}{' '}
+                  · {date(job.createdAt, { dateStyle: 'medium', timeStyle: 'medium' })}
+                  {job.estimatedCost !== undefined &&
+                    ` · ${t('jobs.budget', { budget: job.estimatedCost.toFixed(2) })}`}
                 </p>
-              )}
-            </div>
-            <div className="job-actions">
-              {!['succeeded', 'failed', 'cancelled'].includes(job.status) && (
-                <IconButton
-                  label={t('jobs.cancel', { title: hostText(job.title) })}
-                  disabled={busy || job.cancelRequested}
-                  onClick={() => onCancel(job.id)}
-                >
-                  <Square size={14} />
-                </IconButton>
-              )}
-              {job.kind === 'seedance' && job.remoteId && (
-                <IconButton
-                  label={t('jobs.reconcile', { title: hostText(job.title) })}
-                  disabled={busy}
-                  onClick={() => onReconcile(job.id)}
-                >
-                  <RefreshCw size={14} />
-                </IconButton>
-              )}
-              {job.outputPath && (
-                <IconButton
-                  label={t('jobs.reveal', { title: hostText(job.title) })}
-                  onClick={() => onReveal(job.outputPath!)}
-                >
-                  <FolderOpen size={16} />
-                </IconButton>
-              )}
-            </div>
-          </article>
-        ))}
+                {['queued', 'submitting', 'running', 'reconciling', 'finalizing'].includes(
+                  job.status,
+                ) && (
+                  <div
+                    className={`progress ${job.kind === 'seedance' && job.status === 'running' ? 'indeterminate' : ''}`}
+                  >
+                    <span style={{ width: `${Math.max(2, Math.min(100, job.progress * 100))}%` }} />
+                  </div>
+                )}
+                {job.error && <p className="error-message">{hostText(job.error)}</p>}
+                {job.kind === 'seedance' && (
+                  <details className="job-details">
+                    <summary>{t('jobs.details')}</summary>
+                    <dl>
+                      <dt>{t('jobs.model')}</dt>
+                      <dd>{String(job.input.model || 'Seedance')}</dd>
+                      <dt>{t('jobs.id')}</dt>
+                      <dd>{job.remoteId || t('jobs.noRemoteId')}</dd>
+                    </dl>
+                  </details>
+                )}
+                {job.cancelRequested && job.status !== 'cancelled' && (
+                  <p className="field-hint">
+                    {job.kind !== 'seedance'
+                      ? t('jobs.cancelLocal')
+                      : job.remoteId
+                        ? t('jobs.cancelRemote')
+                        : t('jobs.cancelUnknown')}
+                  </p>
+                )}
+              </div>
+              <div className="job-actions">
+                {!['succeeded', 'failed', 'cancelled'].includes(job.status) && (
+                  <IconButton
+                    label={t('jobs.cancel', { title })}
+                    disabled={busy || job.cancelRequested}
+                    onClick={() => onCancel(job.id)}
+                  >
+                    <Square size={14} />
+                  </IconButton>
+                )}
+                {job.kind === 'seedance' && job.remoteId && (
+                  <IconButton
+                    label={t('jobs.reconcile', { title })}
+                    disabled={busy}
+                    onClick={() => onReconcile(job.id)}
+                  >
+                    <RefreshCw size={14} />
+                  </IconButton>
+                )}
+                {job.outputPath && (
+                  <IconButton
+                    label={t('jobs.reveal', { title })}
+                    onClick={() => onReveal(job.outputPath!)}
+                  >
+                    <FolderOpen size={16} />
+                  </IconButton>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </Modal>
   );
