@@ -14,6 +14,10 @@ Show the selected material or work beside the composer. Plans, approval requests
 
 Dialogs use shadcn-style Radix primitives for focus management, inert background and keyboard dismissal. Every input has a visible label; drafts survive failures. Tab order follows the interface. IME composition never sends a prompt prematurely. Reading earlier conversation content must not force the viewport to the latest streamed token.
 
+## Interface languages
+
+Start in English unless this computer has an explicit Chinese preference. Put the language control in the top bar and dialog header, with a visible associated label. Changes must update in place, preserving authored text, pending review identities and all drafts. Dates use the selected locale. Longer English buttons and notices may wrap at the minimum 1120×760 window size; keep fields and actions reachable through their existing scroll areas.
+
 ## References and decisions
 
 The requested [UI UX Pro Max](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) source at commit 7246805992a42b7bba37d4cac83b01416f0c6c44 was read and its local design-system/focus/shadcn searches were run. The verified Minimalism & Swiss Style guidance fits this professional desktop tool. Generated landing-page patterns and decorative color suggestions were not adopted: the product is an editing workspace, and the user explicitly selected a light workbench.

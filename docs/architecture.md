@@ -46,6 +46,12 @@ Framo accepts legacy project directories and shared archives. Built-in capabilit
 
 Interrupted worker reservations remain conservative and orphan steps become interrupted. Active paid work is never replayed. Existing remote IDs can be reconciled; verified staged output can be finalized without a fresh paid call or an expiring provider URL. A generated candidate enters the timeline only after explicit adoption.
 
+## Interface language
+
+The presentation layer supports English (`en`, the default) and Simplified Chinese (`zh-CN`). Typed catalogs and anchored host-system message templates present renderer controls, native menus/dialogs, errors and dates. The locale is an independent app preference; it is excluded from model settings, account/task snapshots and exact approval digests.
+
+React changes locale in place: conversations, forms and leased timeline drafts remain mounted. User/model content, custom Kit names and authored workflow JSON stay in their original language. Built-in Kit display fields may translate, while canonical manifests and frozen fingerprints retain their legacy content. New project names come through optional name ports at the application boundary; portable application/core packages do not import localization.
+
 ## Verification
 
 Architecture tests enforce dependency direction and exercise generation, recovery, exact reviews and Agent preparation against in-memory ports. Concrete adapter tests cover SQLite history/receipts, provider failures, shared budgets, Kit trust and native media composition. Electron acceptance exercises actual IPC, draft leases, reviews, reopening and frame-exact exports. Synthetic UI fixtures and existing generated media require no new paid inference.
