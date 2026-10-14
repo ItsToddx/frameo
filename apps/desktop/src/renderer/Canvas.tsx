@@ -123,7 +123,7 @@ function Card({ data }: NodeProps<CardNode>) {
         {asset && (
           <button
             className="card-add nodrag"
-            aria-label={t('workbench.asset.addName', { name })}
+            aria-label={t('workbench.canvas.addName', { name })}
             disabled={data.busy}
             onClick={() => data.onAdd(asset)}
           >

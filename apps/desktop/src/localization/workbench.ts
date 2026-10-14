@@ -647,6 +647,7 @@ export const workbench = {
     en: 'Add {name} to sequence',
     zh: '将 {name} 添加至作品',
   },
+  'workbench.canvas.addName': { en: 'Add {name} to sequence', zh: '将 {name} 加入作品' },
   'workbench.canvas.openSequence': {
     en: 'Edit sequence {name}',
     zh: '编辑作品 {name}',
