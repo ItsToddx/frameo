@@ -83,7 +83,7 @@ await launch();
 try {
   assert.equal(await page.getByTestId('language-select').inputValue(), 'en');
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
-  await page.getByRole('heading', { name: 'Start with an idea', exact: true }).waitFor();
+  await page.getByRole('heading', { name: 'Start with an idea', exact: true, level: 1 }).waitFor();
   assert.ok((await menuLabels()).includes('File'));
   assert.equal(
     await page
@@ -111,7 +111,7 @@ try {
   assert.equal(await page.getByTestId('api-key-input').inputValue(), 'unsubmitted fake key');
   await page.getByRole('button', { name: '关闭窗口', exact: true }).click();
   assert.ok((await menuLabels()).includes('文件'));
-  await page.getByRole('heading', { name: '从一个想法开始创作', exact: true }).waitFor();
+  await page.getByRole('heading', { name: '从一个想法开始创作', exact: true, level: 1 }).waitFor();
   await page.screenshot({ path: join(directory, 'welcome-zh.png') });
   await page.evaluate(() =>
     window.frameo.saveSettings({
