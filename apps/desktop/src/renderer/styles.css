@@ -3042,3 +3042,14 @@ progress.agent-job-progress::-webkit-progress-value {
   background: none;
   border: none;
 }
+
+.language-select {
+  min-width: 92px;
+  padding: 5px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}

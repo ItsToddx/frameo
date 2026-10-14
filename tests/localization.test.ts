@@ -61,17 +61,17 @@ test('language persists through the public desktop API without configured models
     });
   let app = await create();
   try {
-    assert.equal(app.methods.bootstrap().settings.language, 'en');
-    const before = app.methods.bootstrap().settings;
-    const next = app.methods.setLanguage('zh-CN');
+    assert.equal((await app.methods.bootstrap()).settings.language, 'en');
+    const before = (await app.methods.bootstrap()).settings;
+    const next = await app.methods.setLanguage('zh-CN');
     assert.equal(next.language, 'zh-CN');
     assert.equal(next.hasApiKey, false);
     assert.equal(next.agentModel, before.agentModel);
     assert.equal(next.generationCostLimit, before.generationCostLimit);
     await app.dispose();
     app = await create();
-    assert.equal(app.methods.bootstrap().settings.language, 'zh-CN');
-    app.methods.setLanguage('en');
+    assert.equal((await app.methods.bootstrap()).settings.language, 'zh-CN');
+    await app.methods.setLanguage('en');
     assert.equal(access, 0);
     assert.throws(() => schemas.setLanguage.parse('fr'));
     assert.equal(schemas.setLanguage.parse('en'), 'en');

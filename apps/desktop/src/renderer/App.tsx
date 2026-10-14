@@ -1,3 +1,4 @@
+import { useI18n, normalizeLocale } from './i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Aperture,
@@ -68,6 +69,7 @@ const defaultSettings: Settings = {
   maxModelCalls: 12,
 };
 export function App() {
+  const { t, date, hostText, locale, setLocale } = useI18n();
   const [boot, setBoot] = useState<AppBootstrap | null>(null);
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
@@ -196,16 +198,20 @@ export function App() {
   const initialize = useCallback(async () => {
     setLoadError('');
     try {
-      if (!window.frameo) throw new Error('桌面连接不可用。请通过 Frameo 桌面应用启动工作台。');
+      if (!window.frameo)
+        throw new Error(
+          'Desktop connection unavailable. Open the workbench through the Framo desktop app.',
+        );
       const data = await window.frameo.bootstrap();
       setBoot(data);
       setSettings(data.settings);
+      setLocale(normalizeLocale(data.settings.language));
       setKits(data.kits);
       if (data.project) acceptSnapshot(data.project, 'replace');
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
     }
-  }, [acceptSnapshot]);
+  }, [acceptSnapshot, setLocale]);
   useEffect(() => {
     void initialize();
     if (!window.frameo) return;
@@ -221,12 +227,12 @@ export function App() {
           event.status || '',
         );
         setAgentRunning(!terminal);
-        setAgentStatus(event.text || event.agent || 'Agent 正在执行');
+        setAgentStatus(event.text || event.agent || 'Agent is working');
         if (terminal) setDelta('');
       }
       if (event.type === 'error') {
         setAgentRunning(false);
-        notify(event.text || '操作执行失败', true);
+        notify(event.text || 'Operation failed', true);
       }
     });
   }, [initialize, acceptSnapshot, notify]);
@@ -255,9 +261,9 @@ export function App() {
   }
   const requireSavedDraft = useCallback(() => {
     if (!dirtyEditRef.current) return true;
-    notify('请先保存或放弃时间线草稿，再继续此操作。');
+    notify(t('workbench.draft.saveFirst'));
     return false;
-  }, [notify]);
+  }, [notify, t]);
   function needModel() {
     if (ready) return true;
     setModal('settings');
@@ -272,19 +278,19 @@ export function App() {
   const showGenerate = () => {
     if (!needModel()) return;
     if (!snapshot) {
-      notify('请先创建或打开一个工程');
+      notify(t('workbench.project.openFirst'));
       return;
     }
     setModal('generation');
   };
   async function refresh() {
-    const result = await perform('读取工程', () => window.frameo.snapshot());
+    const result = await perform(t('workbench.project.read'), () => window.frameo.snapshot());
     if (result) acceptSnapshot(result.value);
   }
   async function apply(commands: EditCommand[], expectedRevision?: number): Promise<boolean> {
     if (!sequence) return false;
     const lease = editLeaseRef.current?.sequenceId === sequence.id ? editLeaseRef.current : null;
-    const result = await update('保存剪辑', async () => {
+    const result = await update(t('workbench.edit.save'), async () => {
       if (lease) await lease.ready;
       return window.frameo.apply({
         sequenceId: sequence.id,
@@ -299,11 +305,11 @@ export function App() {
   const saveCanvas = useCallback(
     async (items: CanvasItem[]) => {
       if (!snapshot) return;
-      await update('保存画布', () =>
+      await update(t('workbench.canvas.save'), () =>
         window.frameo.saveCanvas({ expectedRevision: snapshot.canvas.revision, items }),
       );
     },
-    [snapshot],
+    [snapshot, t],
   );
   const hideCard = useCallback(
     (id: string) => {
@@ -355,7 +361,7 @@ export function App() {
       if (!requireSavedDraft()) return;
       const target = snapshot?.sequences.find((s) => s.id === sequenceId) || snapshot?.sequences[0];
       if (!target) {
-        notify('请先新建作品，再将素材加入时间线');
+        notify(t('workbench.sequence.createFirst'));
         return;
       }
       const kind = asset.kind === 'audio' ? 'audio' : 'video';
@@ -365,7 +371,7 @@ export function App() {
         track = {
           id: uid(),
           kind,
-          name: kind === 'audio' ? '音频 1' : '视频 1',
+          name: kind === 'audio' ? t('workbench.track.audio') : t('workbench.track.video'),
           muted: false,
           locked: false,
         };
@@ -391,7 +397,7 @@ export function App() {
           muted: false,
         },
       });
-      void update('添加片段', () =>
+      void update(t('workbench.clip.add'), () =>
         window.frameo.apply({
           sequenceId: target.id,
           expectedRevision: target.revision,
@@ -405,14 +411,16 @@ export function App() {
         }
       });
     },
-    [snapshot, sequenceId, notify, requireSavedDraft],
+    [snapshot, sequenceId, notify, requireSavedDraft, t],
   );
   async function sendPrompt(text: string): Promise<boolean> {
     if (!requireSavedDraft() || !needModel() || !snapshot || agentRunning || busy) return false;
     let session: Session | undefined =
       snapshot.sessions.find((s) => s.id === sessionId) || snapshot.sessions[0];
     if (!session) {
-      const created = await update('创建对话', () => window.frameo.createSession('创作对话'));
+      const created = await update(t('workbench.chat.create'), () =>
+        window.frameo.createSession(t('workbench.chat.default')),
+      );
       if (!created?.value) return false;
       session = created.value.sessions.at(-1);
       setSessionId(session?.id || null);
@@ -421,13 +429,13 @@ export function App() {
     setAgentRunning(true);
     setStreamSessionId(session.id);
     setDelta('');
-    setAgentStatus('Agent 正在理解你的需求…');
-    const result = await perform('发送指令', () =>
+    setAgentStatus(t('workbench.agent.understanding'));
+    const result = await perform(t('workbench.prompt.send'), () =>
       window.frameo.prompt({
         requestId: uid(),
         sessionId: session!.id,
         text: selectedAsset
-          ? `${text}\n\n当前选择的素材：${selectedAsset.name}（Asset ID: ${selectedAsset.id}）`
+          ? `${text}\n\n${t('workbench.prompt.assetContext', { name: selectedAsset.name, id: selectedAsset.id })}`
           : text,
         sequenceId: contextSequence?.id,
         clipId: contextSequence ? selectedClip || undefined : undefined,
@@ -437,7 +445,7 @@ export function App() {
     return !!result;
   }
   async function listKits() {
-    const result = await perform('读取 Kit 列表', () => window.frameo.listKits());
+    const result = await perform(t('workbench.kits.read'), () => window.frameo.listKits());
     if (result) setKits(result.value);
   }
   async function kitOperation(label: string, fn: () => Promise<AppBootstrap['kits']>) {
@@ -447,10 +455,18 @@ export function App() {
   async function open(path?: string) {
     if (!requireSavedDraft()) return;
     await update(
-      '打开工程',
+      t('workbench.project.open'),
       () => (path ? window.frameo.openRecent(path) : window.frameo.openProject()),
       true,
     );
+  }
+  async function changeLanguage(value: string) {
+    const nextLocale = normalizeLocale(value);
+    const result = await perform(t('language.label'), () => window.frameo.setLanguage(nextLocale));
+    if (result) {
+      setSettings(result.value);
+      setLocale(nextLocale);
+    }
   }
   const closeModal = useCallback(() => {
     if (!busy) setModal(null);
@@ -459,10 +475,10 @@ export function App() {
     return (
       <div className="fatal">
         <Aperture size={34} />
-        <h1>无法连接桌面工作台</h1>
-        <p>{loadError}</p>
+        <h1>{t('workbench.desktop.unavailable')}</h1>
+        <p>{hostText(loadError)}</p>
         <Button kind="accent" onClick={() => void initialize()}>
-          重试连接
+          {t('workbench.desktop.retry')}
         </Button>
       </div>
     );
@@ -473,7 +489,7 @@ export function App() {
         <h1>Frameo</h1>
         <span>
           <LoaderCircle size={14} className="spin" />
-          正在打开创作工作台
+          {t('workbench.desktop.loading')}
         </span>
       </div>
     );
@@ -486,36 +502,53 @@ export function App() {
         </div>
         <div className="header-project">
           <span className={`status-dot ${snapshot ? 'ready' : ''}`} />
-          {snapshot ? snapshot.project.name : '尚未打开工程'}
+          {snapshot ? snapshot.project.name : t('workbench.project.none')}
           {snapshot && (
             <span className="local-saved">
-              {pending === '保存剪辑' || pending === '保存画布' ? '保存中…' : '本地自动保存'}
+              {pending === t('workbench.edit.save') || pending === t('workbench.canvas.save')
+                ? t('workbench.save.pending')
+                : t('workbench.save.local')}
             </span>
           )}
         </div>
         <div className="header-actions">
+          <select
+            className="language-select"
+            aria-label={t('language.label')}
+            data-testid="language-select"
+            value={locale}
+            disabled={busy}
+            onChange={(event) => void changeLanguage(event.target.value)}
+          >
+            <option value="en">English</option>
+            <option value="zh-CN">简体中文</option>
+          </select>
           <Button onClick={() => setModal('jobs')} disabled={!snapshot} testId="jobs-button">
             <Clock3 size={15} />
-            <span>任务</span>
+            <span>{t('workbench.jobs')}</span>
             {activeJobs > 0 && <b className="count-badge">{activeJobs}</b>}
           </Button>
           <IconButton
-            label="共享工程"
+            label={t('workbench.share')}
             disabled={!snapshot || busy}
             onClick={() => setModal('share')}
           >
             <Share2 size={16} />
           </IconButton>
-          <IconButton label="模型与应用设置" onClick={() => setModal('settings')}>
+          <IconButton label={t('workbench.settings')} onClick={() => setModal('settings')}>
             <Settings2 size={16} />
           </IconButton>
         </div>
       </header>
       <div className="workspace">
-        <nav className="activity-rail" aria-label="工作台工具栏">
+        <nav className="activity-rail" aria-label={t('workbench.toolbar')}>
           <div>
             <IconButton
-              label={sidebar && sidebarTab === 'projects' ? '收起工程列表' : '工程列表'}
+              label={
+                sidebar && sidebarTab === 'projects'
+                  ? t('workbench.projects.collapse')
+                  : t('workbench.projects.list')
+              }
               active={sidebar && sidebarTab === 'projects'}
               onClick={() => {
                 if (sidebar && sidebarTab === 'projects') setSidebar(false);
@@ -526,10 +559,14 @@ export function App() {
               }}
             >
               <FolderOpen size={19} />
-              <span>工程</span>
+              <span>{t('workbench.projects')}</span>
             </IconButton>
             <IconButton
-              label={sidebar && sidebarTab === 'assets' ? '收起素材库' : '素材库'}
+              label={
+                sidebar && sidebarTab === 'assets'
+                  ? t('workbench.assets.collapse')
+                  : t('workbench.assets.library')
+              }
               active={sidebar && sidebarTab === 'assets'}
               onClick={() => {
                 if (sidebar && sidebarTab === 'assets') setSidebar(false);
@@ -540,10 +577,10 @@ export function App() {
               }}
             >
               <Layers3 size={19} />
-              <span>素材</span>
+              <span>{t('workbench.assets')}</span>
             </IconButton>
             <IconButton
-              label="Kit 商店"
+              label={t('workbench.kits')}
               active={modal === 'kits'}
               onClick={() => {
                 setModal('kits');
@@ -551,25 +588,35 @@ export function App() {
               }}
             >
               <Package size={19} />
-              <span>扩展</span>
+              <span>{t('workbench.extensions')}</span>
             </IconButton>
-            <IconButton label="创作记忆" disabled={!snapshot} onClick={() => setModal('memories')}>
+            <IconButton
+              label={t('workbench.memories.open')}
+              disabled={!snapshot}
+              onClick={() => setModal('memories')}
+            >
               <Brain size={19} />
-              <span>记忆</span>
+              <span>{t('workbench.memories')}</span>
             </IconButton>
           </div>
           <div>
             <IconButton
-              label="导入共享工程"
+              label={t('workbench.share.import')}
               disabled={busy || dirtyEdit}
-              onClick={() => void update('导入工程', () => window.frameo.importProject(), true)}
+              onClick={() =>
+                void update(
+                  t('workbench.project.import'),
+                  () => window.frameo.importProject(),
+                  true,
+                )
+              }
             >
               <Upload size={18} />
-              <span>导入</span>
+              <span>{t('workbench.import')}</span>
             </IconButton>
-            <IconButton label="新建工程" onClick={showCreate}>
+            <IconButton label={t('workbench.project.new')} onClick={showCreate}>
               <Plus size={19} />
-              <span>新建</span>
+              <span>{t('workbench.new')}</span>
             </IconButton>
             <span className="rail-version" title={`Frameo ${boot.version}`}>
               {boot.version}
@@ -579,30 +626,39 @@ export function App() {
         {sidebar && (snapshot || sidebarTab === 'projects') && (
           <aside className="library-panel">
             <div className="library-heading">
-              <strong>{sidebarTab === 'assets' ? '工程素材' : '工程'}</strong>
-              <IconButton label="收起侧栏" onClick={() => setSidebar(false)}>
+              <strong>
+                {sidebarTab === 'assets' ? t('workbench.assets.project') : t('workbench.projects')}
+              </strong>
+              <IconButton label={t('workbench.sidebar.collapse')} onClick={() => setSidebar(false)}>
                 <PanelLeftClose size={15} />
               </IconButton>
             </div>
             {sidebarTab === 'assets' && snapshot ? (
               <>
                 <div className="library-project">
-                  <span className="eyebrow">当前工程</span>
+                  <span className="eyebrow">{t('workbench.project.current')}</span>
                   <strong>{snapshot.project.name}</strong>
                   <Button
                     disabled={busy}
-                    onClick={() => void update('导入素材', () => window.frameo.importMedia())}
+                    onClick={() =>
+                      void update(t('workbench.media.import'), () => window.frameo.importMedia())
+                    }
                     testId="import-media"
                   >
                     <Plus size={14} />
-                    导入素材
+                    {t('workbench.media.import')}
                   </Button>
                 </div>
                 <div className="library-section-heading">
                   <span>
-                    作品 <b>{snapshot.sequences.length}</b>
+                    {t('workbench.sequences')}
+                    <b>{snapshot.sequences.length}</b>
                   </span>
-                  <IconButton label="新建作品" disabled={busy} onClick={showSequence}>
+                  <IconButton
+                    label={t('workbench.sequence.new')}
+                    disabled={busy}
+                    onClick={showSequence}
+                  >
                     <Plus size={14} />
                   </IconButton>
                 </div>
@@ -619,7 +675,7 @@ export function App() {
                       <div>
                         <strong>{s.name}</strong>
                         <small>
-                          {s.width} × {s.height} · {s.clips.length} 个片段
+                          {s.width} × {s.height} · {t('workbench.clips', { count: s.clips.length })}
                         </small>
                       </div>
                       <ArrowUpRight size={12} />
@@ -628,16 +684,17 @@ export function App() {
                 </div>
                 <div className="library-section-heading">
                   <span>
-                    素材 <b>{snapshot.assets.length}</b>
+                    {t('workbench.assets')}
+                    <b>{snapshot.assets.length}</b>
                   </span>
                 </div>
                 <div className="search-input library-search">
                   <Search size={13} />
                   <input
-                    aria-label="搜索工程素材"
+                    aria-label={t('workbench.assets.searchLabel')}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="搜索素材"
+                    placeholder={t('workbench.assets.search')}
                   />
                 </div>
                 <div className="asset-list">
@@ -652,7 +709,7 @@ export function App() {
                           className="asset-list-main"
                           onClick={() => void addToCanvas('asset', a.id)}
                           onDoubleClick={() => setInspectAsset(a)}
-                          title="点击显示在画布，双击预览"
+                          title={t('workbench.assets.cardHelp')}
                         >
                           <div className="asset-thumbnail">
                             {a.thumbnailUrl ? (
@@ -668,13 +725,17 @@ export function App() {
                           <div>
                             <strong>{a.name}</strong>
                             <span>
-                              {a.kind === 'image' ? '图片' : a.kind === 'audio' ? '音频' : '视频'}
+                              {a.kind === 'image'
+                                ? t('workbench.kind.image')
+                                : a.kind === 'audio'
+                                  ? t('workbench.kind.audio')
+                                  : t('workbench.kind.video')}
                               {a.duration > 0 && ` · ${a.duration.toFixed(1)}s`}
                             </span>
                           </div>
                         </button>
                         <IconButton
-                          label={`将 ${a.name} 添加至作品`}
+                          label={t('workbench.asset.addName', { name: a.name })}
                           disabled={busy}
                           onClick={() => addAsset(a)}
                         >
@@ -683,24 +744,26 @@ export function App() {
                       </article>
                     ))}
                   {!snapshot.assets.length && (
-                    <Empty icon={<Image size={23} />} title="等待第一个素材">
-                      导入文件或生成一个镜头。
+                    <Empty icon={<Image size={23} />} title={t('workbench.assets.first')}>
+                      {t('workbench.assets.firstHelp')}
                     </Empty>
                   )}
                   {snapshot.assets.length > 0 &&
                     !snapshot.assets.some((a) =>
                       a.name.toLowerCase().includes(query.toLowerCase()),
-                    ) && <Empty title="没有匹配的素材" />}
+                    ) && <Empty title={t('workbench.assets.noMatch')} />}
                 </div>
                 <div className="library-footer">
                   <IconButton
-                    label="撤销画布布局"
+                    label={t('workbench.canvas.undoLabel')}
                     disabled={busy}
-                    onClick={() => void update('撤销画布', () => window.frameo.undoCanvas())}
+                    onClick={() =>
+                      void update(t('workbench.canvas.undo'), () => window.frameo.undoCanvas())
+                    }
                   >
                     <Undo2 size={14} />
                   </IconButton>
-                  <span>画布隐藏保留原素材</span>
+                  <span>{t('workbench.canvas.hiddenHelp')}</span>
                 </div>
               </>
             ) : (
@@ -712,34 +775,34 @@ export function App() {
                   testId="new-project-button"
                 >
                   <Plus size={15} />
-                  新建工程
+                  {t('workbench.project.new')}
                 </Button>
                 <Button onClick={() => void open()} disabled={busy}>
                   <FolderOpen size={15} />
-                  打开工程
+                  {t('workbench.project.open')}
                 </Button>
                 {snapshot && (
                   <Button
                     onClick={() =>
-                      void perform('关闭工程', () => window.frameo.closeProject()).then(
-                        (result) => {
-                          if (result) {
-                            snapshotRef.current = null;
-                            setSnapshot(null);
-                            setSequenceId(null);
-                            setSelection(null);
-                            onDraftChange(false);
-                          }
-                        },
-                      )
+                      void perform(t('workbench.project.close'), () =>
+                        window.frameo.closeProject(),
+                      ).then((result) => {
+                        if (result) {
+                          snapshotRef.current = null;
+                          setSnapshot(null);
+                          setSequenceId(null);
+                          setSelection(null);
+                          onDraftChange(false);
+                        }
+                      })
                     }
                     disabled={busy || agentRunning || dirtyEdit}
                   >
-                    关闭当前工程
+                    {t('workbench.project.closeCurrent')}
                   </Button>
                 )}
                 <div className="library-section-heading">
-                  <span>最近工程</span>
+                  <span>{t('workbench.projects.recent')}</span>
                 </div>
                 {boot.recentProjects.map((p) => (
                   <button
@@ -751,13 +814,13 @@ export function App() {
                     <FolderOpen size={17} />
                     <div>
                       <strong>{p.name}</strong>
-                      <span>{new Date(p.updatedAt).toLocaleDateString('zh-CN')}</span>
+                      <span>{date(p.updatedAt)}</span>
                     </div>
                     <ArrowUpRight size={13} />
                   </button>
                 ))}
                 {!boot.recentProjects.length && (
-                  <p className="field-hint">创建的工程会出现在这里。</p>
+                  <p className="field-hint">{t('workbench.projects.empty')}</p>
                 )}
               </div>
             )}
@@ -782,18 +845,22 @@ export function App() {
                 onHide={hideCard}
                 onAdd={addAsset}
                 onGenerate={showGenerate}
-                onImport={() => void update('导入素材', () => window.frameo.importMedia())}
+                onImport={() =>
+                  void update(t('workbench.media.import'), () => window.frameo.importMedia())
+                }
                 busy={busy}
               />
               {selectedAsset && !sequence && (
                 <div className="asset-selection-bar">
                   <span>{selectedAsset.name}</span>
-                  <Button onClick={() => setInspectAsset(selectedAsset)}>预览素材</Button>
+                  <Button onClick={() => setInspectAsset(selectedAsset)}>
+                    {t('workbench.asset.preview')}
+                  </Button>
                   <Button onClick={() => addAsset(selectedAsset)} disabled={busy}>
                     <Plus size={13} />
-                    加入作品
+                    {t('workbench.asset.add')}
                   </Button>
-                  <IconButton label="清除素材选择" onClick={() => setSelection(null)}>
+                  <IconButton label={t('workbench.asset.clear')} onClick={() => setSelection(null)}>
                     <X size={14} />
                   </IconButton>
                 </div>
@@ -811,7 +878,7 @@ export function App() {
                   onApply={apply}
                   onDraftChange={(dirty) => onDraftChange(dirty, sequence.id)}
                   onUndo={() =>
-                    void update('撤销剪辑', () =>
+                    void update(t('workbench.edit.undo'), () =>
                       window.frameo.undo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
@@ -820,7 +887,7 @@ export function App() {
                     )
                   }
                   onRedo={() =>
-                    void update('重做剪辑', () =>
+                    void update(t('workbench.edit.redo'), () =>
                       window.frameo.redo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
@@ -831,24 +898,24 @@ export function App() {
                   canUndo={!!snapshot.canUndo[sequence.id]}
                   canRedo={!!snapshot.canRedo[sequence.id]}
                   onPreview={() =>
-                    void perform('提交预览', () =>
+                    void perform(t('workbench.preview.submit'), () =>
                       window.frameo.preview({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
                     ).then((result) => {
-                      if (result) notify('正在合成作品预览');
+                      if (result) notify(t('workbench.preview.rendering'));
                     })
                   }
                   onExport={() =>
-                    void perform('提交导出', () =>
+                    void perform(t('workbench.export.submit'), () =>
                       window.frameo.exportVideo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
                     ).then((result) => {
                       if (result?.value) {
-                        notify('导出任务已提交');
+                        notify(t('workbench.export.submitted'));
                         setModal('jobs');
                       }
                     })
@@ -869,50 +936,48 @@ export function App() {
                 <FrameMark size={32} />
               </div>
               <span className="eyebrow">FRAMEO STUDIO</span>
-              <h1>从一个想法开始创作</h1>
-              <p>与 Agent 一起规划镜头，审阅方案，打磨成片。</p>
-              <div className="welcome-workflow" aria-label="创作流程">
+              <h1>{t('workbench.welcome.title')}</h1>
+              <p>{t('workbench.welcome.description')}</p>
+              <div className="welcome-workflow" aria-label={t('workbench.welcome.workflow')}>
                 <div>
                   <span>01</span>
-                  <strong>表达想法</strong>
-                  <p>描述目标，添加参考素材</p>
+                  <strong>{t('workbench.welcome.idea')}</strong>
+                  <p>{t('workbench.welcome.ideaHelp')}</p>
                 </div>
                 <div>
                   <span>02</span>
-                  <strong>审阅方案</strong>
-                  <p>确认计划、操作与生成预算</p>
+                  <strong>{t('workbench.review')}</strong>
+                  <p>{t('workbench.welcome.reviewHelp')}</p>
                 </div>
                 <div>
                   <span>03</span>
-                  <strong>完成作品</strong>
-                  <p>采纳镜头，剪辑并导出</p>
+                  <strong>{t('workbench.welcome.finish')}</strong>
+                  <p>{t('workbench.welcome.finishHelp')}</p>
                 </div>
               </div>
               <div className="welcome-actions">
                 <Button kind="accent" onClick={showCreate} testId="welcome-create">
                   <Plus size={15} />
-                  新建创作工程
+                  {t('workbench.welcome.create')}
                 </Button>
                 <Button onClick={() => void open()} disabled={busy}>
                   <FolderOpen size={15} />
-                  打开工程
+                  {t('workbench.project.open')}
                 </Button>
               </div>
               <div className={`model-connection ${ready ? 'connected' : ''}`}>
                 <span className="status-dot" />
                 <span>
-                  {ready
-                    ? '已配置方舟 · Seedance 视频生成'
-                    : '开始创作前，请配置方舟模型和 API Key'}
+                  {ready ? t('workbench.model.connected') : t('workbench.model.required')}
                 </span>
                 <button onClick={() => setModal('settings')}>
-                  {ready ? '管理配置' : '配置模型'}
+                  {ready ? t('workbench.model.manage') : t('workbench.model.setup')}
                   <ArrowUpRight size={12} />
                 </button>
               </div>
               {boot.recentProjects.length > 0 && (
                 <div className="welcome-recents">
-                  <span className="eyebrow">继续创作</span>
+                  <span className="eyebrow">{t('workbench.welcome.continue')}</span>
                   {boot.recentProjects.slice(0, 3).map((p) => (
                     <button key={p.id} onClick={() => void open(p.path)} disabled={busy}>
                       <FolderOpen size={17} />
@@ -931,20 +996,24 @@ export function App() {
           sessionId={sessionId}
           onSession={setSessionId}
           onNewSession={() =>
-            void update('新建对话', () =>
-              window.frameo.createSession(`创作对话 ${(snapshot?.sessions.length || 0) + 1}`),
+            void update(t('workbench.chat.new'), () =>
+              window.frameo.createSession(
+                t('workbench.chat.numbered', { count: (snapshot?.sessions.length || 0) + 1 }),
+              ),
             ).then((result) => {
               if (result?.value) setSessionId(result.value.sessions.at(-1)?.id || null);
             })
           }
           onPrompt={sendPrompt}
           onStop={() =>
-            void perform('停止 Agent', () => window.frameo.stopAgent()).then((result) => {
-              if (result) {
-                setAgentRunning(false);
-                setDelta('');
-              }
-            })
+            void perform(t('workbench.agent.stop'), () => window.frameo.stopAgent()).then(
+              (result) => {
+                if (result) {
+                  setAgentRunning(false);
+                  setDelta('');
+                }
+              },
+            )
           }
           running={agentRunning}
           status={agentStatus}
@@ -958,48 +1027,59 @@ export function App() {
           onSetup={() => setModal('settings')}
           onReview={(reviewId, decision) => {
             if (decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅方案', () => window.frameo.decideReview({ reviewId, decision }));
+            void update(t('workbench.review'), () =>
+              window.frameo.decideReview({ reviewId, decision }),
+            );
           }}
           onResume={(recipeId) => {
             if (requireSavedDraft())
-              void perform('继续工作流', () => window.frameo.resumeRecipe({ recipeId }));
+              void perform(t('workbench.recipe.resume'), () =>
+                window.frameo.resumeRecipe({ recipeId }),
+              );
           }}
           onRedo={(recipeId, redoStepId) => {
             if (!requireSavedDraft()) return;
             if (activeJobs) {
-              notify('有任务尚未结束或状态待确认，请在任务记录中查询或取消后重做。');
+              notify(t('workbench.recipe.activeJobs'));
               return;
             }
-            void perform('重做工作流步骤', () =>
+            void perform(t('workbench.recipe.redo'), () =>
               window.frameo.resumeRecipe({ recipeId, redoStepId }),
             );
           }}
           onRecipeResult={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅工作流结果', () => window.frameo.decideRecipeResult(input));
+            void update(t('workbench.recipe.reviewResult'), () =>
+              window.frameo.decideRecipeResult(input),
+            );
           }}
           onRecipeInput={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
-            void update('审阅工作流输入', () => window.frameo.decideRecipeInput(input));
+            void update(t('workbench.recipe.reviewInput'), () =>
+              window.frameo.decideRecipeInput(input),
+            );
           }}
           onExportRecipe={(recipeId) =>
-            void perform('导出工作流', () => window.frameo.exportRecipe({ recipeId })).then(
-              (result) => {
-                if (result?.value) notify('工作流记录已导出');
-              },
-            )
+            void perform(t('workbench.recipe.export'), () =>
+              window.frameo.exportRecipe({ recipeId }),
+            ).then((result) => {
+              if (result?.value) notify(t('workbench.recipe.exported'));
+            })
           }
         />
       </div>
       <footer className="app-status">
         <span>
           <span className={`status-dot ${ready ? 'ready' : ''}`} />
-          {ready ? '方舟模型已配置' : '模型未连接'}
+          {ready ? t('workbench.model.ready') : t('workbench.model.offline')}
         </span>
         <span>
           {snapshot
-            ? `${snapshot.assets.length} 个素材 · ${snapshot.sequences.length} 个作品`
-            : '欢迎来到 Frameo'}
+            ? t('workbench.project.stats', {
+                assets: snapshot.assets.length,
+                sequences: snapshot.sequences.length,
+              })
+            : t('workbench.welcome')}
           {busy && (
             <>
               <LoaderCircle size={10} className="spin" /> {pending}
@@ -1007,7 +1087,7 @@ export function App() {
           )}
         </span>
         <button onClick={() => setModal('kits')}>
-          Kit 驱动的创作环境
+          {t('workbench.kits.environment')}
           <Package size={11} />
         </button>
       </footer>
@@ -1017,11 +1097,13 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onSave={async (value) => {
-            const result = await perform('保存模型配置', () => window.frameo.saveSettings(value));
+            const result = await perform(t('workbench.model.save'), () =>
+              window.frameo.saveSettings(value),
+            );
             if (result) {
               setSettings(result.value);
               setModal(null);
-              notify('模型配置已保存');
+              notify(t('workbench.model.saved'));
             }
             return !!result;
           }}
@@ -1035,7 +1117,7 @@ export function App() {
           onCreate={async (value) => {
             if (!needModel()) return false;
             const result = await update(
-              modal === 'project' ? '创建工程' : '创建作品',
+              modal === 'project' ? t('workbench.project.create') : t('workbench.sequence.create'),
               () =>
                 modal === 'project'
                   ? window.frameo.createProject(value)
@@ -1050,7 +1132,9 @@ export function App() {
                 setSelection(created.id);
                 setSequenceId(created.id);
               }
-              const next = await perform('读取最近工程', () => window.frameo.bootstrap());
+              const next = await perform(t('workbench.projects.read'), () =>
+                window.frameo.bootstrap(),
+              );
               if (next) setBoot(next.value);
             }
             return !!result?.value;
@@ -1065,10 +1149,12 @@ export function App() {
           onClose={closeModal}
           onSubmit={async (input) => {
             if (!needModel()) return false;
-            const result = await perform('提交 Seedance 生成', () => window.frameo.generate(input));
+            const result = await perform(t('workbench.seedance.submit'), () =>
+              window.frameo.generate(input),
+            );
             if (result) {
               setModal(null);
-              notify('Seedance 生成任务已提交');
+              notify(t('workbench.seedance.submitted'));
             }
             return !!result;
           }}
@@ -1079,9 +1165,15 @@ export function App() {
           jobs={snapshot.jobs}
           busy={busy}
           onClose={closeModal}
-          onCancel={(id) => void perform('取消任务', () => window.frameo.cancelJob(id))}
-          onReconcile={(id) => void perform('查询云端任务', () => window.frameo.reconcileJob(id))}
-          onReveal={(path) => void perform('查看输出文件', () => window.frameo.revealFile(path))}
+          onCancel={(id) =>
+            void perform(t('workbench.task.cancel'), () => window.frameo.cancelJob(id))
+          }
+          onReconcile={(id) =>
+            void perform(t('workbench.task.query'), () => window.frameo.reconcileJob(id))
+          }
+          onReveal={(path) =>
+            void perform(t('workbench.output.reveal'), () => window.frameo.revealFile(path))
+          }
         />
       )}
       {modal === 'kits' && (
@@ -1089,12 +1181,20 @@ export function App() {
           kits={kits}
           busy={busy}
           onClose={closeModal}
-          onInstall={(id) => void kitOperation('安装 Kit', () => window.frameo.installKit(id))}
-          onEnable={(id, enabled) =>
-            void kitOperation('更新 Kit 状态', () => window.frameo.setKitEnabled({ id, enabled }))
+          onInstall={(id) =>
+            void kitOperation(t('workbench.kit.install'), () => window.frameo.installKit(id))
           }
-          onUninstall={(id) => void kitOperation('卸载 Kit', () => window.frameo.uninstallKit(id))}
-          onImport={() => void kitOperation('导入 Kit', () => window.frameo.importKit())}
+          onEnable={(id, enabled) =>
+            void kitOperation(t('workbench.kit.enable'), () =>
+              window.frameo.setKitEnabled({ id, enabled }),
+            )
+          }
+          onUninstall={(id) =>
+            void kitOperation(t('workbench.kit.uninstall'), () => window.frameo.uninstallKit(id))
+          }
+          onImport={() =>
+            void kitOperation(t('workbench.kit.import'), () => window.frameo.importKit())
+          }
           onRefresh={() => void listKits()}
           canStart={!!snapshot}
           onStart={(kit) => {
@@ -1110,11 +1210,13 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onSave={async (input) => {
-            const result = await update('保存记忆', () => window.frameo.saveMemory(input));
+            const result = await update(t('workbench.memory.save'), () =>
+              window.frameo.saveMemory(input),
+            );
             return !!result?.value;
           }}
           onDelete={(memory) =>
-            void update('删除记忆', () =>
+            void update(t('workbench.memory.delete'), () =>
               window.frameo.deleteMemory({
                 id: memory.id,
                 scope: memory.scope,
@@ -1126,7 +1228,7 @@ export function App() {
       )}
       {modal === 'recipe' && recipeKit && snapshot && (
         <Modal
-          title={`开始制作 · ${recipeKit.name}`}
+          title={t('workbench.recipe.title', { name: recipeKit.name })}
           description={recipeKit.description}
           busy={busy}
           onClose={closeModal}
@@ -1142,12 +1244,12 @@ export function App() {
                 const raw = String(data.get('parameters') || '').trim();
                 parameters = raw ? JSON.parse(raw) : undefined;
                 if (parameters && (typeof parameters !== 'object' || Array.isArray(parameters)))
-                  throw new Error('配方输入必须为 JSON 对象。');
+                  throw new Error(t('workbench.recipe.inputObject'));
               } catch {
-                notify('配方参数必须为有效的 JSON 对象。', true);
+                notify(t('workbench.recipe.invalidJson'), true);
                 return;
               }
-              void update('启动创作工作流', () =>
+              void update(t('workbench.recipe.starting'), () =>
                 window.frameo.startRecipe({
                   kitId: recipeKit.id,
                   title: String(data.get('title')).trim(),
@@ -1157,43 +1259,42 @@ export function App() {
               ).then((result) => {
                 if (result?.value) {
                   setModal(null);
-                  notify('工作流已启动，请在 Agent 工作流中查看进度');
+                  notify(t('workbench.recipe.started'));
                 }
               });
             }}
           >
             <label>
-              创作目标
+              {t('workbench.recipe.goal')}
               <textarea
                 name="title"
                 rows={5}
                 required
                 maxLength={1000}
-                placeholder="告诉工作流你希望制作什么，例如：为一款户外香水制作 15 秒的品牌短片，森林光线、克制的字幕和舒缓的节奏。"
+                placeholder={t('workbench.recipe.goalPlaceholder')}
               />
             </label>
             <label>
-              可选配方参数 · JSON 对象
+              {t('workbench.recipe.parameters')}
               <textarea
                 name="parameters"
                 rows={3}
                 maxLength={16000}
-                placeholder='{"brief":"替换创作目标，或填写此配方要求的输入"}'
+                placeholder={t('workbench.recipe.parametersPlaceholder')}
               />
             </label>
             {contextSequence && (
               <p className="field-hint">
-                目标作品：{contextSequence.name}
-                。工作流按创意、视觉与剪辑步骤执行，生成和剪辑方案仍需审阅。
+                {t('workbench.recipe.target', { name: contextSequence.name })}
               </p>
             )}
             <div className="modal-actions">
               <Button onClick={closeModal} disabled={busy}>
-                取消
+                {t('workbench.cancel')}
               </Button>
               <Button type="submit" kind="accent" disabled={busy || agentRunning}>
                 <Sparkles size={14} />
-                启动工作流
+                {t('workbench.recipe.start')}
               </Button>
             </div>
           </form>
@@ -1201,29 +1302,31 @@ export function App() {
       )}
       {modal === 'share' && snapshot && (
         <Modal
-          title="共享创作工程"
-          description="导出工程副本，方便在另一台机器继续剪辑。"
+          title={t('workbench.share.title')}
+          description={t('workbench.share.description')}
           busy={busy}
           onClose={closeModal}
         >
           <div className="share-body">
             <Share2 size={32} />
             <h3>{snapshot.project.name}</h3>
-            <p>包含作品、画布和已导入媒体。账户密钥、聊天、个人记忆与任务记录不会进入共享包。</p>
+            <p>{t('workbench.share.contents')}</p>
             <Button
               kind="accent"
               disabled={busy}
               onClick={() =>
-                void perform('导出共享工程', () => window.frameo.exportProject()).then((result) => {
-                  if (result?.value) {
-                    notify('共享工程已导出');
-                    setModal(null);
-                  }
-                })
+                void perform(t('workbench.share.export'), () => window.frameo.exportProject()).then(
+                  (result) => {
+                    if (result?.value) {
+                      notify(t('workbench.share.exported'));
+                      setModal(null);
+                    }
+                  },
+                )
               }
             >
               <Share2 size={14} />
-              选择位置并导出工程
+              {t('workbench.share.choose')}
             </Button>
           </div>
         </Modal>
@@ -1241,20 +1344,32 @@ export function App() {
             {inspectAsset.kind === 'image' ? (
               <img src={inspectAsset.url} alt={inspectAsset.name} />
             ) : inspectAsset.kind === 'video' ? (
-              <video src={inspectAsset.url} controls autoPlay aria-label="素材视频预览" />
+              <video
+                src={inspectAsset.url}
+                controls
+                autoPlay
+                aria-label={t('workbench.preview.video')}
+              />
             ) : (
-              <audio src={inspectAsset.url} controls autoPlay aria-label="音频素材预览" />
+              <audio
+                src={inspectAsset.url}
+                controls
+                autoPlay
+                aria-label={t('workbench.preview.audio')}
+              />
             )}
           </div>
           <div className="modal-actions">
             <Button
               disabled={busy}
               onClick={() =>
-                void perform('显示素材文件', () => window.frameo.revealFile(inspectAsset.path))
+                void perform(t('workbench.file.showing'), () =>
+                  window.frameo.revealFile(inspectAsset.path),
+                )
               }
             >
               <FolderOpen size={14} />
-              显示文件
+              {t('workbench.file.show')}
             </Button>
             <Button
               kind="accent"
@@ -1266,7 +1381,7 @@ export function App() {
               }}
             >
               <Plus size={14} />
-              加入作品
+              {t('workbench.asset.add')}
             </Button>
           </div>
         </Modal>
@@ -1277,8 +1392,8 @@ export function App() {
           role={toast.error ? 'alert' : 'status'}
         >
           {toast.error ? <X size={16} /> : <CheckCircle2 size={16} />}
-          <span>{toast.text}</span>
-          <IconButton label="关闭通知" onClick={() => setToast(null)}>
+          <span>{hostText(toast.text)}</span>
+          <IconButton label={t('workbench.toast.close')} onClick={() => setToast(null)}>
             <X size={13} />
           </IconButton>
         </div>
