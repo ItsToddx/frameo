@@ -38,6 +38,8 @@ import {
   type TimelineDraftState,
 } from './timeline-interactions';
 import { Button, Empty, IconButton, mediaUrl, timecode, uid } from './ui';
+import { useI18n } from './i18n';
+import type { MessageKey } from '../localization';
 
 interface Props {
   sequence: Sequence;
@@ -70,11 +72,11 @@ interface PointerGesture {
   changed: boolean;
 }
 const numeric = (form: FormData, key: string) => Number(form.get(key));
-const modeLabels: Record<ClipManipulationMode, string> = {
-  move: '移动片段',
-  'trim-start': '裁剪起点',
-  'trim-end': '裁剪终点',
-};
+const modeLabels = {
+  move: 'timeline.move',
+  'trim-start': 'timeline.trimStart',
+  'trim-end': 'timeline.trimEnd',
+} as const satisfies Record<ClipManipulationMode, MessageKey>;
 const acceptsAsset = (asset: Asset, kind: 'video' | 'audio') =>
   kind === 'video'
     ? asset.kind !== 'audio'
@@ -97,6 +99,7 @@ export function Timeline({
   onClose,
   busy,
 }: Props) {
+  const { t } = useI18n();
   const video = useRef<HTMLVideoElement>(null);
   const timelineScroll = useRef<HTMLDivElement>(null);
   const inspectorForm = useRef<HTMLFormElement>(null);
@@ -388,19 +391,22 @@ export function Timeline({
   }
 
   const draftMessage = draftConflict
-    ? `作品已更新至修订 ${sequence.revision}。草稿保留在修订 ${draftState?.base.revision}，请放弃后重新编辑。`
+    ? t('timeline.draftConflict', {
+        revision: sequence.revision,
+        draftRevision: draftState?.base.revision,
+      })
     : draftState?.phase === 'blocked'
-      ? '未能取得编辑权限。草稿已保留，请放弃后重试。'
+      ? t('timeline.draftBlocked')
       : draftState?.phase === 'release-failed'
-        ? '结束编辑未成功。请重试释放草稿，再继续协作。'
+        ? t('timeline.draftReleaseFailed')
         : draftState?.phase === 'saving'
-          ? '正在保存草稿…'
+          ? t('timeline.draftSaving')
           : draftState?.phase === 'releasing'
-            ? '正在结束编辑…'
-            : '有未保存的调整。保存或放弃后继续 Agent 协作。';
+            ? t('timeline.draftReleasing')
+            : t('timeline.draftUnsaved');
 
   return (
-    <section className="timeline-shell" data-testid="timeline" aria-label="作品时间线">
+    <section className="timeline-shell" data-testid="timeline" aria-label={t('timeline.title')}>
       <header className="timeline-header">
         <div className="timeline-title">
           <Film size={18} />
@@ -412,10 +418,18 @@ export function Timeline({
           </div>
         </div>
         <div className="timeline-header-actions">
-          <IconButton label="撤销剪辑" disabled={!canUndo || editingBusy} onClick={onUndo}>
+          <IconButton
+            label={t('timeline.undo')}
+            disabled={!canUndo || editingBusy}
+            onClick={onUndo}
+          >
             <Undo2 size={17} />
           </IconButton>
-          <IconButton label="重做剪辑" disabled={!canRedo || editingBusy} onClick={onRedo}>
+          <IconButton
+            label={t('timeline.redo')}
+            disabled={!canRedo || editingBusy}
+            onClick={onRedo}
+          >
             <Redo2 size={17} />
           </IconButton>
           <span className="divider" />
@@ -425,7 +439,7 @@ export function Timeline({
             testId="preview-button"
           >
             <RefreshCw size={15} className={previewBusy ? 'spin' : ''} />
-            {previewBusy ? '合成中' : '合成预览'}
+            {previewBusy ? t('timeline.rendering') : t('timeline.renderPreview')}
           </Button>
           <Button
             kind="accent"
@@ -434,16 +448,16 @@ export function Timeline({
             testId="export-button"
           >
             <Download size={15} />
-            导出
+            {t('timeline.export')}
           </Button>
           <IconButton
-            label={inspector ? '收起检查器' : '打开检查器'}
+            label={inspector ? t('timeline.collapseInspector') : t('timeline.openInspector')}
             disabled={draftDirty}
             onClick={() => setInspector(!inspector)}
           >
             {inspector ? <PanelRightClose size={17} /> : <PanelRightOpen size={17} />}
           </IconButton>
-          <IconButton label="收起时间线" disabled={draftDirty} onClick={onClose}>
+          <IconButton label={t('timeline.collapse')} disabled={draftDirty} onClick={onClose}>
             <X size={17} />
           </IconButton>
         </div>
@@ -465,14 +479,16 @@ export function Timeline({
               testId="save-timeline-draft"
             >
               <Check size={15} />
-              保存草稿
+              {t('timeline.saveDraft')}
             </Button>
             <Button
               disabled={busy || draftPending}
               onClick={() => void releaseDraft()}
               testId="discard-timeline-draft"
             >
-              {draftState?.phase === 'release-failed' ? '重试结束编辑' : '放弃草稿'}
+              {draftState?.phase === 'release-failed'
+                ? t('timeline.retryRelease')
+                : t('timeline.discardDraft')}
             </Button>
           </div>
         </div>
@@ -481,8 +497,10 @@ export function Timeline({
         <div className={`editor-stage ${inspector ? 'with-inspector' : ''}`}>
           <div className="sequence-viewer">
             <div className="editor-overview">
-              <span>作品预览</span>
-              <span className="preview-metadata">修订 {sequence.revision}</span>
+              <span>{t('timeline.preview')}</span>
+              <span className="preview-metadata">
+                {t('timeline.revision', { revision: sequence.revision })}
+              </span>
             </div>
             <div
               className="player-frame"
@@ -498,14 +516,14 @@ export function Timeline({
                   onTimeUpdate={(event) =>
                     setPlayhead(Math.round(event.currentTarget.currentTime * workingSequence.fps))
                   }
-                  aria-label="作品合成预览"
+                  aria-label={t('timeline.previewLabel')}
                   data-testid="preview-video"
                 />
               ) : (
                 <div className="preview-empty">
                   <Play size={30} />
-                  <strong>预览你的作品</strong>
-                  <span>合成后在这里播放画面和声音</span>
+                  <strong>{t('timeline.previewEmpty')}</strong>
+                  <span>{t('timeline.previewEmptyBody')}</span>
                 </div>
               )}
             </div>
@@ -513,40 +531,40 @@ export function Timeline({
               <span className={`status-dot ${currentPreview && !draftDirty ? 'ready' : ''}`} />
               <span>
                 {draftDirty
-                  ? '预览对应已保存的作品'
+                  ? t('timeline.previewSaved')
                   : currentPreview
-                    ? '预览已同步'
+                    ? t('timeline.previewCurrent')
                     : oldPreview
-                      ? '作品已修改，请重新合成'
-                      : '等待合成预览'}
+                      ? t('timeline.previewOutdated')
+                      : t('timeline.previewWaiting')}
               </span>
               <code>{timecode(playhead / workingSequence.fps)}</code>
             </div>
           </div>
           {inspector && (
-            <aside className="inspector" aria-label="编辑检查器">
+            <aside className="inspector" aria-label={t('timeline.inspector')}>
               <Tabs value={tab} onValueChange={(value) => setTab(value as InspectorTab)}>
-                <TabsList className="tabs" aria-label="编辑内容">
+                <TabsList className="tabs" aria-label={t('timeline.editContent')}>
                   <TabsTrigger
                     value="clip"
                     className={tab === 'clip' ? 'active' : undefined}
                     disabled={draftDirty && tab !== 'clip'}
                   >
-                    片段
+                    {t('timeline.clip')}
                   </TabsTrigger>
                   <TabsTrigger
                     value="captions"
                     className={tab === 'captions' ? 'active' : undefined}
                     disabled={draftDirty && tab !== 'captions'}
                   >
-                    字幕
+                    {t('timeline.captions')}
                   </TabsTrigger>
                   <TabsTrigger
                     value="sequence"
                     className={tab === 'sequence' ? 'active' : undefined}
                     disabled={draftDirty && tab !== 'sequence'}
                   >
-                    作品
+                    {t('timeline.work')}
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="clip">
@@ -560,15 +578,21 @@ export function Timeline({
                       className="inspector-form"
                     >
                       <div className="inspector-header">
-                        <span className="inspector-name">{selectedAsset?.name ?? '片段'}</span>
-                        <span className="frame-readout">{selected.duration} 帧</span>
+                        <span className="inspector-name">
+                          {selectedAsset?.name ?? t('timeline.clip')}
+                        </span>
+                        <span className="frame-readout">
+                          {t('timeline.frames', { count: selected.duration })}
+                        </span>
                       </div>
-                      {track?.locked && <p className="inline-notice">轨道已锁定，解锁后可编辑。</p>}
+                      {track?.locked && (
+                        <p className="inline-notice">{t('timeline.trackLocked')}</p>
+                      )}
                       <div className="inspector-section">
-                        <span className="inspector-section-title">时间与裁剪</span>
+                        <span className="inspector-section-title">{t('timeline.timing')}</span>
                         <div className="field-row">
                           <label>
-                            起点 / 秒
+                            {t('timeline.startSeconds')}
                             <input
                               name="start"
                               type="number"
@@ -580,7 +604,7 @@ export function Timeline({
                             />
                           </label>
                           <label>
-                            时长 / 秒
+                            {t('timeline.durationSeconds')}
                             <input
                               name="duration"
                               type="number"
@@ -593,7 +617,7 @@ export function Timeline({
                           </label>
                         </div>
                         <label>
-                          源素材起点 / 秒
+                          {t('timeline.sourceSeconds')}
                           <input
                             name="sourceStart"
                             type="number"
@@ -609,10 +633,10 @@ export function Timeline({
                         )}
                       </div>
                       <div className="inspector-section">
-                        <span className="inspector-section-title">声音与轨道</span>
+                        <span className="inspector-section-title">{t('timeline.soundTrack')}</span>
                         <div className="field-row">
                           <label>
-                            音量倍数
+                            {t('timeline.gain')}
                             <input
                               name="audioGain"
                               type="number"
@@ -625,7 +649,7 @@ export function Timeline({
                             />
                           </label>
                           <label>
-                            所在轨道
+                            {t('timeline.track')}
                             <select
                               name="trackId"
                               defaultValue={selected.trackId}
@@ -654,19 +678,19 @@ export function Timeline({
                             defaultChecked={selected.muted}
                             disabled={locked}
                           />
-                          静音片段
+                          {t('timeline.muteClip')}
                         </label>
                       </div>
                       <div className="inspector-actions">
                         <Button type="submit" kind="accent" disabled={locked} testId="save-clip">
                           <Check size={15} />
-                          保存片段
+                          {t('timeline.saveClip')}
                         </Button>
                       </div>
                       <label className="replacement-field">
-                        替换素材
+                        {t('timeline.replaceAsset')}
                         <select
-                          aria-label="替换选中片段素材"
+                          aria-label={t('timeline.replaceLabel')}
                           value=""
                           disabled={locked || draftDirty}
                           onChange={(event) => {
@@ -685,7 +709,7 @@ export function Timeline({
                               );
                           }}
                         >
-                          <option value="">选择新素材</option>
+                          <option value="">{t('timeline.chooseNewAsset')}</option>
                           {assets
                             .filter((asset) => track && acceptsAsset(asset, track.kind))
                             .map((asset) => (
@@ -696,12 +720,12 @@ export function Timeline({
                         </select>
                       </label>
                       <p className="field-hint">
-                        位置与时长按 {workingSequence.fps} fps 对齐。源素材保持不变。
+                        {t('timeline.frameAlignment', { fps: workingSequence.fps })}
                       </p>
                     </form>
                   ) : (
-                    <Empty icon={<Film size={24} />} title="选择一个片段">
-                      选择时间线片段，编辑时间、裁剪与声音。
+                    <Empty icon={<Film size={24} />} title={t('timeline.chooseClip')}>
+                      {t('timeline.chooseClipBody')}
                     </Empty>
                   )}
                 </TabsContent>
@@ -716,7 +740,7 @@ export function Timeline({
                   >
                     <div className="caption-picker">
                       <select
-                        aria-label="选择字幕"
+                        aria-label={t('timeline.chooseCaption')}
                         value={selectedCaption ?? ''}
                         disabled={draftDirty}
                         onChange={(event) => {
@@ -724,7 +748,7 @@ export function Timeline({
                           setSelectedCaption(event.target.value || null);
                         }}
                       >
-                        <option value="">新增字幕</option>
+                        <option value="">{t('timeline.newCaption')}</option>
                         {workingSequence.captions.map((item) => (
                           <option key={item.id} value={item.id}>
                             {item.text}
@@ -733,7 +757,7 @@ export function Timeline({
                       </select>
                       {caption && (
                         <IconButton
-                          label="删除字幕"
+                          label={t('timeline.deleteCaption')}
                           disabled={editingBusy}
                           onClick={() =>
                             void onApply(
@@ -749,7 +773,7 @@ export function Timeline({
                       )}
                     </div>
                     <label className="caption-text-field">
-                      字幕文字
+                      {t('timeline.captionText')}
                       <textarea
                         name="text"
                         defaultValue={caption?.text ?? ''}
@@ -761,7 +785,7 @@ export function Timeline({
                     <div className="inspector-section">
                       <div className="field-row">
                         <label>
-                          起点 / 秒
+                          {t('timeline.startSeconds')}
                           <input
                             name="start"
                             type="number"
@@ -776,7 +800,7 @@ export function Timeline({
                           />
                         </label>
                         <label>
-                          时长 / 秒
+                          {t('timeline.durationSeconds')}
                           <input
                             name="duration"
                             type="number"
@@ -789,7 +813,7 @@ export function Timeline({
                       </div>
                       <div className="field-row">
                         <label>
-                          字号
+                          {t('timeline.fontSize')}
                           <input
                             name="fontSize"
                             type="number"
@@ -800,7 +824,7 @@ export function Timeline({
                           />
                         </label>
                         <label>
-                          颜色
+                          {t('timeline.color')}
                           <input
                             name="color"
                             type="color"
@@ -809,11 +833,11 @@ export function Timeline({
                         </label>
                       </div>
                       <label>
-                        字幕位置
+                        {t('timeline.captionPosition')}
                         <select name="position" defaultValue={caption?.position ?? 'bottom'}>
-                          <option value="bottom">底部</option>
-                          <option value="center">中央</option>
-                          <option value="top">顶部</option>
+                          <option value="bottom">{t('timeline.bottom')}</option>
+                          <option value="center">{t('timeline.center')}</option>
+                          <option value="top">{t('timeline.top')}</option>
                         </select>
                       </label>
                     </div>
@@ -824,7 +848,7 @@ export function Timeline({
                         disabled={busy || draftPending || draftBlocked || draftConflict}
                       >
                         <Check size={15} />
-                        {caption ? '保存字幕' : '添加字幕'}
+                        {caption ? t('timeline.saveCaption') : t('timeline.addCaption')}
                       </Button>
                     </div>
                   </form>
@@ -853,7 +877,7 @@ export function Timeline({
                     }}
                   >
                     <label className="sequence-name-field">
-                      作品名称
+                      {t('timeline.workName')}
                       <input
                         name="name"
                         defaultValue={workingSequence.name}
@@ -864,7 +888,7 @@ export function Timeline({
                     <div className="inspector-section">
                       <div className="field-row">
                         <label>
-                          宽度
+                          {t('timeline.width')}
                           <input
                             name="width"
                             type="number"
@@ -876,7 +900,7 @@ export function Timeline({
                           />
                         </label>
                         <label>
-                          高度
+                          {t('timeline.height')}
                           <input
                             name="height"
                             type="number"
@@ -889,7 +913,7 @@ export function Timeline({
                         </label>
                       </div>
                       <label>
-                        帧率
+                        {t('timeline.fps')}
                         <select name="fps" defaultValue={workingSequence.fps}>
                           {[24, 25, 30, 60].map((fps) => (
                             <option key={fps} value={fps}>
@@ -899,7 +923,7 @@ export function Timeline({
                         </select>
                       </label>
                     </div>
-                    <p className="field-hint">更改帧率将保留实时位置，并由工程服务校验帧边界。</p>
+                    <p className="field-hint">{t('timeline.fpsHelp')}</p>
                     <div className="inspector-actions">
                       <Button
                         type="submit"
@@ -907,7 +931,7 @@ export function Timeline({
                         disabled={busy || draftPending || draftBlocked || draftConflict}
                       >
                         <Check size={15} />
-                        保存作品设置
+                        {t('timeline.saveSettings')}
                       </Button>
                     </div>
                   </form>
@@ -920,7 +944,7 @@ export function Timeline({
           <div className="timeline-tools">
             <div className="timeline-edit-tools">
               <IconButton
-                label="在播放头分割片段"
+                label={t('timeline.split')}
                 disabled={
                   !selected ||
                   locked ||
@@ -939,7 +963,7 @@ export function Timeline({
                 <Scissors size={17} />
               </IconButton>
               <IconButton
-                label="删除选中片段"
+                label={t('timeline.removeClip')}
                 disabled={!selected || locked || draftDirty}
                 onClick={() =>
                   selected &&
@@ -962,12 +986,12 @@ export function Timeline({
                 }}
               >
                 <Captions size={16} />
-                字幕
+                {t('timeline.captions')}
               </Button>
             </div>
             <div className="timeline-zoom-tools">
               <IconButton
-                label="适合时间线宽度"
+                label={t('timeline.fit')}
                 onClick={() =>
                   setScale(
                     Math.max(
@@ -984,9 +1008,9 @@ export function Timeline({
                 <Maximize2 size={16} />
               </IconButton>
               <label className="zoom-label">
-                缩放
+                {t('timeline.zoom')}
                 <input
-                  aria-label="时间线缩放"
+                  aria-label={t('timeline.zoomLabel')}
                   type="range"
                   min="10"
                   max="120"
@@ -997,18 +1021,21 @@ export function Timeline({
             </div>
           </div>
           <p className="sr-only" id="timeline-gesture-help">
-            拖动片段移动，拖动两端裁剪。聚焦片段或裁剪按钮后，用左右方向键调整一帧，Shift
-            调整十帧。保存草稿后生效，Escape 放弃调整。
+            {t('timeline.gestureHelp')}
           </p>
           <div className="timeline-scroll" ref={timelineScroll}>
             <div className="track-labels">
-              <div className="ruler-label">轨道</div>
+              <div className="ruler-label">{t('timeline.tracks')}</div>
               {workingSequence.tracks.map((item) => (
                 <div className="track-label" key={item.id}>
                   <span title={item.name}>
                     {item.kind === 'video' ? <Film size={15} /> : <Music2 size={15} />}
                     <input
-                      aria-label={`轨道 ${item.name} 名称`}
+                      aria-label={t('timeline.trackNameLabel', { name: item.name })}
+                      ref={(element) => {
+                        if (element?.validity.customError)
+                          element.setCustomValidity(t('timeline.trackNameRequired'));
+                      }}
                       defaultValue={item.name}
                       key={`${item.id}-${item.name}-${draftReset}`}
                       disabled={
@@ -1026,7 +1053,7 @@ export function Timeline({
                         draftCommands.current = name
                           ? [{ type: 'updateTrack', trackId: item.id, patch: { name } }]
                           : [];
-                        event.target.setCustomValidity(name ? '' : '轨道名称不能为空');
+                        event.target.setCustomValidity(name ? '' : t('timeline.trackNameRequired'));
                         setDraftState((current) => (current ? { ...current } : current));
                       }}
                       onKeyDown={(event) => {
@@ -1039,7 +1066,11 @@ export function Timeline({
                   </span>
                   <div>
                     <IconButton
-                      label={item.muted ? `取消 ${item.name} 静音` : `静音 ${item.name}`}
+                      label={
+                        item.muted
+                          ? t('timeline.unmuteTrack', { name: item.name })
+                          : t('timeline.muteTrack', { name: item.name })
+                      }
                       active={item.muted}
                       disabled={editingBusy || item.locked}
                       onClick={() =>
@@ -1058,7 +1089,11 @@ export function Timeline({
                       {item.muted ? <VolumeX size={15} /> : <Volume2 size={15} />}
                     </IconButton>
                     <IconButton
-                      label={item.locked ? `解锁 ${item.name}` : `锁定 ${item.name}`}
+                      label={
+                        item.locked
+                          ? t('timeline.unlockTrack', { name: item.name })
+                          : t('timeline.lockTrack', { name: item.name })
+                      }
                       active={item.locked}
                       disabled={editingBusy}
                       onClick={() =>
@@ -1077,7 +1112,7 @@ export function Timeline({
                       {item.locked ? <LockKeyhole size={15} /> : <LockKeyholeOpen size={15} />}
                     </IconButton>
                     <IconButton
-                      label={`删除轨道 ${item.name}`}
+                      label={t('timeline.deleteTrack', { name: item.name })}
                       disabled={editingBusy || item.locked}
                       onClick={() =>
                         void onApply(
@@ -1093,7 +1128,7 @@ export function Timeline({
               ))}
               <div className="track-label captions-track">
                 <Captions size={15} />
-                字幕
+                {t('timeline.captions')}
               </div>
             </div>
             <div className="track-content" style={{ width, minWidth: width }}>
@@ -1137,7 +1172,7 @@ export function Timeline({
                           ? gestureDraft.proposal.clip
                           : original;
                       const asset = assets.find((entry) => entry.id === clip.assetVersionId);
-                      const name = asset?.name ?? '素材';
+                      const name = asset?.name ?? t('timeline.asset');
                       return (
                         <div
                           key={clip.id}
@@ -1146,14 +1181,22 @@ export function Timeline({
                             left: (clip.start / workingSequence.fps) * scale,
                             width: Math.max(8, (clip.duration / workingSequence.fps) * scale),
                           }}
-                          title={`${name} · ${clip.start} → ${clip.start + clip.duration} 帧`}
+                          title={t('timeline.clipRange', {
+                            name,
+                            start: clip.start,
+                            end: clip.start + clip.duration,
+                          })}
                         >
                           <button
                             type="button"
                             className="clip-body"
                             onClick={() => selectClip(clip.id)}
                             aria-pressed={clip.id === selectedClipId}
-                            aria-label={`${name}，起点 ${clip.start} 帧，时长 ${clip.duration} 帧`}
+                            aria-label={t('timeline.clipLabel', {
+                              name,
+                              start: clip.start,
+                              duration: clip.duration,
+                            })}
                             aria-describedby="timeline-gesture-help"
                             disabled={draftDirty && !gestureAllowed(original, 'move')}
                             data-testid="timeline-clip"
@@ -1176,7 +1219,10 @@ export function Timeline({
                                 type="button"
                                 key={mode}
                                 className={`clip-trim-handle ${mode === 'trim-start' ? 'start' : 'end'}`}
-                                aria-label={`${modeLabels[mode]} ${name}`}
+                                aria-label={t('timeline.trimLabel', {
+                                  mode: t(modeLabels[mode]),
+                                  name,
+                                })}
                                 aria-describedby="timeline-gesture-help"
                                 disabled={!gestureAllowed(original, mode)}
                                 onPointerDown={(event) => startGesture(event, original, mode)}
@@ -1224,26 +1270,32 @@ export function Timeline({
           <div className="timeline-selection-summary" role="status">
             {gestureDraft ? (
               <span className="timeline-interaction-status">
-                {modeLabels[gestureDraft.manipulation.mode]}：起点{' '}
-                {gestureDraft.proposal.clip.start} 帧 · 时长 {gestureDraft.proposal.clip.duration}{' '}
-                帧{gestureDraft.proposal.constrained ? ' · 已到边界' : ''}
+                {t('timeline.gestureStatus', {
+                  mode: t(modeLabels[gestureDraft.manipulation.mode]),
+                  start: gestureDraft.proposal.clip.start,
+                  duration: gestureDraft.proposal.clip.duration,
+                })}
+                {gestureDraft.proposal.constrained ? t('timeline.boundary') : ''}
               </span>
             ) : (
               <span>
                 {selected
-                  ? `${selectedAsset?.name ?? '片段'} · ${selected.duration} 帧`
-                  : '选择片段开始编辑'}
+                  ? t('timeline.selection', {
+                      name: selectedAsset?.name ?? t('timeline.clip'),
+                      duration: selected.duration,
+                    })
+                  : t('timeline.selectToEdit')}
               </span>
             )}
             <label className="ruler-control">
-              播放头 / 帧
+              {t('timeline.playhead')}
               <input
                 type="number"
                 min="0"
                 max={durationFrames}
                 step="1"
                 value={playhead}
-                aria-label="播放头帧位置"
+                aria-label={t('timeline.playheadLabel')}
                 onChange={(event) => seek(Number(event.target.value))}
               />
             </label>
@@ -1259,7 +1311,11 @@ export function Timeline({
                         type: 'addTrack',
                         track: {
                           id: uid(),
-                          name: `视频 ${workingSequence.tracks.filter((item) => item.kind === 'video').length + 1}`,
+                          name: t('timeline.videoName', {
+                            count:
+                              workingSequence.tracks.filter((item) => item.kind === 'video')
+                                .length + 1,
+                          }),
                           kind: 'video',
                           muted: false,
                           locked: false,
@@ -1271,7 +1327,7 @@ export function Timeline({
                 }
               >
                 <Plus size={15} />
-                视频轨道
+                {t('timeline.addVideoTrack')}
               </Button>
               <Button
                 disabled={editingBusy}
@@ -1282,7 +1338,11 @@ export function Timeline({
                         type: 'addTrack',
                         track: {
                           id: uid(),
-                          name: `音频 ${workingSequence.tracks.filter((item) => item.kind === 'audio').length + 1}`,
+                          name: t('timeline.audioName', {
+                            count:
+                              workingSequence.tracks.filter((item) => item.kind === 'audio')
+                                .length + 1,
+                          }),
                           kind: 'audio',
                           muted: false,
                           locked: false,
@@ -1294,7 +1354,7 @@ export function Timeline({
                 }
               >
                 <Plus size={15} />
-                音频轨道
+                {t('timeline.addAudioTrack')}
               </Button>
             </div>
             <code>
@@ -1304,7 +1364,7 @@ export function Timeline({
           </footer>
           <form className="add-clip-form" onSubmit={(event) => void addClip(event)}>
             <select
-              aria-label="选择要加入的素材"
+              aria-label={t('timeline.chooseAssetLabel')}
               required
               value={addAsset}
               disabled={editingBusy}
@@ -1313,7 +1373,7 @@ export function Timeline({
                 setAddTrack('');
               }}
             >
-              <option value="">选择素材</option>
+              <option value="">{t('timeline.chooseAsset')}</option>
               {assets.map((asset) => (
                 <option key={asset.id} value={asset.id}>
                   {asset.name}
@@ -1321,13 +1381,13 @@ export function Timeline({
               ))}
             </select>
             <select
-              aria-label="选择目标轨道"
+              aria-label={t('timeline.chooseTrackLabel')}
               required
               value={addTrack}
               disabled={editingBusy}
               onChange={(event) => setAddTrack(event.target.value)}
             >
-              <option value="">目标轨道</option>
+              <option value="">{t('timeline.targetTrack')}</option>
               {workingSequence.tracks
                 .filter(
                   (item) =>
@@ -1345,7 +1405,7 @@ export function Timeline({
             </select>
             <Button type="submit" disabled={editingBusy || !addAsset || !addTrack}>
               <Plus size={15} />
-              加入播放头
+              {t('timeline.addAtPlayhead')}
             </Button>
           </form>
         </div>

@@ -1,5 +1,7 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useI18n, normalizeLocale } from './i18n';
+import type { MessageKey } from '../localization';
 import { StudioButton } from './components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
 import { Tooltip } from './components/ui/tooltip';
@@ -86,6 +88,39 @@ export function IconButton({
     </Tooltip>
   );
 }
+export function LanguagePicker({ disabled = false }: { disabled?: boolean }) {
+  const { t, locale, setLocale, hostText } = useI18n();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  return (
+    <span className="language-picker">
+      <select
+        className="language-select"
+        aria-label={t('language.label')}
+        data-testid="language-select"
+        value={locale}
+        disabled={disabled || saving}
+        onChange={async (event) => {
+          const next = normalizeLocale(event.target.value);
+          setSaving(true);
+          setError('');
+          try {
+            await window.frameo.setLanguage(next);
+            setLocale(next);
+          } catch (reason) {
+            setError(reason instanceof Error ? reason.message : String(reason));
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <option value="en">English</option>
+        <option value="zh-CN">简体中文</option>
+      </select>
+      {error && <span role="alert">{hostText(error)}</span>}
+    </span>
+  );
+}
 export function Modal({
   title,
   description,
@@ -101,6 +136,7 @@ export function Modal({
   wide?: boolean;
   busy?: boolean;
 }) {
+  const { t } = useI18n();
   const previousFocus = useRef(document.activeElement as HTMLElement | null);
   return (
     <Dialog
@@ -146,7 +182,8 @@ export function Modal({
               <DialogDescription className="sr-only">{title}</DialogDescription>
             )}
           </div>
-          <IconButton label="关闭窗口" disabled={busy} onClick={onClose}>
+          <LanguagePicker disabled={busy} />
+          <IconButton label={t('dialog.close')} disabled={busy} onClick={onClose}>
             <X size={18} />
           </IconButton>
         </div>
@@ -172,19 +209,19 @@ export function Empty({
     </div>
   );
 }
-export const jobLabels: Record<string, string> = {
-  queued: '等待执行',
-  submitting: '提交云端',
-  running: '执行中',
-  unknown: '状态待确认',
-  reconciling: '查询云端状态',
-  finalizing: '保存素材',
-  succeeded: '已完成',
-  failed: '失败',
-  cancelled: '已取消',
+export const jobLabels: Record<string, MessageKey> = {
+  queued: 'job.queued',
+  submitting: 'job.submitting',
+  running: 'job.running',
+  unknown: 'job.unknown',
+  reconciling: 'job.reconciling',
+  finalizing: 'job.finalizing',
+  succeeded: 'job.succeeded',
+  failed: 'job.failed',
+  cancelled: 'job.cancelled',
 };
-export const roleLabels: Record<string, string> = {
-  creative: '创意',
-  visual: '视觉',
-  editor: '剪辑',
+export const roleLabels: Record<string, MessageKey> = {
+  creative: 'role.creative',
+  visual: 'role.visual',
+  editor: 'role.editor',
 };

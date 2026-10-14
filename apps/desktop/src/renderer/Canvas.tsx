@@ -1,3 +1,4 @@
+import { useI18n } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -39,8 +40,9 @@ type CardData = {
 };
 type CardNode = Node<CardData, 'card'>;
 function Card({ data }: NodeProps<CardNode>) {
+  const { t } = useI18n();
   const { item, asset, sequence } = data;
-  const name = sequence?.name || asset?.name || '素材不可用';
+  const name = sequence?.name || asset?.name || t('workbench.canvas.unavailable');
   const duration = sequence
     ? Math.max(0, ...sequence.clips.map((c) => (c.start + c.duration) / sequence.fps))
     : asset?.duration || 0;
@@ -52,7 +54,11 @@ function Card({ data }: NodeProps<CardNode>) {
       <div className="card-media">
         <button
           className="card-open nodrag"
-          aria-label={sequence ? `编辑作品 ${name}` : `预览素材 ${name}`}
+          aria-label={
+            sequence
+              ? t('workbench.canvas.openSequence', { name })
+              : t('workbench.canvas.openAsset', { name })
+          }
           onClick={() => {
             data.onOpen(item);
             if (asset) data.onInspect(asset);
@@ -72,7 +78,11 @@ function Card({ data }: NodeProps<CardNode>) {
                 <Film size={32} />
               )}
               <span>
-                {sequence ? '打开编辑器' : asset?.kind === 'audio' ? '预览音频' : '预览视频'}
+                {sequence
+                  ? t('workbench.canvas.openEditor')
+                  : asset?.kind === 'audio'
+                    ? t('workbench.canvas.previewAudio')
+                    : t('workbench.canvas.previewVideo')}
               </span>
             </div>
           )}
@@ -82,17 +92,17 @@ function Card({ data }: NodeProps<CardNode>) {
         </button>
         <span className="card-kind">
           {sequence
-            ? '作品'
+            ? t('workbench.kind.sequence')
             : asset?.kind === 'video'
-              ? '视频'
+              ? t('workbench.kind.video')
               : asset?.kind === 'audio'
-                ? '音频'
-                : '图片'}
+                ? t('workbench.kind.audio')
+                : t('workbench.kind.image')}
         </span>
         {!!duration && <span className="card-duration">{timecode(duration)}</span>}
         <button
           className="card-hide nodrag"
-          aria-label={`从画布隐藏 ${name}`}
+          aria-label={t('workbench.canvas.hide', { name })}
           disabled={data.busy}
           onClick={() => data.onHide(item.id)}
         >
@@ -107,13 +117,13 @@ function Card({ data }: NodeProps<CardNode>) {
               ? `${sequence.width} × ${sequence.height} · ${sequence.fps} fps`
               : asset?.width
                 ? `${asset.width} × ${asset.height}`
-                : '声音素材'}
+                : t('workbench.canvas.audioAsset')}
           </span>
         </div>
         {asset && (
           <button
             className="card-add nodrag"
-            aria-label={`将 ${name} 加入作品`}
+            aria-label={t('workbench.asset.addName', { name })}
             disabled={data.busy}
             onClick={() => data.onAdd(asset)}
           >
@@ -123,9 +133,10 @@ function Card({ data }: NodeProps<CardNode>) {
       </div>
       {sequence && (
         <button className="sequence-footer nodrag" onClick={() => data.onOpen(item)}>
-          <span>{sequence.clips.length} 个片段</span>
+          <span>{t('workbench.clips', { count: sequence.clips.length })}</span>
           <span>
-            编辑作品 <ArrowDownToLine size={13} />
+            {t('workbench.canvas.edit')}
+            <ArrowDownToLine size={13} />
           </span>
         </button>
       )}
@@ -168,6 +179,7 @@ function CanvasInner({
   onBack,
   busy,
 }: Props) {
+  const { t } = useI18n();
   const [nodes, setNodes] = useState<CardNode[]>([]);
   const dragging = useRef(false);
   const container = useRef<HTMLDivElement>(null);
@@ -241,31 +253,33 @@ function CanvasInner({
       ref={container}
       className={`canvas-shell ${timelineOpen ? 'compact' : ''}`}
       data-testid="canvas"
-      aria-label="创作画布"
+      aria-label={t('workbench.canvas.title')}
     >
       <div className="canvas-topline">
         <div className="canvas-heading">
           {timelineOpen ? (
             <Button kind="ghost" onClick={onBack}>
               <ArrowLeft size={15} />
-              返回画布
+              {t('workbench.canvas.back')}
             </Button>
           ) : (
             <>
               <LayoutGrid size={18} />
-              <h2>创作画布</h2>
-              <span className="canvas-count">{snapshot.canvas.items.length} 项</span>
+              <h2>{t('workbench.canvas.title')}</h2>
+              <span className="canvas-count">
+                {t('workbench.canvas.items', { count: snapshot.canvas.items.length })}
+              </span>
             </>
           )}
         </div>
         <div className="canvas-actions">
           <Button onClick={onImport} disabled={busy}>
             <Plus size={15} />
-            导入素材
+            {t('workbench.media.import')}
           </Button>
           <Button kind="accent" onClick={onGenerate} disabled={busy}>
             <Aperture size={15} />
-            生成镜头
+            {t('workbench.canvas.generate')}
           </Button>
         </div>
       </div>
@@ -301,27 +315,27 @@ function CanvasInner({
       {!snapshot.canvas.items.length && !timelineOpen && (
         <div className="canvas-empty">
           <LayoutGrid size={32} />
-          <h3>把镜头放在一起</h3>
+          <h3>{t('workbench.canvas.empty')}</h3>
           <p>
-            导入参考素材，或生成一个镜头。
+            {t('workbench.canvas.emptyImport')}
             <br />
-            在左侧选择作品，开始剪辑。
+            {t('workbench.canvas.emptyEdit')}
           </p>
         </div>
       )}
       <div className="canvas-controls">
         <span>
           <MousePointer2 size={14} />
-          拖动整理 · 滚动平移
+          {t('workbench.canvas.help')}
         </span>
         <div>
-          <IconButton label="缩小画布" onClick={() => void flow.zoomOut()}>
+          <IconButton label={t('workbench.canvas.zoomOut')} onClick={() => void flow.zoomOut()}>
             <Minus size={16} />
           </IconButton>
-          <IconButton label="放大画布" onClick={() => void flow.zoomIn()}>
+          <IconButton label={t('workbench.canvas.zoomIn')} onClick={() => void flow.zoomIn()}>
             <Plus size={16} />
           </IconButton>
-          <IconButton label="适应画布" onClick={fitCanvas}>
+          <IconButton label={t('workbench.canvas.fit')} onClick={fitCanvas}>
             <Maximize size={16} />
           </IconButton>
         </div>
