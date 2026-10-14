@@ -1,6 +1,6 @@
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { useI18n } from './i18n';
+import { useI18n, normalizeLocale } from './i18n';
 import type { MessageKey } from '../localization';
 import { StudioButton } from './components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from './components/ui/dialog';
@@ -88,6 +88,39 @@ export function IconButton({
     </Tooltip>
   );
 }
+export function LanguagePicker({ disabled = false }: { disabled?: boolean }) {
+  const { t, locale, setLocale, hostText } = useI18n();
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  return (
+    <span className="language-picker">
+      <select
+        className="language-select"
+        aria-label={t('language.label')}
+        data-testid="language-select"
+        value={locale}
+        disabled={disabled || saving}
+        onChange={async (event) => {
+          const next = normalizeLocale(event.target.value);
+          setSaving(true);
+          setError('');
+          try {
+            await window.frameo.setLanguage(next);
+            setLocale(next);
+          } catch (reason) {
+            setError(reason instanceof Error ? reason.message : String(reason));
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <option value="en">English</option>
+        <option value="zh-CN">简体中文</option>
+      </select>
+      {error && <span role="alert">{hostText(error)}</span>}
+    </span>
+  );
+}
 export function Modal({
   title,
   description,
@@ -149,6 +182,7 @@ export function Modal({
               <DialogDescription className="sr-only">{title}</DialogDescription>
             )}
           </div>
+          <LanguagePicker disabled={busy} />
           <IconButton label={t('dialog.close')} disabled={busy} onClick={onClose}>
             <X size={18} />
           </IconButton>
