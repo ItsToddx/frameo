@@ -5,6 +5,9 @@ import {
 } from '@assistant-ui/react';
 import type { Session } from '../adapters/contracts/api';
 
+export const CHAT_SUBMISSION_FAILURE =
+  'Message was not sent. Your draft is kept. Check model settings and project state, then retry.';
+
 export interface ChatProjection {
   session?: Session;
   delta: string;
@@ -146,11 +149,11 @@ export function createChatAdapter(
       input.onSubmission?.({ pending: true });
       try {
         if (!(await input.drafts.submit(input.draftKey, input.onPrompt))) {
-          throw new MessageNotSentError('指令未发送，草稿已保留。检查模型配置与工程状态后重试。');
+          throw new MessageNotSentError(CHAT_SUBMISSION_FAILURE);
         }
         input.onSubmission?.({ pending: false });
       } catch (error) {
-        const message = error instanceof Error ? error.message : '指令未发送，草稿已保留。';
+        const message = error instanceof Error ? error.message : CHAT_SUBMISSION_FAILURE;
         input.onSubmission?.({ pending: false, error: message });
         throw new MessageNotSentError(message);
       }

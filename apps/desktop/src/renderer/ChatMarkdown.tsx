@@ -1,5 +1,6 @@
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useI18n } from './i18n';
 
 function safeLink(url: string): string {
   try {
@@ -12,6 +13,7 @@ function safeLink(url: string): string {
 
 /** Model output stays text: raw HTML, scripts and remote image requests are never executed. */
 export function ChatMarkdown({ text }: { text: string }) {
+  const { t } = useI18n();
   return (
     <div className="message-text">
       <Markdown
@@ -29,7 +31,9 @@ export function ChatMarkdown({ text }: { text: string }) {
               <span>{children}</span>
             ),
           img: ({ alt }) => (
-            <span className="message-image-placeholder">{alt ? `[图片：${alt}]` : '[图片]'}</span>
+            <span className="message-image-placeholder">
+              {alt ? t('chat.imageAlt', { alt }) : t('chat.image')}
+            </span>
           ),
           table: ({ children }) => (
             <div className="message-table">
