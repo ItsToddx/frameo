@@ -547,6 +547,7 @@ const systemMessages: Message[] = [
     en: 'This media format is unsupported. Choose an image, video or audio file.',
   },
   { zh: '素材时长无法读取。', en: 'The media duration cannot be read.' },
+  { zh: '素材画面尺寸无法读取。', en: 'The media dimensions cannot be read.' },
   {
     zh: '已归档素材被外部修改，请恢复该素材版本。',
     en: 'Archived media was modified outside the app. Restore that media version.',

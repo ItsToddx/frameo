@@ -152,6 +152,7 @@ export function Canvas(props: Props) {
 function CanvasInner({
   snapshot,
   selection,
+  timelineOpen,
   onSelect,
   onSave,
   onHide,
@@ -166,7 +167,8 @@ function CanvasInner({
   const [nodes, setNodes] = useState<CardNode[]>([]);
   const [fileDrag, setFileDrag] = useState(false);
   const dragging = useRef(false);
-  const container = useRef<HTMLDivElement>(null);
+  const container = useRef<HTMLElement>(null);
+  const hadEditor = useRef(false);
   const fittedProject = useRef<string | null>(null);
   const flow = useReactFlow<CardNode>();
   function fitCanvas() {
@@ -179,9 +181,22 @@ function CanvasInner({
   const fitRef = useRef(fitCanvas);
   fitRef.current = fitCanvas;
   useEffect(() => {
-    if (dragging.current) return;
-    setNodes(
-      snapshot.canvas.items.map((item) => {
+    const returning = hadEditor.current && !timelineOpen;
+    hadEditor.current = timelineOpen;
+    if (returning) {
+      const opener = selection
+        ? container.current?.querySelector<HTMLElement>(
+            `[data-ref-id="${CSS.escape(selection)}"] .card-preview`,
+          )
+        : null;
+      (opener ?? container.current)?.focus();
+    }
+  }, [timelineOpen, selection]);
+  useEffect(() => {
+    setNodes((previous) => {
+      const existing = new Map(previous.map((node) => [node.id, node]));
+      return snapshot.canvas.items.map((item) => {
+        const current = existing.get(item.id);
         const asset = snapshot.assets.find((a) => a.id === item.refId);
         const sequence = snapshot.sequences.find((s) => s.id === item.refId);
         const cover = sequence
@@ -190,7 +205,9 @@ function CanvasInner({
         return {
           id: item.id,
           type: 'card',
-          position: { x: item.x, y: item.y },
+          position: dragging.current && current ? current.position : { x: item.x, y: item.y },
+          // Keep measured dimensions so selecting a card never hides it between clicks.
+          measured: current?.measured,
           selected: item.refId === selection,
           style: { width: 260 },
           data: {
@@ -200,7 +217,7 @@ function CanvasInner({
             thumbnail: cover?.thumbnailUrl || (cover?.kind === 'image' ? cover.url : undefined),
             selected: item.refId === selection,
             busy,
-            dropTarget: false,
+            dropTarget: dragging.current ? (current?.data.dropTarget ?? false) : false,
             onSelect,
             onHide,
             onAdd,
@@ -208,8 +225,8 @@ function CanvasInner({
             onEdit,
           },
         };
-      }),
-    );
+      });
+    });
   }, [snapshot, selection, onSelect, onHide, onAdd, onInspect, onEdit, busy]);
   useEffect(() => {
     if (
@@ -242,6 +259,8 @@ function CanvasInner({
   return (
     <section
       ref={container}
+      inert={timelineOpen}
+      tabIndex={-1}
       className={`canvas-shell board ${fileDrag ? 'file-drag' : ''}`}
       data-testid="canvas"
       aria-label={t('workbench.canvas.title')}

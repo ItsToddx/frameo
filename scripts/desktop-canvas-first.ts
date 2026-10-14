@@ -147,6 +147,30 @@ try {
   assert.equal((await page.evaluate(() => window.framo.snapshot())).assets.length, 1);
   await page.getByRole('button', { name: 'Fit canvas', exact: true }).click();
   await page.waitForTimeout(220);
+  const beforeMove = (await page.evaluate(() => window.framo.snapshot())).canvas.items.find(
+    (item) => item.kind === 'asset',
+  )!;
+  const moving = (await page.getByTestId('asset-card').boundingBox())!;
+  await page.mouse.move(moving.x + 70, moving.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(moving.x + 135, moving.y + 25, { steps: 20 });
+  await page.mouse.up();
+  await page.waitForFunction(async (before) => {
+    const item = (await window.framo.snapshot()).canvas.items.find((item) => item.id === before.id);
+    return item && item.x > before.x && item.y < before.y;
+  }, beforeMove);
+  const moved = (await page.evaluate(() => window.framo.snapshot())).canvas.items.find(
+    (item) => item.id === beforeMove.id,
+  )!;
+  assert.equal((await page.evaluate(() => window.framo.snapshot())).sequences[0].clips.length, 0);
+  await page.reload();
+  await page.getByTestId('asset-card').waitFor();
+  const reopened = (await page.evaluate(() => window.framo.snapshot())).canvas.items.find(
+    (item) => item.id === moved.id,
+  )!;
+  assert.deepEqual(reopened, moved, 'Dragging a card persists its layout across reopening');
+  await page.getByRole('button', { name: 'Fit canvas', exact: true }).click();
+  await page.waitForTimeout(220);
   const source = (await page.getByTestId('asset-card').boundingBox())!,
     target = (await page.getByTestId('sequence-card').boundingBox())!;
   await page.mouse.move(source.x + 60, source.y + 85);
@@ -173,17 +197,29 @@ try {
   await page.waitForTimeout(220);
   await page
     .getByTestId('sequence-card')
-    .getByRole('button', { name: /^Edit sequence/ })
-    .click();
+    .locator('.card-media')
+    .dblclick({ position: { x: 70, y: 70 } });
   await page.getByTestId('timeline').waitFor();
   assert.equal(await page.locator('.inspector').isVisible(), false);
+  assert.equal(await board.evaluate((node) => (node as HTMLElement).inert), true);
+  await page.waitForFunction(
+    () => document.activeElement?.getAttribute('data-testid') === 'timeline-close',
+  );
+  for (let i = 0; i < 6; i++) {
+    await page.keyboard.press('Tab');
+    assert.equal(await board.evaluate((node) => node.contains(document.activeElement)), false);
+  }
   await page.getByRole('button', { name: 'Undo edit', exact: true }).click();
   assert.equal((await page.evaluate(() => window.framo.snapshot())).sequences[0].clips.length, 0);
   await page.getByRole('button', { name: 'Collapse timeline', exact: true }).click();
+  await page.waitForFunction(() => document.activeElement?.classList.contains('card-preview'));
+  assert.equal(await board.evaluate((node) => (node as HTMLElement).inert), false);
   await app.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()[0].setSize(1120, 760);
   });
   await page.waitForTimeout(150);
+  await page.getByRole('button', { name: 'Fit canvas', exact: true }).click();
+  await page.waitForTimeout(220);
   await page.screenshot({ path: join(directory, 'canvas-compact.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.getByTestId('project-menu').click();
@@ -192,6 +228,78 @@ try {
   await page.getByTestId('project-menu').click();
   assert.equal(await composer.inputValue(), 'Keep this idea in the conversation');
   await page.screenshot({ path: join(directory, 'canvas-zh.png') });
+  await page.locator('.conversation-menu summary').click();
+  await page.getByRole('button', { name: '审阅历史', exact: true }).click();
+  assert.equal(await page.locator('.review-list').isVisible(), true);
+  await page.getByRole('button', { name: '新建对话', exact: true }).click();
+  await page.waitForFunction(async () => (await window.framo.snapshot()).sessions.length === 2);
+  assert.equal(await page.locator('.review-list').isVisible(), false);
+  await page.locator('.conversation-menu summary').click();
+  const firstSession = (await page.evaluate(() => window.framo.snapshot())).sessions[0].id;
+  await page.getByRole('combobox', { name: '选择对话', exact: true }).selectOption(firstSession);
+  await page.waitForFunction(
+    () =>
+      (document.querySelector('[data-testid="agent-prompt"]') as HTMLTextAreaElement)?.value ===
+      'Keep this idea in the conversation',
+  );
+  const valid = join(directory, 'Second reference.png'),
+    corrupt = join(directory, 'Broken.png');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(8, 8, 4, 4);
+  await writeFile(valid, canvas.toBuffer('image/png'));
+  await writeFile(corrupt, 'This file cannot be decoded as media.');
+  const after = (await board.boundingBox())!;
+  for (const type of ['dragEnter', 'dragOver', 'drop'] as const)
+    await cdp.send('Input.dispatchDragEvent', {
+      type,
+      x: after.x + 60,
+      y: after.y + 170,
+      data: { items: [], files: [valid, corrupt], dragOperationsMask: 1 },
+    });
+  await page.waitForFunction(async () => (await window.framo.snapshot()).assets.length === 2);
+  await page.getByTestId('asset-card').filter({ hasText: 'Second reference.png' }).waitFor();
+  assert.equal(
+    await page.getByTestId('asset-card').count(),
+    2,
+    'Committed files stay visible when a later file fails',
+  );
+  const activeCard = (await page.getByTestId('asset-card').first().boundingBox())!;
+  await page.mouse.move(activeCard.x + 70, activeCard.y + 80);
+  await page.mouse.down();
+  await page.mouse.move(activeCard.x + 85, activeCard.y + 85, { steps: 5 });
+  try {
+    await page.evaluate(async () => {
+      const state = await window.framo.snapshot(),
+        sequence = state.sequences[0];
+      await window.framo.apply({
+        sequenceId: sequence.id,
+        expectedRevision: sequence.revision,
+        commandId: 'concurrent-card-metadata',
+        commands: [
+          {
+            type: 'addClip',
+            clip: {
+              id: 'concurrent-clip',
+              trackId: sequence.tracks.find((track) => track.kind === 'video')!.id,
+              assetVersionId: state.assets[0].id,
+              start: 0,
+              duration: 24,
+              sourceStart: 0,
+              audioGain: 1,
+              muted: false,
+            },
+          },
+        ],
+      });
+    });
+    await page
+      .getByTestId('sequence-card')
+      .locator('.card-info > div > span')
+      .filter({ hasText: '1 个片段' })
+      .waitFor({ timeout: 2000 });
+  } finally {
+    await page.mouse.up();
+  }
   assert.equal(await app.evaluate(() => (globalThis as unknown as { calls: number }).calls), 0);
   assert.deepEqual(errors, []);
   await writeFile(
@@ -202,11 +310,17 @@ try {
         auxiliaryUIHiddenByDefault: true,
         nativeFileDrop: true,
         forgedFileRejected: true,
+        cardMoveReopen: true,
         dragAdoption: true,
         referenceDropPreservesDraft: true,
         inlineExactApproval: true,
         adoptionUndo: true,
         optionalInspector: true,
+        coveredCanvasInertAndFocusRestored: true,
+        doubleClickOpensEditor: true,
+        liveMetadataDuringDrag: true,
+        newConversationLeavesHistory: true,
+        mixedDropPublishesCommittedAssets: true,
         bilingual: true,
         minimumWindow: true,
         cloudCalls: 0,
@@ -216,6 +330,36 @@ try {
     ),
   );
   console.log('Canvas-first desktop acceptance passed.');
+} catch (error) {
+  const page = await app.firstWindow();
+  await page.screenshot({ path: join(directory, 'failure.png') });
+  await writeFile(
+    join(directory, 'failure.json'),
+    JSON.stringify(
+      await page.evaluate(async () => {
+        const snapshot = await window.framo.snapshot();
+        return {
+          locale: document.documentElement.lang,
+          cards: Array.from(document.querySelectorAll('[data-testid="sequence-card"]')).map(
+            (node) => ({
+              text: node.textContent,
+              bounds: node.getBoundingClientRect().toJSON(),
+              classes: node.className,
+              hidden: node.closest('[inert],[hidden]')?.tagName,
+            }),
+          ),
+          sequences: snapshot.sequences.map((sequence) => ({
+            id: sequence.id,
+            clips: sequence.clips.length,
+          })),
+          canvas: snapshot.canvas,
+        };
+      }),
+      null,
+      2,
+    ),
+  );
+  throw error;
 } finally {
   await app.close();
 }

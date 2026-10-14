@@ -252,11 +252,17 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     requireModels();
     const validated = schemas.importDroppedMedia.parse({ paths }) as { paths: string[] };
     const db = database();
-    for (const path of validated.paths) {
-      const asset = await archiveMedia(db.directory, path);
-      db.addAsset(asset);
+    let imported = false;
+    try {
+      for (const path of validated.paths) {
+        const asset = await archiveMedia(db.directory, path);
+        db.addAsset(asset);
+        imported = true;
+      }
+    } finally {
+      // A later unreadable file must not hide assets already committed to the project.
+      if (imported) changed(db);
     }
-    changed(db);
     return service(db).snapshot();
   }
   const methods = {

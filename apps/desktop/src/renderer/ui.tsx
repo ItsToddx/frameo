@@ -68,12 +68,14 @@ export function IconButton({
   onClick,
   disabled,
   active,
+  testId,
 }: {
   children: ReactNode;
   label: string;
   onClick?: () => void;
   disabled?: boolean;
   active?: boolean;
+  testId?: string;
 }) {
   return (
     <Tooltip label={label}>
@@ -83,6 +85,7 @@ export function IconButton({
         className={`icon-button${active ? ' active' : ''}`}
         aria-label={label}
         aria-pressed={active}
+        data-testid={testId}
         onClick={(event) => {
           event.currentTarget.focus();
           onClick?.();

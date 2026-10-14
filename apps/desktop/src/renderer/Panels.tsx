@@ -238,7 +238,7 @@ export function CreateModal({
           />
         </label>
         <details className="create-options">
-          <summary>{t('create.aspect')} · 16:9</summary>
+          <summary>{t('create.aspect')}</summary>
           <div className="field-row">
             <label>
               {t('create.aspect')}

@@ -101,6 +101,7 @@ export function Timeline({
 }: Props) {
   const { t } = useI18n();
   const video = useRef<HTMLVideoElement>(null);
+  const editor = useRef<HTMLElement>(null);
   const timelineScroll = useRef<HTMLDivElement>(null);
   const inspectorForm = useRef<HTMLFormElement>(null);
   const activePointer = useRef<PointerGesture | null>(null);
@@ -191,6 +192,7 @@ export function Timeline({
     onSelectClip(null);
     setSelectedCaption(null);
     setAddTrack('');
+    editor.current?.querySelector<HTMLElement>('[data-testid="timeline-close"]')?.focus();
   }, [sequence.id]);
 
   function markDraft(source: string) {
@@ -405,7 +407,12 @@ export function Timeline({
             : t('timeline.draftUnsaved');
 
   return (
-    <section className="timeline-shell" data-testid="timeline" aria-label={t('timeline.title')}>
+    <section
+      ref={editor}
+      className="timeline-shell"
+      data-testid="timeline"
+      aria-label={t('timeline.title')}
+    >
       <header className="timeline-header">
         <div className="timeline-title">
           <Film size={18} />
@@ -456,7 +463,12 @@ export function Timeline({
           >
             {inspector ? <PanelRightClose size={17} /> : <PanelRightOpen size={17} />}
           </IconButton>
-          <IconButton label={t('timeline.collapse')} disabled={draftDirty} onClick={onClose}>
+          <IconButton
+            label={t('timeline.collapse')}
+            testId="timeline-close"
+            disabled={draftDirty}
+            onClick={onClose}
+          >
             <X size={17} />
           </IconButton>
         </div>

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test, { type TestContext } from 'node:test';
@@ -603,5 +603,21 @@ test('media archiving copies immutable content and deduplicates identical import
   assert.equal(
     (await readFile(join(f.database.directory, first.path))).equals(await readFile(f.video)),
     true,
+  );
+});
+
+test('Rejects a corrupt image even when FFprobe reports a video stream with no dimensions', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'framo-invalid-media-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const source = join(directory, 'Broken.png'),
+    project = join(directory, 'project');
+  await writeFile(source, 'This file cannot be decoded as media.');
+  const metadata = await probe(source);
+  assert.ok(metadata.streams.some((stream) => stream.codec_type === 'video'));
+  await assert.rejects(archiveMedia(project, source), /素材画面尺寸无法读取/);
+  assert.deepEqual(
+    await readdir(join(project, 'media')),
+    [],
+    'Invalid input never becomes archived media',
   );
 });

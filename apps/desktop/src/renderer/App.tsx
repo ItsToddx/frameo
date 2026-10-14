@@ -809,7 +809,7 @@ export function App() {
               <Canvas
                 snapshot={snapshot}
                 selection={selection}
-                timelineOpen={false}
+                timelineOpen={!!sequence}
                 onBack={() => {
                   if (requireSavedDraft()) {
                     setSequenceId(null);

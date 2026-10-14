@@ -115,7 +115,7 @@ summary::-webkit-details-marker {
   z-index: 4;
   display: flex;
   gap: 9px;
-  color: #a1a1aa;
+  color: #71717a;
   font-size: 12px;
   pointer-events: none;
 }
@@ -170,13 +170,13 @@ summary::-webkit-details-marker {
   border-radius: 4px;
   background: #00000045;
   color: #fff;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.03em;
 }
 .board .card-duration {
   bottom: 9px;
   right: 10px;
-  font-size: 10px;
+  font-size: 12px;
 }
 .board .card-info {
   min-height: 58px;
@@ -188,9 +188,9 @@ summary::-webkit-details-marker {
   font-weight: 500;
 }
 .board .card-info > div > span {
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 3px;
-  color: #a1a1aa;
+  color: #71717a;
 }
 .board .card-preview {
   display: grid;
@@ -209,22 +209,22 @@ summary::-webkit-details-marker {
   transition: opacity 140ms;
 }
 .board .card-hide {
-  width: 23px;
-  height: 23px;
+  width: 32px;
+  height: 32px;
   top: 8px;
   right: 8px;
   opacity: 0;
 }
 .board .card-reference,
 .board .card-add {
-  width: 25px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   display: grid;
   place-items: center;
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: #a1a1aa;
+  color: #71717a;
   opacity: 0;
   flex-shrink: 0;
 }
@@ -281,8 +281,8 @@ summary::-webkit-details-marker {
   padding-inline: 12px;
 }
 .board-dock .icon-button {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
 }
 .dock-separator {
   height: 18px;
@@ -297,8 +297,8 @@ summary::-webkit-details-marker {
   right: 0;
   margin: 0;
   text-align: center;
-  font-size: 10px;
-  color: #a1a1aa;
+  font-size: 12px;
+  color: #71717a;
   pointer-events: none;
 }
 .board-drop-overlay {
@@ -355,8 +355,8 @@ summary::-webkit-details-marker {
   gap: 3px;
 }
 .conversation-header-actions .icon-button {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 .chat-feed {
   padding: 12px 20px 24px;
@@ -377,7 +377,7 @@ summary::-webkit-details-marker {
 .chat-empty p {
   font-size: 12px;
   line-height: 1.8;
-  color: #a1a1aa;
+  color: #71717a;
 }
 .chat-suggestions {
   gap: 8px;
@@ -408,12 +408,12 @@ summary::-webkit-details-marker {
   background: transparent;
 }
 .compose-footer > span {
-  font-size: 10px;
-  color: #a1a1aa;
+  font-size: 12px;
+  color: #71717a;
 }
 .compose-footer .send-button {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
 }
 .chat-footnote {
@@ -421,14 +421,14 @@ summary::-webkit-details-marker {
 }
 .chat-compose-area:focus-within .chat-footnote {
   display: flex;
-  font-size: 10px;
+  font-size: 12px;
 }
 .agent-contexts {
   margin-bottom: 8px;
 }
 .chat-context {
   padding: 4px 7px;
-  font-size: 10px;
+  font-size: 12px;
   background: #f4f4f5;
   border: 0;
 }
@@ -483,7 +483,7 @@ summary::-webkit-details-marker {
 }
 .welcome-screen > p {
   font-size: 13px;
-  color: #a1a1aa;
+  color: #71717a;
 }
 .welcome-actions {
   margin-top: 26px;

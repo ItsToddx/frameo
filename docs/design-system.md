@@ -1,12 +1,18 @@
 # Framo design system
 
-The desktop workbench uses a light, content-first interface. The agent, media canvas and timeline are views of one saved project. A creator moves from intent to a reviewed plan, execution, candidate selection and precise edits.
+The desktop workbench uses a light, content-first interface. The canvas and conversation are the default surfaces of one saved project; the timeline opens for focused editing. A creator moves from intent to a reviewed plan, execution, candidate selection and precise edits.
 
 ## Visual language
 
 Use neutral white and zinc surfaces, near-black primary actions, quiet borders and one consistent Lucide icon family. Color identifies status and selection; it does not compete with video. Video preview retains a dark surround. System sans-serif and PingFang SC fonts remain available offline. Body text is 14–15 px, supporting labels 12–13 px and section headings 18–24 px. Layout follows a 4/8 px spacing rhythm. Main controls are 36–40 px high; compact desktop controls remain at least 32 px with visible focus.
 
 Primary text uses #18181b on white; secondary text uses #71717a. Surface #fafafa and borders #e4e4e7 establish hierarchy. Shared semantic tokens control components. Use subtle 120–180 ms transitions and disable nonessential movement under reduced motion.
+
+## Workspace hierarchy
+
+Keep one quiet header above a large canvas and a conversation column. Auxiliary libraries, projects, tasks, memory and Kits open on demand. Avoid permanent navigation rails, inspectors, status footers and management tabs. Pending reviews and active workflows belong in the conversation; completed histories remain accessible through its options menu.
+
+Canvas cards show a thumbnail, name and a short description. Selecting supplies Agent context; preview and precision editing are explicit actions. Drag native files onto the canvas, cards to arrange them, media onto a film to add a shot, and a card's reference handle into the conversation without replacing draft text. Moving a card changes layout; adopting media is a revision-checked edit. Retain discoverable button alternatives for keyboard users. The precision editor is an overlay with the inspector initially closed and protected Save/Discard drafts.
 
 ## Interaction language
 
@@ -16,7 +22,7 @@ Dialogs use shadcn-style Radix primitives for focus management, inert background
 
 ## Interface languages
 
-Start in English unless this computer has an explicit Chinese preference. Put the language control in the top bar and dialog header, with a visible associated label. Changes must update in place, preserving authored text, pending review identities and all drafts. Dates use the selected locale. Longer English buttons and notices may wrap at the minimum 1120×760 window size; keep fields and actions reachable through their existing scroll areas.
+Start in English unless this computer has an explicit Chinese preference. Put the language control in the top-bar More menu and dialog header, with a visible associated label. Changes must update in place, preserving authored text, pending review identities and all drafts. Dates use the selected locale. Longer English buttons and notices may wrap at the minimum 1120×760 window size; keep fields and actions reachable through their existing scroll areas.
 
 ## References and decisions
 

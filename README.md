@@ -4,7 +4,7 @@
 
 **Describe a story. Shape every frame.**
 
-A desktop video studio where an agent, a canvas, and a timeline work on the same project.
+A desktop video agent built around a canvas and a conversation.
 
 [Quick start](#quick-start) · [How it works](#how-it-works) · [Kits](#kits) · [Development](#development) · [中文](README.zh-CN.md)
 
@@ -16,16 +16,16 @@ Framo brings planning, Seedance generation, candidate review, and precise editin
 
 **Model configuration is required.** This first release generates video with **Seedance only** through Volcengine Ark. Pi reasoning uses a separate tool-capable, image-capable Ark chat model. Bring your own API key and model access; local test fixtures are not an offline creative mode.
 
-![Framo canvas, timeline and agent](docs/images/workbench.png)
+![Framo canvas and conversation](docs/images/workbench.png)
 
 ## Quick start
 
 1. Download the macOS Apple Silicon build from [Releases](https://github.com/ItsToddx/framo/releases).
 2. This preview is not Developer ID signed or notarized. If macOS blocks it, follow [Apple’s Open Anyway instructions](https://support.apple.com/102445) for a build you have verified.
 3. Open Framo and configure your Ark API key, chat model or endpoint ID, and Seedance model ID in **Settings**. Both models must be available to that account.
-4. Create a project. Import a reference image or footage, or describe your idea in the agent panel.
+4. Create a project. Drop reference images or footage onto the canvas, then describe your idea in the conversation.
 5. Review generation parameters and the spending estimate before submission. Seedance outputs appear as candidates in your asset library.
-6. Add or replace a timeline clip, edit captions and sound, compose a preview, and export MP4.
+6. Drag media onto a film card to add a shot. Open the film for precise timing, captions, preview and MP4 export.
 
 Try a request such as:
 
@@ -35,7 +35,7 @@ Ark bills model requests to your own account. The app stores the key using macOS
 
 ### Interface language
 
-The interface starts in **English**. Choose **简体中文** in the language selector in the top bar or any dialog. Your choice is saved on this computer; switching keeps conversations, form inputs, and timeline drafts intact. Authored names, messages, and custom Kit content keep their original language.
+The interface starts in **English**. Choose **简体中文** in the top-bar **More** menu or any dialog. Your choice is saved on this computer; switching keeps conversations, form inputs, and timeline drafts intact. Authored names, messages, and custom Kit content keep their original language.
 
 ### Upgrading an existing profile
 
@@ -45,7 +45,7 @@ Existing projects and shared archives remain readable, and built-in workflow ide
 
 | Workspace | Behavior                                                                                                                            |
 | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Canvas    | Arrange and select asset and film cards; hide a card without deleting its media.                                                    |
+| Canvas    | Drop files onto the board, arrange cards, drag media onto a film, or drag a reference handle into the conversation.                 |
 | Agent     | Plan with a coordinator and creative, visual and editing specialists; review every edit or paid generation.                         |
 | Timeline  | Add tracks and clips, move, trim, split, delete and replace; adjust gain and mute; edit caption text, timing and style.             |
 | History   | Manual and agent edits share one revision-checked undo/redo history. Canvas history is separate.                                    |
@@ -57,9 +57,9 @@ Existing projects and shared archives remain readable, and built-in workflow ide
 
 ## A focused creative workspace
 
-A light studio keeps references and Agent decisions visible. Opening a work gives the composed preview and timeline the main workspace. Drag or use frame keyboard controls to move and trim; changes remain a protected draft until Save or Discard.
+The canvas and conversation stay visible as the main workspace. A quiet header opens the media library, projects, tasks and settings when needed. Select a card to give the agent context, drag its handle into the conversation, or double-click a film to open the focused preview and timeline. The inspector starts closed. Drag or use frame keyboard controls to move and trim; changes remain a protected draft until Save or Discard.
 
-The assistant-ui conversation projects the actual persisted session, tools and streamed reply. Plans, exact reviews, workflow steps and output candidates are readable working surfaces. Drafts survive tab/session changes and rejected sends; IME input and reading older messages keep their expected behavior.
+The assistant-ui conversation projects the actual persisted session, tools and streamed reply. Pending reviews and active workflows appear directly in the conversation. Completed review and workflow histories open on demand. Drafts survive tab/session changes and rejected sends; IME input and reading older messages keep their expected behavior.
 
 Domain objects and portable application use cases follow inward dependencies. Repository, runtime, provider and media interfaces isolate SQLite, Electron, Pi and FFmpeg. See [architecture](docs/architecture.md), [application boundaries](packages/application/README.md) and [domain vocabulary](GLOSSARY.md).
 
@@ -113,6 +113,7 @@ npm run typecheck
 npm test
 npm run build
 npm run test:desktop
+npm run test:desktop-canvas
 npm run test:desktop-failures
 npm run test:desktop-ui
 npm run test:desktop-languages

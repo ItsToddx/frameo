@@ -129,7 +129,10 @@ export function Chat(props: ChatProps) {
           <IconButton
             label={t('chat.createSession')}
             disabled={!snapshot || running || props.busy}
-            onClick={props.onNewSession}
+            onClick={() => {
+              setTab('chat');
+              props.onNewSession();
+            }}
           >
             <MessageSquarePlus size={16} />
           </IconButton>
@@ -151,7 +154,13 @@ export function Chat(props: ChatProps) {
                 <select
                   aria-label={t('chat.chooseSession')}
                   value={session?.id ?? ''}
-                  onChange={(event) => props.onSession(event.target.value)}
+                  onChange={(event) => {
+                    setTab('chat');
+                    props.onSession(event.target.value);
+                    const menu = event.currentTarget.closest('details');
+                    menu?.removeAttribute('open');
+                    menu?.querySelector('summary')?.focus();
+                  }}
                   disabled={!snapshot || running}
                 >
                   {snapshot?.sessions.map((item) => (

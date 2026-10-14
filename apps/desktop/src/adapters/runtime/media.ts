@@ -124,6 +124,14 @@ export async function archiveMedia(
             ? 'audio'
             : undefined;
     if (!kind) throw new Error('不支持此素材格式，请选择图片、视频或音频。');
+    if (
+      video &&
+      (!Number.isSafeInteger(video.width) ||
+        !Number.isSafeInteger(video.height) ||
+        (video.width ?? 0) <= 0 ||
+        (video.height ?? 0) <= 0)
+    )
+      throw new Error('素材画面尺寸无法读取。');
     const duration =
       kind === 'image' ? 0 : Number(metadata.format.duration ?? video?.duration ?? 0);
     if (kind !== 'image' && (!Number.isFinite(duration) || duration <= 0))

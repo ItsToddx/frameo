@@ -11,6 +11,7 @@ The repository separates contract evidence, native media evidence, desktop evide
 | `npm run test:desktop-failures`                      | Actual Electron failure messages, redacted keys, unknown submissions, cancellation guidance and reopening without network requests.                          |
 | `npm run test:desktop-generated -- --project <path>` | Adoption and editing of an already generated project copy, real composed playback, captioned 120-frame export and reopening, with all cloud fetches blocked. |
 | `npm run test:desktop-languages`                     | English default, both-language native controls/notices, persistence, retained drafts and authored-content preservation in actual Electron.                   |
+| `npm run test:desktop-canvas`                        | Native drag/drop, trusted File import, persisted layout, adoption/undo, reference drafts, inline reviews and default workspace hierarchy.                    |
 | SDK build                                            | Kit authors can compile the public package independently.                                                                                                    |
 | Paid account acceptance                              | Real Ark inference, Seedance task creation, polling and candidate download on the selected account.                                                          |
 
@@ -18,11 +19,23 @@ Tests contain no real keys. Provider fixtures deliberately simulate lost submit 
 
 Native rendering checks decoded pixels at exact frame boundaries, including a first tick at 7/24 second, independent source split boundaries, Chinese captions, audio gain and muted tracks, exact frame count, dimensions and complete decoding. Use the native macOS host to permit VideoToolbox; the restricted shell sandbox can reject encoder sessions.
 
-Desktop evidence is written to `test-results/desktop-smoke/evidence.json` and the workspace screenshot under `docs/images/`. It uses an isolated profile and a labeled synthetic test image. The screenshot demonstrates the running editor, not model-generated footage.
+Desktop evidence is written to `test-results/desktop-smoke/evidence.json` and the workspace screenshot under `docs/images/`. It uses an isolated profile and a labeled synthetic test image. The screenshot demonstrates the running workspace using synthetic fixtures, not model-generated footage.
 
 Release acceptance additionally checks the packaged application, clean-profile first use, installed native tools and worker resolution. Apple Developer signing, notarization and real paid-account acceptance require the owner's credentials; source/fixture tests cannot prove those gates.
 
 Implementation review used the initial repository commit as a fixed baseline and checked both documented standards and the supplied desktop requirements. Fixes include aborted preparation, crash-safe shared budgets, exact recipe approvals, core-owned idempotent undo/redo, confined session files, registered-only media access, and explicit memory confirmation. A small duplicate proposal-construction helper remains a refactoring opportunity; it does not create another write path.
+
+## Framo 0.4.0 evidence
+
+The canvas and conversation update and final macOS Apple Silicon ZIP were checked on 2026-10-14:
+
+- Final source typecheck, production/SDK builds, formatting and all 167 tests pass. The new corrupt-image regression fails against the prior implementation and passes with the fix.
+- The ZIP was extracted into a clean temporary directory. Strict ad-hoc signature, DMG integrity and the four release checksums pass. The public Kit SDK is unchanged at 0.3.0.
+- The extracted application passes all six desktop suites: canvas direct manipulation; native IPC/import/edit/undo/preview/export/reopen and Kit reviews; bilingual controls and retained drafts; focus, IME, history and busy dialogs; model failure and unknown-submission handling; and editing an existing generated candidate with a fully decoded, captioned 120-frame export.
+- Native canvas acceptance includes genuine disk drops and forged-File rejection, persisted card movement after reload, drag adoption and undo, reference-to-chat with retained draft, inline exact reviews, optional inspector, editor focus/covered-canvas isolation, new-conversation transitions, mixed valid/corrupt import, English/Chinese and the minimum window. It also verifies double-click opening and live metadata during a held drag.
+- Final package testing exposed a card visibility defect: snapshot updates discarded React Flow's measured dimensions, briefly hiding a selected card between the two clicks. Preserving dimensions fixes double-click opening; preserving only active drag position lets metadata keep updating. The original native interaction and concurrent-update regression now pass.
+- Independent Standards and Spec reviews each raised two issues: covered controls/small hit areas, and partial-import feedback/new-conversation view selection. All four are fixed and rechecked. The final card stability fix received both targeted reviews with no new finding.
+- The README image is the final packaged application in English with labeled synthetic acceptance media and authored fixture conversation. All requests in this update use local controlled fixtures or a copy of the previously authorized generated result; no new paid inference occurred. Developer ID signing/notarization and paid Ark chat acceptance remain outside this preview verification.
 
 ## Framo 0.3.0 evidence
 
