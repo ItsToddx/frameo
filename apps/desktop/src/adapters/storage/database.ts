@@ -2,6 +2,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync, realpathSync, readdirSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
+import { hostText } from '../../localization/host-text';
+import { normalizeLocale, type Locale } from '../../localization/types';
 import type {
   Asset,
   ProjectInfo,
@@ -81,6 +83,7 @@ export class ProjectDatabase implements ProjectStore {
     width: number,
     height: number,
     fps: number,
+    language: Locale = 'en',
   ): ProjectDatabase {
     mkdirSync(directory, { recursive: true });
     for (const folder of ['media', 'cache', 'sessions', 'snapshots'])
@@ -89,14 +92,26 @@ export class ProjectDatabase implements ProjectStore {
     const timestamp = now();
     const sequence: Sequence = {
       id: id(),
-      name: '作品 01',
+      name: hostText(language, 'default.sequence', { number: '01' }),
       revision: 0,
       width,
       height,
       fps,
       tracks: [
-        { id: id(), name: '画面', kind: 'video', muted: false, locked: false },
-        { id: id(), name: '声音', kind: 'audio', muted: false, locked: false },
+        {
+          id: id(),
+          name: hostText(language, 'default.video'),
+          kind: 'video',
+          muted: false,
+          locked: false,
+        },
+        {
+          id: id(),
+          name: hostText(language, 'default.audio'),
+          kind: 'audio',
+          muted: false,
+          locked: false,
+        },
       ],
       clips: [],
       captions: [],
@@ -121,7 +136,7 @@ export class ProjectDatabase implements ProjectStore {
         ],
       },
       jobs: [],
-      sessions: [{ id: id(), title: '创作对话', messages: [] }],
+      sessions: [{ id: id(), title: hostText(language, 'default.session'), messages: [] }],
       memories: [],
       reviews: [],
       recipes: [],
@@ -274,7 +289,7 @@ export class AppDatabase {
     return {
       ...this.get('settings', defaultSettings),
       hasApiKey,
-      language: this.get('language', 'en'),
+      language: normalizeLocale(this.get('language', 'en')),
     };
   }
   remember(project: ProjectInfo): void {

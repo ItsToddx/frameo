@@ -2,7 +2,7 @@ import { join, dirname } from 'node:path';
 import { existsSync, realpathSync } from 'node:fs';
 import { appendFile, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import type { AppEvent, KitInfo, ProjectSnapshot, Review, Settings } from '../contracts/api';
-import { commandSchema, generationSchema } from '../contracts/validation';
+import { commandSchema, generationSchema, schemas, settingsSchema } from '../contracts/validation';
 import { AppDatabase, ProjectDatabase, id, now, digest } from '../storage/database';
 import { CredentialVault } from '../storage/credentials';
 import { ProjectService } from '../storage/project-service';
@@ -30,6 +30,13 @@ import {
   publicContext,
 } from '../../../../../packages/application/src/agent-execution.js';
 import type { DesktopApi } from '../contracts/api.js';
+import { hostText } from '../../localization/host-text';
+import { normalizeLocale, type Locale } from '../../localization/types';
+import {
+  hostErrorMessage,
+  presentHostEvent,
+  presentHostResult,
+} from '../../localization/host-presentation';
 type DesktopMethods = {
   [K in Exclude<keyof DesktopApi, 'onEvent'>]: (
     ...input: Parameters<DesktopApi[K]>
@@ -45,6 +52,7 @@ export interface DesktopApplicationPorts {
     kit: string;
   };
   emit: (event: AppEvent) => void;
+  languageChanged?: (language: Locale) => void;
   revealFile: (path: string) => void;
   dialog: {
     save: (options: {
@@ -85,6 +93,7 @@ export interface DesktopApplicationPorts {
   runtimeFactory?: (
     options: import('../runtime/pi').PiRuntimeOptions,
   ) => Pick<PiRuntime, 'run' | 'stop' | 'dispose' | 'isRunning'>;
+  jobPorts?: import('../runtime/jobs').JobRunnerPorts;
   loadHistory?: (database: ProjectDatabase, sessionId: string, role: string) => Promise<unknown[]>;
 }
 export async function createDesktopApplication(ports: DesktopApplicationPorts) {
@@ -102,8 +111,24 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
   function settings(): Settings {
     return application.settings(vault.hasKey());
   }
+  function language(): Locale {
+    return normalizeLocale(settings().language);
+  }
+  const uiText = (
+    key: Parameters<typeof hostText>[1],
+    parameters?: Parameters<typeof hostText>[2],
+  ) => hostText(language(), key, parameters);
+  // Language is presentation metadata, not part of paid-task authorization.
+  // Preserve the exact legacy settings/account digest for existing pending proposals.
+  function configurationDigest(): string {
+    return digest({ ...modelSettings(), accountRef: vault.currentId() });
+  }
+  function modelSettings(): Settings {
+    const { language: _language, ...configuration } = settings();
+    return configuration;
+  }
   function requireModels(): Settings {
-    const s = settings();
+    const s = modelSettings();
     if (!s.hasApiKey || !s.agentModel || !s.seedanceModel)
       throw new Error('请先在设置中配置方舟 API Key、Agent 模型和 Seedance 模型。');
     return s;
@@ -116,7 +141,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     return new ProjectService(db, application);
   }
   function emit(event: AppEvent): void {
-    ports.emit(event);
+    ports.emit(presentHostEvent(event, language()));
   }
   function changed(db: ProjectDatabase): void {
     if (current?.directory === db.directory)
@@ -235,20 +260,27 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     async createProject(input) {
       requireModels();
       const result = await ports.dialog.save({
-        title: '创建 Frameo 工程',
+        title: uiText('dialog.createProject'),
         defaultPath: join(ports.documents, input.name + '.frameo'),
-        buttonLabel: '创建工程',
+        buttonLabel: uiText('dialog.create'),
       });
       if (result.canceled || !result.filePath) return null;
       if (existsSync(result.filePath)) throw new Error('此位置已经存在，请选择新工程目录。');
       await stopAgent();
       return adopt(
-        ProjectDatabase.create(result.filePath, input.name, input.width, input.height, input.fps),
+        ProjectDatabase.create(
+          result.filePath,
+          input.name,
+          input.width,
+          input.height,
+          input.fps,
+          language(),
+        ),
       );
     },
     async openProject() {
       const result = await ports.dialog.open({
-        title: '打开 Frameo 工程',
+        title: uiText('dialog.openProject'),
         properties: ['openDirectory'],
       });
       return result.canceled ? null : openPath(result.filePaths[0]);
@@ -271,11 +303,11 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       requireModels();
       const db = database();
       const result = await ports.dialog.open({
-        title: '导入素材',
+        title: uiText('dialog.importMedia'),
         properties: ['openFile', 'multiSelections'],
         filters: [
           {
-            name: '媒体',
+            name: uiText('dialog.media'),
             extensions: [
               'mp4',
               'mov',
@@ -346,7 +378,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     generate(input) {
       requireModels();
       if (!enabledKit('reelbeam.seedance-kit')) throw new Error('Seedance Kit 已停用。');
-      return jobs.createGeneration(database(), input, settings());
+      return jobs.createGeneration(database(), input, modelSettings());
     },
     async cancelJob(jobId) {
       await jobs.cancel(database(), jobId);
@@ -359,7 +391,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const db = database();
       const s = sequence(db, input);
       const result = await ports.dialog.save({
-        title: '导出 MP4',
+        title: uiText('dialog.exportMp4'),
         defaultPath: s.name + '.mp4',
         filters: [{ name: 'MP4', extensions: ['mp4'] }],
       });
@@ -418,10 +450,13 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       return snapshot;
     },
     setLanguage(language) {
-      application.set('language', language);
+      const validated = schemas.setLanguage.parse(language) as Locale;
+      application.set('language', validated);
+      ports.languageChanged?.(validated);
       return settings();
     },
     saveSettings(input) {
+      input = settingsSchema.parse(input);
       const parsed = new URL(input.arkBaseUrl);
       if (
         parsed.protocol !== 'https:' ||
@@ -471,7 +506,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     async importKit() {
       if (agents.active) throw new Error('请等待或停止 Agent 后再安装 Kit。');
       const result = await ports.dialog.open({
-        title: '导入创作 Kit',
+        title: uiText('dialog.importKit'),
         properties: ['openFile', 'openDirectory'],
         filters: [{ name: 'Frameo Kit', extensions: ['json', 'frameokit', 'reelbeamkit', 'zip'] }],
       });
@@ -483,10 +518,17 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
         catalog.validateNativeImport(plan.manifest);
         const confirmation = await ports.dialog.confirm({
           type: 'warning',
-          title: '信任并安装代码 Kit',
+          title: uiText('dialog.trustKit'),
           message: plan.manifest.name,
-          detail: `来源：${file}\n作者：${plan.manifest.author}\n版本：${plan.manifest.version}\n许可：${plan.manifest.license}\n权限：${plan.manifest.permissions.join('、')}\nSHA256：${plan.digest}\n\n代码将在后台执行，拥有你的系统账户权限。只安装你信任的作者和文件。`,
-          buttons: ['信任并安装', '取消'],
+          detail: uiText('dialog.nativeKitDetails', {
+            source: file,
+            author: plan.manifest.author,
+            version: plan.manifest.version,
+            license: plan.manifest.license,
+            permissions: plan.manifest.permissions.join(', '),
+            digest: plan.digest,
+          }),
+          buttons: [uiText('dialog.trust'), uiText('dialog.cancel')],
           defaultId: 1,
           cancelId: 1,
         });
@@ -498,10 +540,15 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const kit = importDeclaration(text);
       const confirmation = await ports.dialog.confirm({
         type: 'question',
-        title: '安装创作配方',
+        title: uiText('dialog.installRecipe'),
         message: kit.manifest.name,
-        detail: `作者：${kit.manifest.author}\n版本：${kit.manifest.version}\n许可：${kit.manifest.license}\n权限：${kit.manifest.permissions.join('、')}\n仅包含 Agent 与配方声明。`,
-        buttons: ['安装', '取消'],
+        detail: uiText('dialog.recipeDetails', {
+          author: kit.manifest.author,
+          version: kit.manifest.version,
+          license: kit.manifest.license,
+          permissions: kit.manifest.permissions.join(', '),
+        }),
+        buttons: [uiText('dialog.install'), uiText('dialog.cancel')],
         cancelId: 1,
       });
       return confirmation.response === 0
@@ -512,9 +559,11 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const db = database();
       const recipe = db.read().recipes.find((r) => r.id === input.recipeId);
       if (!recipe) throw new Error('制作计划不存在。');
-      const data = new RecipeService(db, catalog).exportRecipeDefinition(input.recipeId);
+      const data = new RecipeService(db, catalog, language()).exportRecipeDefinition(
+        input.recipeId,
+      );
       const result = await ports.dialog.save({
-        title: '分享配方 Kit',
+        title: uiText('dialog.shareRecipe'),
         defaultPath: recipe.definition.descriptor.name + '.frameokit',
         filters: [{ name: 'Frameo Kit', extensions: ['frameokit'] }],
       });
@@ -528,21 +577,21 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       edits.assertAvailable(db.read().project.id, input.sequenceId);
       const recipeInput = input.input;
       if (recipeInput !== undefined) assertJsonValue(recipeInput);
-      new RecipeService(db, catalog).create({ ...input, input: recipeInput });
+      new RecipeService(db, catalog, language()).create({ ...input, input: recipeInput });
       changed(db);
       return service(db).snapshot();
     },
     decideRecipeInput(input) {
       const db = database();
       if (input.decision === 'accept') edits.assertAvailable(db.read().project.id);
-      new RecipeService(db, catalog).decideInput(input);
+      new RecipeService(db, catalog, language()).decideInput(input);
       changed(db);
       return service(db).snapshot();
     },
     decideRecipeResult(input) {
       const db = database();
       if (input.decision === 'accept') edits.assertAvailable(db.read().project.id);
-      new RecipeService(db, catalog).decideResult(input);
+      new RecipeService(db, catalog, language()).decideResult(input);
       changed(db);
       return service(db).snapshot();
     },
@@ -551,7 +600,10 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       if (agents.active) throw new Error('Agent 正在运行。');
       const db = database();
       edits.assertAvailable(db.read().project.id);
-      const execution = new RecipeService(db, catalog).resume(input.recipeId, input.redoStepId);
+      const execution = new RecipeService(db, catalog, language()).resume(
+        input.recipeId,
+        input.redoStepId,
+      );
       changed(db);
       if (!execution) return;
       agents.resume(db, execution);
@@ -560,18 +612,20 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const db = database();
       const answer = await ports.dialog.confirm({
         type: 'question',
-        title: '共享工程',
-        message: '共享已保存作品和工程中的媒体',
-        detail:
-          '仅包含作品、画布和全部已导入媒体。请确认这些素材允许分享。账户、聊天、记忆、任务和授权记录不会包含在文件中。',
-        buttons: ['继续导出', '取消'],
+        title: uiText('dialog.shareProject'),
+        message: uiText('dialog.shareMessage'),
+        detail: uiText('dialog.shareDetails'),
+        buttons: [uiText('dialog.continueExport'), uiText('dialog.cancel')],
         cancelId: 1,
       });
       if (answer.response !== 0) return null;
       const result = await ports.dialog.save({
         defaultPath: db.read().project.name + '.frameoproject',
         filters: [
-          { name: 'Frameo shared project', extensions: ['frameoproject', 'reelbeamproject'] },
+          {
+            name: uiText('dialog.sharedProjectFilter'),
+            extensions: ['frameoproject', 'reelbeamproject'],
+          },
         ],
       });
       if (result.canceled || !result.filePath) return null;
@@ -580,20 +634,23 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     },
     async importProject() {
       const source = await ports.dialog.open({
-        title: '导入共享工程',
+        title: uiText('dialog.importProject'),
         properties: ['openFile'],
         filters: [
-          { name: 'Frameo shared project', extensions: ['frameoproject', 'reelbeamproject'] },
+          {
+            name: uiText('dialog.sharedProjectFilter'),
+            extensions: ['frameoproject', 'reelbeamproject'],
+          },
         ],
       });
       if (source.canceled) return null;
       const target = await ports.dialog.save({
-        title: '保存为新工程',
-        defaultPath: '导入工程.frameo',
+        title: uiText('dialog.saveNewProject'),
+        defaultPath: uiText('default.importedProject') + '.frameo',
       });
       if (target.canceled || !target.filePath) return null;
       await stopAgent();
-      return adopt(await importSharedProject(source.filePaths[0], target.filePath));
+      return adopt(await importSharedProject(source.filePaths[0], target.filePath, language()));
     },
   } satisfies DesktopMethods;
   async function hostTool(
@@ -720,7 +777,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
           id: id(),
           kind: 'edit',
           title: proposal.title,
-          description: `由 ${capability.name} 提出；采纳后保存，可撤销。`,
+          description: uiText('review.kitEditDescription', { name: capability.name }),
           status: 'pending',
           sequenceId: proposal.sequenceId,
           expectedRevision: proposal.expectedRevision,
@@ -747,10 +804,10 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
           id: id(),
           kind: 'generation',
           title: draft.title,
-          description: '此 Kit 将通过 Seedance 生成候选，采纳前请检查参数与预算。',
+          description: uiText('review.kitGenerationDescription'),
           status: 'pending',
           generation,
-          configHash: digest({ ...settings(), accountRef: vault.currentId() }),
+          configHash: configurationDigest(),
           createdAt: now(),
           ...binding,
         };
@@ -767,8 +824,8 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const review: Review = {
         id: id(),
         kind: 'memory',
-        title: '保存创作偏好',
-        description: '确认后才会写入长期记忆。你可以在创作记忆中修改或删除。',
+        title: uiText('review.memoryTitle'),
+        description: uiText('review.memoryDescription'),
         status: 'pending',
         memory: args,
         createdAt: now(),
@@ -803,8 +860,8 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       review = {
         id: id(),
         kind: 'edit',
-        title: args.title ?? 'Agent 编辑提案',
-        description: args.description ?? '采纳后修改当前作品，可撤销。',
+        title: args.title ?? uiText('review.editTitle'),
+        description: args.description ?? uiText('review.editDescription'),
         status: 'pending',
         sequenceId: args.sequenceId,
         expectedRevision: args.expectedRevision,
@@ -834,13 +891,11 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       review = {
         id: id(),
         kind: 'generation',
-        title: args.title ?? 'Seedance 生成确认',
-        description:
-          description ??
-          '将提示词和选定参考图片发送到方舟，可能产生费用。结果先保存为候选，不自动进入时间线。',
+        title: args.title ?? uiText('review.generationTitle'),
+        description: description ?? uiText('review.generationDescription'),
         status: 'pending',
         generation,
-        configHash: digest({ ...settings(), accountRef: vault.currentId() }),
+        configHash: configurationDigest(),
         createdAt: now(),
         ...binding,
       };
@@ -860,15 +915,19 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
   } catch (error) {
     application.set('kit-load-error', error instanceof Error ? error.message : 'Kit 加载失败。');
   }
-  jobs = new JobRunner(vault, changed, () => enabledKit('reelbeam.seedance-kit'));
+  jobs = new JobRunner(vault, changed, () => enabledKit('reelbeam.seedance-kit'), {
+    ...ports.jobPorts,
+    renderTitle: (sequence, preview) =>
+      uiText(preview ? 'default.preview' : 'default.export', { name: sequence.name }),
+  });
   reviews = new ReviewDecisions({
     workspace: (db) => service(db as ProjectDatabase),
     assertRecipeCurrent: (db, review) =>
-      new RecipeService(db as ProjectDatabase, catalog).assertReviewCurrent(review),
+      new RecipeService(db as ProjectDatabase, catalog, language()).assertReviewCurrent(review),
     kitEnabled: enabledKit,
     kitDigest: (kitId) => catalog.fingerprint(kitId)?.digest,
-    configuration: settings,
-    configurationDigest: () => digest({ ...settings(), accountRef: vault.currentId() }),
+    configuration: modelSettings,
+    configurationDigest,
     assertEditAvailable: (projectId, sequenceId) => edits.assertAvailable(projectId, sequenceId),
     generate: (db, input, configuration) => jobs.createGeneration(db, input, configuration),
     changed: (db) => changed(db as ProjectDatabase),
@@ -876,7 +935,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
   agents = new AgentExecution({
     id,
     now,
-    configuration: settings,
+    configuration: modelSettings,
     executionSettings: () => ({ ...requireModels(), apiKey: vault.get() }),
     runtime: () => runtime,
     snapshot: (db) => service(db as ProjectDatabase).snapshot(),
@@ -891,7 +950,12 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       catalog.capabilities().find((capability) => capability.id === capabilityId)?.kind,
     hostTool,
     settleRecipe: (db, recipeId, stepId, attempt, result) => {
-      new RecipeService(db as ProjectDatabase, catalog).settle(recipeId, stepId, attempt, result);
+      new RecipeService(db as ProjectDatabase, catalog, language()).settle(
+        recipeId,
+        stepId,
+        attempt,
+        result,
+      );
     },
     changed: (db) => changed(db as ProjectDatabase),
     emit,
@@ -905,8 +969,29 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       agents.active ? persistHistory(data, agents.active.database as ProjectDatabase) : undefined,
     onTool: hostTool,
   });
+  // Keep synchronous methods synchronous for in-process callers while presenting both
+  // immediate exceptions and asynchronous failures at the same public desktop seam.
+  const presentedMethods = Object.fromEntries(
+    Object.entries(methods).map(([name, method]) => [
+      name,
+      (...input: unknown[]) => {
+        try {
+          const result = (method as (...args: unknown[]) => unknown)(...input);
+          return result instanceof Promise
+            ? result
+                .then((value) => presentHostResult(value, language()))
+                .catch((error: unknown) => {
+                  throw new Error(hostErrorMessage(error, language()));
+                })
+            : presentHostResult(result, language());
+        } catch (error) {
+          throw new Error(hostErrorMessage(error, language()));
+        }
+      },
+    ]),
+  );
   return {
-    methods: methods as unknown as DesktopMethods &
+    methods: presentedMethods as unknown as typeof methods &
       Record<string, (input?: unknown) => unknown | Promise<unknown>>,
     openPath,
     mediaAllowed(path: string) {

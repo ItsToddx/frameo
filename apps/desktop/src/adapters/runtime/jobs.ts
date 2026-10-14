@@ -71,6 +71,7 @@ export async function downloadMedia(
   }
 }
 export interface JobRunnerPorts {
+  renderTitle?: (sequence: import('../contracts/api').Sequence, preview: boolean) => string;
   provider?: (job: Job) => Pick<SeedanceProvider, 'submit' | 'status' | 'cancel'>;
   download?: typeof downloadMedia;
   archive?: typeof archiveMedia;
@@ -137,6 +138,7 @@ export class JobRunner extends GenerationJobs {
       now,
       media,
       canStart,
+      renderTitle: ports.renderTitle,
       accountRef: () => vault.currentId(),
       provider: (job) =>
         ports.provider?.(job) ??

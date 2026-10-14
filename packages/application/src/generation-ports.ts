@@ -80,4 +80,5 @@ export interface GenerationPorts extends IdentityClock {
   media: GenerationMedia;
   changed(database: ProjectStore): void;
   canStart(): boolean;
+  renderTitle?(sequence: Sequence, preview: boolean): string;
 }

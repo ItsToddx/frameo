@@ -6,6 +6,8 @@ import { ProjectDatabase, id, now, type PersistedState } from './database';
 import { validateSequence } from '../../../../../packages/core/src/index';
 import { archiveMedia, hashFile } from '../runtime/media';
 import type { ProjectSnapshot } from '../contracts/api';
+import { hostText } from '../../localization/host-text';
+import type { Locale } from '../../localization/types';
 
 export async function shareProject(database: ProjectDatabase, path: string): Promise<void> {
   const state = database.read();
@@ -48,6 +50,7 @@ export async function shareProject(database: ProjectDatabase, path: string): Pro
 export async function importSharedProject(
   archive: string,
   directory: string,
+  language: Locale = 'en',
 ): Promise<ProjectDatabase> {
   if (existsSync(directory)) throw new Error('目标位置已经存在，请选择新工程目录。');
   if ((await stat(archive)).size > 512 * 1024 * 1024)
@@ -167,7 +170,7 @@ export async function importSharedProject(
       assets: manifest.assets,
       canvas: manifest.canvas,
       jobs: [],
-      sessions: [{ id: id(), title: '创作对话', messages: [] }],
+      sessions: [{ id: id(), title: hostText(language, 'default.session'), messages: [] }],
       memories: [],
       reviews: [],
       recipes: [],

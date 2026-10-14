@@ -62,6 +62,7 @@ async function fixture(
     }),
   });
   try {
+    app.methods.setLanguage('zh-CN');
     app.methods.saveSettings({
       arkBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
       agentModel: 'fixture',
