@@ -84,7 +84,7 @@ try {
   assert.equal(await page.getByTestId('language-select').inputValue(), 'en');
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
   await page.getByRole('heading', { name: 'Start with an idea', exact: true, level: 1 }).waitFor();
-  assert.ok((await menuLabels()).includes('File'));
+  assert.ok((await menuLabels()).includes('Edit'));
   assert.equal(
     await page
       .locator('.welcome-screen')
@@ -110,7 +110,7 @@ try {
   assert.equal(await page.getByTestId('agent-model-input').inputValue(), 'unsubmitted model draft');
   assert.equal(await page.getByTestId('api-key-input').inputValue(), 'unsubmitted fake key');
   await page.getByRole('button', { name: '关闭窗口', exact: true }).click();
-  assert.ok((await menuLabels()).includes('文件'));
+  assert.ok((await menuLabels()).includes('编辑'));
   await page.getByRole('heading', { name: '从一个想法开始创作', exact: true, level: 1 }).waitFor();
   await page.screenshot({ path: join(directory, 'welcome-zh.png') });
   await page.evaluate(() =>
