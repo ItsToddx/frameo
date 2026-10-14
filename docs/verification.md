@@ -10,6 +10,7 @@ The repository separates contract evidence, native media evidence, desktop evide
 | `npm run test:desktop`                               | Actual Electron IPC, mandatory model setup, import, trim/caption, undo/redo, composed playback, MP4 export and project reopen.                               |
 | `npm run test:desktop-failures`                      | Actual Electron failure messages, redacted keys, unknown submissions, cancellation guidance and reopening without network requests.                          |
 | `npm run test:desktop-generated -- --project <path>` | Adoption and editing of an already generated project copy, real composed playback, captioned 120-frame export and reopening, with all cloud fetches blocked. |
+| `npm run test:desktop-languages`                     | English default, both-language native controls/notices, persistence, retained drafts and authored-content preservation in actual Electron.                   |
 | SDK build                                            | Kit authors can compile the public package independently.                                                                                                    |
 | Paid account acceptance                              | Real Ark inference, Seedance task creation, polling and candidate download on the selected account.                                                          |
 
@@ -22,6 +23,18 @@ Desktop evidence is written to `test-results/desktop-smoke/evidence.json` and th
 Release acceptance additionally checks the packaged application, clean-profile first use, installed native tools and worker resolution. Apple Developer signing, notarization and real paid-account acceptance require the owner's credentials; source/fixture tests cannot prove those gates.
 
 Implementation review used the initial repository commit as a fixed baseline and checked both documented standards and the supplied desktop requirements. Fixes include aborted preparation, crash-safe shared budgets, exact recipe approvals, core-owned idempotent undo/redo, confined session files, registered-only media access, and explicit memory confirmation. A small duplicate proposal-construction helper remains a refactoring opportunity; it does not create another write path.
+
+## Framo 0.3.0 evidence
+
+The final macOS Apple Silicon ZIP was extracted into a clean temporary directory and checked on 2026-10-14:
+
+- Strict typecheck, production/SDK builds, formatting and all 166 tests pass. Runtime dependency audit reports zero vulnerabilities. Ad-hoc signature, DMG integrity and all four release checksums pass.
+- The extracted application passes all five desktop suites: bilingual default/persistence/native menu/dialog/error checks; import, editing, Kit workers, exact reviews and MP4 export; both-language model failure/unknown-submit handling; editing an existing generated candidate with captioned 120-frame export; and focus, IME, retained drafts, history, busy dialogs and minimum-window layout.
+- A clean or older profile without a language preference starts in English. Switching updates already displayed tool notices without a snapshot, preserves matching user/model text, and retains settings, composer and caption drafts. The language choice survives app relaunch without credentials.
+- Prompt-derived Seedance task titles remain authored content, including prompts that resemble system messages. Canonical stored errors, task IDs, account references, inputs and cancellation state survive both-language presentation and reopening.
+- A golden legacy pending generation review remains acceptable after switching language; its original approval hash and task/account fields are unchanged. Legacy Frameo/Reelbeam shared formats, profile selection and built-in fingerprints are covered by regression checks.
+- Standards review raised one visible-label issue; Spec review raised authored task-title translation and stale chat system notices. All three are fixed and independently rechecked with no remaining actionable finding in that scope.
+- The README image is the actual packaged application in English, using synthetic acceptance data. All model/provider requests in this update use local controlled fixtures; no new paid inference occurred. Developer ID signing/notarization and paid Ark chat acceptance remain outside this release verification.
 
 ## Frameo 0.2.0 evidence
 
