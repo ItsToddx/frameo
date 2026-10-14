@@ -53,6 +53,8 @@ try {
   page = await application.firstWindow();
   page.on('pageerror', (error) => errors.push(error.message));
   await page.getByTestId('welcome-create').waitFor({ timeout: 30000 });
+  await page.getByTestId('language-select').selectOption('zh-CN');
+  await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   assert.equal(
     await page.evaluate(() => typeof (window as unknown as { require?: unknown }).require),
     'undefined',

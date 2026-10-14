@@ -188,6 +188,9 @@ try {
     })) as typeof dialog.showOpenDialog;
   }, project);
   let page = await app.firstWindow();
+  await page.getByTestId('welcome-create').waitFor();
+  await page.getByTestId('language-select').selectOption('zh-CN');
+  await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   async function inspect() {
