@@ -108,7 +108,7 @@ export function Timeline({
   const draftCommands = useRef<EditCommand[]>([]);
   const [playhead, setPlayhead] = useState(0);
   const [scale, setScale] = useState(45);
-  const [inspector, setInspector] = useState(true);
+  const [inspector, setInspector] = useState(false);
   const [tab, setTab] = useState<InspectorTab>('clip');
   const [selectedCaption, setSelectedCaption] = useState<string | null>(null);
   const [addAsset, setAddAsset] = useState('');
@@ -230,7 +230,6 @@ export function Timeline({
     if (draftDirty) return;
     onSelectClip(id);
     setTab('clip');
-    setInspector(true);
   }
 
   function pendingDelta(gesture: GestureDraft): number {

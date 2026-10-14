@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Clock3,
   Sparkles,
+  MoreHorizontal,
 } from 'lucide-react';
 import type {
   AppBootstrap,
@@ -86,7 +87,7 @@ export function App() {
   const [sequenceId, setSequenceId] = useState<string | null>(null);
   const [selectedClip, setSelectedClip] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [sidebar, setSidebar] = useState(true);
+  const [sidebar, setSidebar] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<'assets' | 'projects'>('assets');
   const [query, setQuery] = useState('');
   const [agentRunning, setAgentRunning] = useState(false);
@@ -108,7 +109,7 @@ export function App() {
     settings.hasApiKey && !!settings.agentModel.trim() && !!settings.seedanceModel.trim();
   const busy = !!pending;
   const sequence = snapshot?.sequences.find((s) => s.id === sequenceId);
-  const contextSequence = selection === sequence?.id ? sequence : undefined;
+  const contextSequence = snapshot?.sequences.find((item) => item.id === selection);
   const selectedAsset = snapshot?.assets.find((a) => a.id === selection);
   const activeJobs =
     snapshot?.jobs.filter((j) => !['succeeded', 'failed', 'cancelled'].includes(j.status)).length ||
@@ -326,7 +327,6 @@ export function App() {
       if (!requireSavedDraft()) return;
       setSelection(item.refId);
       if (item.kind === 'sequence') {
-        setSequenceId(item.refId);
         setSelectedClip(null);
       } else {
         setInspectAsset(null);
@@ -358,12 +358,14 @@ export function App() {
       },
     ]);
     setSelection(refId);
-    if (kind === 'sequence') setSequenceId(refId);
+    if (kind === 'sequence') setSelectedClip(null);
   }
   const addAsset = useCallback(
-    (asset: Asset) => {
+    (asset: Asset, targetSequenceId?: string) => {
       if (!requireSavedDraft()) return;
-      const target = snapshot?.sequences.find((s) => s.id === sequenceId) || snapshot?.sequences[0];
+      const target =
+        snapshot?.sequences.find((s) => s.id === (targetSequenceId || selection || sequenceId)) ||
+        snapshot?.sequences[0];
       if (!target) {
         notify({ key: 'workbench.sequence.createFirst' });
         return;
@@ -411,11 +413,10 @@ export function App() {
       ).then((result) => {
         if (result) {
           setSelection(target.id);
-          setSequenceId(target.id);
         }
       });
     },
-    [snapshot, sequenceId, notify, requireSavedDraft, t],
+    [snapshot, sequenceId, selection, notify, requireSavedDraft, t],
   );
   async function sendPrompt(text: string): Promise<boolean> {
     if (!requireSavedDraft() || !needModel() || !snapshot || agentRunning || busy) return false;
@@ -496,117 +497,111 @@ export function App() {
           <FrameMark size={25} />
           <span>framo</span>
         </div>
-        <div className="header-project">
-          <span className={`status-dot ${snapshot ? 'ready' : ''}`} />
-          {snapshot ? snapshot.project.name : t('workbench.project.none')}
-          {snapshot && (
-            <span className="local-saved">
-              {pending === t('workbench.edit.save') || pending === t('workbench.canvas.save')
-                ? t('workbench.save.pending')
-                : t('workbench.save.local')}
-            </span>
-          )}
-        </div>
+        <button
+          className="header-project project-trigger"
+          aria-label={t('workbench.projects.list')}
+          onClick={() => {
+            setSidebarTab('projects');
+            setSidebar(!sidebar || sidebarTab !== 'projects');
+          }}
+        >
+          {snapshot ? snapshot.project.name : t('workbench.projects')}
+          <ChevronDown size={13} />
+          {busy && <LoaderCircle size={13} className="spin" aria-label={pending} />}
+        </button>
         <div className="header-actions">
-          <LanguagePicker disabled={busy} />
-          <Button onClick={() => setModal('jobs')} disabled={!snapshot} testId="jobs-button">
-            <Clock3 size={15} />
-            <span>{t('workbench.jobs')}</span>
+          <IconButton
+            label={t('workbench.assets.library')}
+            active={sidebar && sidebarTab === 'assets'}
+            onClick={() => {
+              setSidebarTab('assets');
+              setSidebar(!sidebar || sidebarTab !== 'assets');
+            }}
+          >
+            <Layers3 size={17} />
+          </IconButton>
+          <Button
+            kind="ghost"
+            title={t('workbench.jobs')}
+            onClick={() => setModal('jobs')}
+            disabled={!snapshot}
+            testId="jobs-button"
+          >
+            <Clock3 size={16} />
             {activeJobs > 0 && <b className="count-badge">{activeJobs}</b>}
           </Button>
-          <IconButton
-            label={t('workbench.share')}
-            disabled={!snapshot || busy}
-            onClick={() => setModal('share')}
-          >
-            <Share2 size={16} />
-          </IconButton>
           <IconButton label={t('workbench.settings')} onClick={() => setModal('settings')}>
-            <Settings2 size={16} />
+            <Settings2 size={17} />
           </IconButton>
+          <details className="project-menu">
+            <summary aria-label={t('board.more')} data-testid="project-menu">
+              <MoreHorizontal size={19} />
+            </summary>
+            <div
+              className="menu-popover"
+              onClick={(event) => {
+                if (!(event.target as HTMLElement).closest('button')) return;
+                const menu = event.currentTarget.closest('details');
+                menu?.removeAttribute('open');
+                menu?.querySelector('summary')?.focus();
+              }}
+            >
+              <Button onClick={showCreate}>
+                <Plus size={15} />
+                {t('workbench.project.new')}
+              </Button>
+              <Button onClick={() => void open()} disabled={busy}>
+                <FolderOpen size={15} />
+                {t('workbench.project.open')}
+              </Button>
+              <Button onClick={showSequence} disabled={!snapshot || busy}>
+                <Film size={15} />
+                {t('board.newSequence')}
+              </Button>
+              <Button onClick={showGenerate} disabled={!snapshot || busy}>
+                <Aperture size={15} />
+                {t('workbench.canvas.generate')}
+              </Button>
+              <hr />
+              <Button
+                onClick={() => {
+                  setModal('kits');
+                  void listKits();
+                }}
+              >
+                <Package size={15} />
+                {t('workbench.kits')}
+              </Button>
+              <Button onClick={() => setModal('memories')} disabled={!snapshot}>
+                <Brain size={15} />
+                {t('workbench.memories.open')}
+              </Button>
+              <Button onClick={() => setModal('share')} disabled={!snapshot || busy}>
+                <Share2 size={15} />
+                {t('workbench.share')}
+              </Button>
+              <Button
+                onClick={() =>
+                  void update(
+                    t('workbench.project.import'),
+                    () => window.framo.importProject(),
+                    true,
+                  )
+                }
+                disabled={busy || dirtyEdit}
+              >
+                <Upload size={15} />
+                {t('workbench.share.import')}
+              </Button>
+              <hr />
+              <LanguagePicker disabled={busy} />
+            </div>
+          </details>
         </div>
       </header>
       <div className="workspace">
-        <nav className="activity-rail" aria-label={t('workbench.toolbar')}>
-          <div>
-            <IconButton
-              label={
-                sidebar && sidebarTab === 'projects'
-                  ? t('workbench.projects.collapse')
-                  : t('workbench.projects.list')
-              }
-              active={sidebar && sidebarTab === 'projects'}
-              onClick={() => {
-                if (sidebar && sidebarTab === 'projects') setSidebar(false);
-                else {
-                  setSidebar(true);
-                  setSidebarTab('projects');
-                }
-              }}
-            >
-              <FolderOpen size={19} />
-              <span>{t('workbench.projects')}</span>
-            </IconButton>
-            <IconButton
-              label={
-                sidebar && sidebarTab === 'assets'
-                  ? t('workbench.assets.collapse')
-                  : t('workbench.assets.library')
-              }
-              active={sidebar && sidebarTab === 'assets'}
-              onClick={() => {
-                if (sidebar && sidebarTab === 'assets') setSidebar(false);
-                else {
-                  setSidebar(true);
-                  setSidebarTab('assets');
-                }
-              }}
-            >
-              <Layers3 size={19} />
-              <span>{t('workbench.assets')}</span>
-            </IconButton>
-            <IconButton
-              label={t('workbench.kits')}
-              active={modal === 'kits'}
-              onClick={() => {
-                setModal('kits');
-                void listKits();
-              }}
-            >
-              <Package size={19} />
-              <span>{t('workbench.extensions')}</span>
-            </IconButton>
-            <IconButton
-              label={t('workbench.memories.open')}
-              disabled={!snapshot}
-              onClick={() => setModal('memories')}
-            >
-              <Brain size={19} />
-              <span>{t('workbench.memories')}</span>
-            </IconButton>
-          </div>
-          <div>
-            <IconButton
-              label={t('workbench.share.import')}
-              disabled={busy || dirtyEdit}
-              onClick={() =>
-                void update(t('workbench.project.import'), () => window.framo.importProject(), true)
-              }
-            >
-              <Upload size={18} />
-              <span>{t('workbench.import')}</span>
-            </IconButton>
-            <IconButton label={t('workbench.project.new')} onClick={showCreate}>
-              <Plus size={19} />
-              <span>{t('workbench.new')}</span>
-            </IconButton>
-            <span className="rail-version" title={`Framo ${boot.version}`}>
-              {boot.version}
-            </span>
-          </div>
-        </nav>
         {sidebar && (snapshot || sidebarTab === 'projects') && (
-          <aside className="library-panel">
+          <aside className="library-panel library-drawer">
             <div className="library-heading">
               <strong>
                 {sidebarTab === 'assets' ? t('workbench.assets.project') : t('workbench.projects')}
@@ -814,7 +809,7 @@ export function App() {
               <Canvas
                 snapshot={snapshot}
                 selection={selection}
-                timelineOpen={!!sequence}
+                timelineOpen={false}
                 onBack={() => {
                   if (requireSavedDraft()) {
                     setSequenceId(null);
@@ -830,23 +825,20 @@ export function App() {
                 onImport={() =>
                   void update(t('workbench.media.import'), () => window.framo.importMedia())
                 }
-                busy={busy}
+                busy={busy || dirtyEdit}
+                onEdit={(id) => {
+                  if (requireSavedDraft()) {
+                    setSelection(id);
+                    setSequenceId(id);
+                    setSidebar(false);
+                    setSelectedClip(null);
+                  }
+                }}
+                onFiles={async (files) => {
+                  if (!requireSavedDraft() || !needModel()) return;
+                  await update(t('workbench.media.import'), () => window.framo.importFiles(files));
+                }}
               />
-              {selectedAsset && !sequence && (
-                <div className="asset-selection-bar">
-                  <span>{selectedAsset.name}</span>
-                  <Button onClick={() => setInspectAsset(selectedAsset)}>
-                    {t('workbench.asset.preview')}
-                  </Button>
-                  <Button onClick={() => addAsset(selectedAsset)} disabled={busy}>
-                    <Plus size={13} />
-                    {t('workbench.asset.add')}
-                  </Button>
-                  <IconButton label={t('workbench.asset.clear')} onClick={() => setSelection(null)}>
-                    <X size={14} />
-                  </IconButton>
-                </div>
-              )}
               {sequence && (
                 <Timeline
                   sequence={sequence}
@@ -918,25 +910,8 @@ export function App() {
                 <FrameMark size={32} />
               </div>
               <span className="eyebrow">FRAMO STUDIO</span>
-              <h1>{t('workbench.welcome.title')}</h1>
-              <p>{t('workbench.welcome.description')}</p>
-              <div className="welcome-workflow" aria-label={t('workbench.welcome.workflow')}>
-                <div>
-                  <span>01</span>
-                  <strong>{t('workbench.welcome.idea')}</strong>
-                  <p>{t('workbench.welcome.ideaHelp')}</p>
-                </div>
-                <div>
-                  <span>02</span>
-                  <strong>{t('workbench.welcome.review')}</strong>
-                  <p>{t('workbench.welcome.reviewHelp')}</p>
-                </div>
-                <div>
-                  <span>03</span>
-                  <strong>{t('workbench.welcome.finish')}</strong>
-                  <p>{t('workbench.welcome.finishHelp')}</p>
-                </div>
-              </div>
+              <h1>{t('board.welcome')}</h1>
+              <p>{t('board.welcomeHint')}</p>
               <div className="welcome-actions">
                 <Button kind="accent" onClick={showCreate} testId="welcome-create">
                   <Plus size={15} />
@@ -1007,6 +982,10 @@ export function App() {
           dirty={dirtyEdit}
           busy={busy}
           onSetup={() => setModal('settings')}
+          onReference={(id) => {
+            if (requireSavedDraft()) setSelection(id);
+          }}
+          onClearContext={() => setSelection(null)}
           onReview={(reviewId, decision) => {
             if (decision === 'accept' && !requireSavedDraft()) return;
             void update(t('workbench.review'), () =>
@@ -1050,31 +1029,6 @@ export function App() {
           }
         />
       </div>
-      <footer className="app-status">
-        <span>
-          <span className={`status-dot ${ready ? 'ready' : ''}`} />
-          {ready ? t('workbench.model.ready') : t('workbench.model.offline')}
-        </span>
-        <span>
-          {snapshot
-            ? t('workbench.project.stats', {
-                assets: t('workbench.project.assetCount', { count: snapshot.assets.length }),
-                sequences: t('workbench.project.sequenceCount', {
-                  count: snapshot.sequences.length,
-                }),
-              })
-            : t('workbench.welcome')}
-          {busy && (
-            <>
-              <LoaderCircle size={10} className="spin" /> {pending}
-            </>
-          )}
-        </span>
-        <button onClick={() => setModal('kits')}>
-          {t('workbench.kits.environment')}
-          <Package size={11} />
-        </button>
-      </footer>
       {modal === 'settings' && (
         <SettingsModal
           settings={settings}
@@ -1114,7 +1068,7 @@ export function App() {
               const created = result.value.sequences.at(-1);
               if (created) {
                 setSelection(created.id);
-                setSequenceId(created.id);
+                setSequenceId(null);
               }
               const next = await perform(t('workbench.projects.read'), () =>
                 window.framo.bootstrap(),

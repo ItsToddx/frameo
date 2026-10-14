@@ -1,4 +1,3 @@
-import { useI18n } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
@@ -10,33 +9,24 @@ import {
   type Node,
   type NodeProps,
 } from '@xyflow/react';
-import {
-  Aperture,
-  Film,
-  Music2,
-  Maximize,
-  Plus,
-  Minus,
-  X,
-  ArrowDownToLine,
-  LayoutGrid,
-  MousePointer2,
-  ArrowLeft,
-  Play,
-} from 'lucide-react';
+import { Film, Music2, Maximize, Plus, Minus, X, Play, GripVertical } from 'lucide-react';
 import type { Asset, CanvasItem, ProjectSnapshot, Sequence } from '../adapters/contracts/api';
 import { Button, IconButton, timecode } from './ui';
+import { useI18n } from './i18n';
 
 type CardData = {
   item: CanvasItem;
   asset?: Asset;
   sequence?: Sequence;
+  thumbnail?: string;
   selected: boolean;
   busy: boolean;
-  onOpen: (item: CanvasItem) => void;
+  dropTarget: boolean;
+  onSelect: (item: CanvasItem) => void;
   onHide: (id: string) => void;
-  onAdd: (asset: Asset) => void;
+  onAdd: (asset: Asset, sequenceId?: string) => void;
   onInspect: (asset: Asset) => void;
+  onEdit: (id: string) => void;
 };
 type CardNode = Node<CardData, 'card'>;
 function Card({ data }: NodeProps<CardNode>) {
@@ -46,83 +36,84 @@ function Card({ data }: NodeProps<CardNode>) {
   const duration = sequence
     ? Math.max(0, ...sequence.clips.map((c) => (c.start + c.duration) / sequence.fps))
     : asset?.duration || 0;
+  function open() {
+    if (sequence) data.onEdit(sequence.id);
+    else if (asset) data.onInspect(asset);
+  }
   return (
     <article
-      className={`canvas-card ${data.selected ? 'selected' : ''} ${sequence ? 'sequence-card' : ''}`}
+      className={`canvas-card ${data.selected ? 'selected' : ''} ${sequence ? 'sequence-card' : ''} ${data.dropTarget ? 'drop-target' : ''}`}
       data-testid={sequence ? 'sequence-card' : 'asset-card'}
+      data-ref-id={item.refId}
     >
       <div className="card-media">
+        {data.thumbnail ? (
+          <img className="card-image" src={data.thumbnail} alt="" draggable={false} />
+        ) : (
+          <div className="card-placeholder">
+            {asset?.kind === 'audio' ? <Music2 size={25} /> : <Film size={25} />}
+          </div>
+        )}
+        <span className="card-kind">
+          {sequence
+            ? t('workbench.kind.sequence')
+            : t(
+                asset?.kind === 'image'
+                  ? 'workbench.kind.image'
+                  : asset?.kind === 'audio'
+                    ? 'workbench.kind.audio'
+                    : 'workbench.kind.video',
+              )}
+        </span>
+        {!!duration && <span className="card-duration">{timecode(duration)}</span>}
         <button
-          className="card-open nodrag"
+          className="card-preview nodrag"
           aria-label={
             sequence
               ? t('workbench.canvas.openSequence', { name })
               : t('workbench.canvas.openAsset', { name })
           }
-          onClick={() => {
-            data.onOpen(item);
-            if (asset) data.onInspect(asset);
-          }}
+          onClick={open}
         >
-          {asset?.thumbnailUrl ? (
-            <img src={asset.thumbnailUrl} alt="" draggable={false} />
-          ) : asset?.kind === 'image' ? (
-            <img src={asset.url} alt="" draggable={false} />
-          ) : (
-            <div className="card-placeholder">
-              {sequence ? (
-                <Film size={32} />
-              ) : asset?.kind === 'audio' ? (
-                <Music2 size={32} />
-              ) : (
-                <Film size={32} />
-              )}
-              <span>
-                {sequence
-                  ? t('workbench.canvas.openEditor')
-                  : asset?.kind === 'audio'
-                    ? t('workbench.canvas.previewAudio')
-                    : t('workbench.canvas.previewVideo')}
-              </span>
-            </div>
-          )}
-          <span className="card-play">
-            <Play size={20} />
-          </span>
+          <Play size={18} />
         </button>
-        <span className="card-kind">
-          {sequence
-            ? t('workbench.kind.sequence')
-            : asset?.kind === 'video'
-              ? t('workbench.kind.video')
-              : asset?.kind === 'audio'
-                ? t('workbench.kind.audio')
-                : t('workbench.kind.image')}
-        </span>
-        {!!duration && <span className="card-duration">{timecode(duration)}</span>}
         <button
           className="card-hide nodrag"
           aria-label={t('workbench.canvas.hide', { name })}
           disabled={data.busy}
           onClick={() => data.onHide(item.id)}
         >
-          <X size={14} />
+          <X size={13} />
         </button>
+        {data.dropTarget && <span className="card-drop-label">{t('board.dropSequence')}</span>}
       </div>
       <div className="card-info">
         <div>
           <strong>{name}</strong>
           <span>
             {sequence
-              ? `${sequence.width} × ${sequence.height} · ${sequence.fps} fps`
+              ? t('workbench.clips', { count: sequence.clips.length })
               : asset?.width
                 ? `${asset.width} × ${asset.height}`
-                : t('workbench.canvas.audioAsset')}
+                : t('workbench.kind.audio')}
           </span>
         </div>
+        <button
+          className="card-reference nodrag nopan"
+          draggable
+          aria-label={t('board.reference', { name })}
+          onClick={() => data.onSelect(item)}
+          onDragStart={(event) => {
+            event.dataTransfer.setData('application/x-framo-reference', item.refId);
+            event.dataTransfer.effectAllowed = 'copy';
+            event.stopPropagation();
+          }}
+        >
+          <GripVertical size={16} />
+        </button>
         {asset && (
           <button
-            className="card-add nodrag"
+            className="card-add nodrag nopan"
             aria-label={t('workbench.canvas.addName', { name })}
             disabled={data.busy}
             onClick={() => data.onAdd(asset)}
@@ -131,15 +122,6 @@ function Card({ data }: NodeProps<CardNode>) {
           </button>
         )}
       </div>
-      {sequence && (
-        <button className="sequence-footer nodrag" onClick={() => data.onOpen(item)}>
-          <span>{t('workbench.clips', { count: sequence.clips.length })}</span>
-          <span>
-            {t('workbench.canvas.edit')}
-            <ArrowDownToLine size={13} />
-          </span>
-        </button>
-      )}
     </article>
   );
 }
@@ -152,11 +134,13 @@ interface Props {
   onSelect: (item: CanvasItem) => void;
   onSave: (items: CanvasItem[]) => Promise<void>;
   onHide: (id: string) => void;
-  onAdd: (asset: Asset) => void;
+  onAdd: (asset: Asset, sequenceId?: string) => void;
   onGenerate: () => void;
   onImport: () => void;
   onInspect: (asset: Asset) => void;
   onBack: () => void;
+  onEdit: (id: string) => void;
+  onFiles: (files: File[]) => Promise<void>;
 }
 export function Canvas(props: Props) {
   return (
@@ -168,75 +152,67 @@ export function Canvas(props: Props) {
 function CanvasInner({
   snapshot,
   selection,
-  timelineOpen,
   onSelect,
   onSave,
   onHide,
   onAdd,
-  onGenerate,
   onImport,
   onInspect,
-  onBack,
+  onEdit,
+  onFiles,
   busy,
 }: Props) {
   const { t } = useI18n();
   const [nodes, setNodes] = useState<CardNode[]>([]);
+  const [fileDrag, setFileDrag] = useState(false);
   const dragging = useRef(false);
   const container = useRef<HTMLDivElement>(null);
   const fittedProject = useRef<string | null>(null);
-  const flow = useReactFlow();
-  const fitCanvas = () => {
-    const bounds = container.current;
-    if (!bounds || !snapshot.canvas.items.length) return;
-    const items = snapshot.canvas.items;
-    const left = Math.min(...items.map((item) => item.x));
-    const top = Math.min(...items.map((item) => item.y));
-    const width = Math.max(...items.map((item) => item.x + 260)) - left;
-    const height =
-      Math.max(...items.map((item) => item.y + (item.kind === 'sequence' ? 245 : 210))) - top;
-    const availableHeight = Math.max(120, bounds.clientHeight - 140);
-    const zoom = Math.min(
-      1,
-      Math.max(0.25, Math.min((bounds.clientWidth - 64) / width, availableHeight / height)),
-    );
-    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    void flow.setViewport(
-      {
-        x: (bounds.clientWidth - width * zoom) / 2 - left * zoom,
-        y: 80 + (availableHeight - height * zoom) / 2 - top * zoom,
-        zoom,
-      },
-      { duration: reduceMotion ? 0 : 140 },
-    );
-  };
+  const flow = useReactFlow<CardNode>();
+  function fitCanvas() {
+    void flow.fitView({
+      padding: 0.32,
+      maxZoom: 1,
+      duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 180,
+    });
+  }
   const fitRef = useRef(fitCanvas);
   fitRef.current = fitCanvas;
   useEffect(() => {
     if (dragging.current) return;
     setNodes(
-      snapshot.canvas.items.map((item) => ({
-        id: item.id,
-        type: 'card',
-        position: { x: item.x, y: item.y },
-        selected: item.refId === selection,
-        style: { width: 260 },
-        data: {
-          item,
-          asset: snapshot.assets.find((a) => a.id === item.refId),
-          sequence: snapshot.sequences.find((s) => s.id === item.refId),
+      snapshot.canvas.items.map((item) => {
+        const asset = snapshot.assets.find((a) => a.id === item.refId);
+        const sequence = snapshot.sequences.find((s) => s.id === item.refId);
+        const cover = sequence
+          ? snapshot.assets.find((a) => a.id === sequence.clips[0]?.assetVersionId)
+          : asset;
+        return {
+          id: item.id,
+          type: 'card',
+          position: { x: item.x, y: item.y },
           selected: item.refId === selection,
-          busy,
-          onOpen: onSelect,
-          onHide,
-          onAdd,
-          onInspect,
-        },
-      })),
+          style: { width: 260 },
+          data: {
+            item,
+            asset,
+            sequence,
+            thumbnail: cover?.thumbnailUrl || (cover?.kind === 'image' ? cover.url : undefined),
+            selected: item.refId === selection,
+            busy,
+            dropTarget: false,
+            onSelect,
+            onHide,
+            onAdd,
+            onInspect,
+            onEdit,
+          },
+        };
+      }),
     );
-  }, [snapshot, selection, onSelect, onHide, onAdd, onInspect, busy]);
+  }, [snapshot, selection, onSelect, onHide, onAdd, onInspect, onEdit, busy]);
   useEffect(() => {
     if (
-      timelineOpen ||
       !flow.viewportInitialized ||
       !snapshot.canvas.items.length ||
       fittedProject.current === snapshot.project.id
@@ -247,99 +223,138 @@ function CanvasInner({
       fittedProject.current = snapshot.project.id;
     }, 80);
     return () => clearTimeout(timer);
-  }, [flow.viewportInitialized, snapshot.project.id, snapshot.canvas.items.length, timelineOpen]);
+  }, [flow.viewportInitialized, snapshot.project.id, snapshot.canvas.items.length]);
+  function targetFor(node: CardNode) {
+    if (!node.data.asset) return undefined;
+    const x = node.position.x + 130,
+      y = node.position.y + 85;
+    return flow
+      .getNodes()
+      .find(
+        (target) =>
+          target.data.sequence &&
+          x >= target.position.x &&
+          x <= target.position.x + 260 &&
+          y >= target.position.y &&
+          y <= target.position.y + 215,
+      );
+  }
   return (
     <section
       ref={container}
-      className={`canvas-shell ${timelineOpen ? 'compact' : ''}`}
+      className={`canvas-shell board ${fileDrag ? 'file-drag' : ''}`}
       data-testid="canvas"
       aria-label={t('workbench.canvas.title')}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes('Files')) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'copy';
+          setFileDrag(true);
+        }
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null))
+          setFileDrag(false);
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.types.includes('Files')) return;
+        event.preventDefault();
+        setFileDrag(false);
+        if (!busy)
+          void onFiles(Array.from(event.dataTransfer.files)).then(() =>
+            setTimeout(() => void flow.fitView({ padding: 0.32, maxZoom: 1, duration: 0 }), 80),
+          );
+      }}
     >
-      <div className="canvas-topline">
-        <div className="canvas-heading">
-          {timelineOpen ? (
-            <Button kind="ghost" onClick={onBack}>
-              <ArrowLeft size={15} />
-              {t('workbench.canvas.back')}
-            </Button>
-          ) : (
-            <>
-              <LayoutGrid size={18} />
-              <h2>{t('workbench.canvas.title')}</h2>
-              <span className="canvas-count">
-                {t('workbench.canvas.items', { count: snapshot.canvas.items.length })}
-              </span>
-            </>
-          )}
-        </div>
-        <div className="canvas-actions">
-          <Button onClick={onImport} disabled={busy}>
-            <Plus size={15} />
-            {t('workbench.media.import')}
-          </Button>
-          <Button kind="accent" onClick={onGenerate} disabled={busy}>
-            <Aperture size={15} />
-            {t('workbench.canvas.generate')}
-          </Button>
-        </div>
+      <div className="board-heading">
+        <span>{t('board.title')}</span>
+        <span>{snapshot.canvas.items.length}</span>
       </div>
-      <div className="canvas-flow">
-        <ReactFlow
-          nodes={nodes}
-          nodeTypes={nodeTypes}
-          onNodesChange={(changes) => setNodes((previous) => applyNodeChanges(changes, previous))}
-          onNodeClick={(_, node) => onSelect(node.data.item)}
-          onNodeDragStart={() => {
-            dragging.current = true;
-          }}
-          onNodeDragStop={(_, node) => {
-            dragging.current = false;
+      <ReactFlow
+        nodes={nodes}
+        nodeTypes={nodeTypes}
+        onNodesChange={(changes) => setNodes((previous) => applyNodeChanges(changes, previous))}
+        onNodeClick={(_, node) => onSelect(node.data.item)}
+        zoomOnDoubleClick={false}
+        onNodeDoubleClick={(_, node) => {
+          if (node.data.sequence) onEdit(node.data.sequence.id);
+          else if (node.data.asset) onInspect(node.data.asset);
+        }}
+        onNodeDragStart={() => {
+          dragging.current = true;
+        }}
+        onNodeDrag={(_, node) => {
+          const target = targetFor(node);
+          setNodes((previous) =>
+            previous.map((item) => ({
+              ...item,
+              data: { ...item.data, dropTarget: item.id === target?.id },
+            })),
+          );
+        }}
+        onNodeDragStop={(_, node) => {
+          dragging.current = false;
+          const target = targetFor(node);
+          if (target && node.data.asset) {
+            onAdd(node.data.asset, target.data.sequence!.id);
+            setNodes((previous) =>
+              previous.map((item) => ({
+                ...item,
+                position:
+                  item.id === node.id
+                    ? { x: node.data.item.x, y: node.data.item.y }
+                    : item.position,
+                data: { ...item.data, dropTarget: false },
+              })),
+            );
+          } else {
             void onSave(
               snapshot.canvas.items.map((item) =>
                 item.id === node.id ? { ...item, x: node.position.x, y: node.position.y } : item,
               ),
             );
-          }}
-          minZoom={0.25}
-          maxZoom={1.6}
-          panOnScroll
-          nodesDraggable={!busy}
-          selectionOnDrag={false}
-          nodesConnectable={false}
-          deleteKeyCode={null}
-          proOptions={{ hideAttribution: true }}
-        >
-          <Background variant={BackgroundVariant.Dots} color="#d4d4d8" gap={24} size={1} />
-        </ReactFlow>
-      </div>
-      {!snapshot.canvas.items.length && !timelineOpen && (
+          }
+        }}
+        minZoom={0.25}
+        maxZoom={1.6}
+        autoPanOnNodeDrag={false}
+        panOnScroll
+        nodesDraggable={!busy}
+        nodesConnectable={false}
+        deleteKeyCode={null}
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background variant={BackgroundVariant.Dots} color="#d6d7da" gap={28} size={1} />
+      </ReactFlow>
+      {!snapshot.canvas.items.length && (
         <div className="canvas-empty">
-          <LayoutGrid size={32} />
-          <h3>{t('workbench.canvas.empty')}</h3>
-          <p>
-            {t('workbench.canvas.emptyImport')}
-            <br />
-            {t('workbench.canvas.emptyEdit')}
-          </p>
+          <h3>{t('board.empty')}</h3>
+          <p>{t('board.emptyHint')}</p>
         </div>
       )}
-      <div className="canvas-controls">
-        <span>
-          <MousePointer2 size={14} />
-          {t('workbench.canvas.help')}
-        </span>
-        <div>
-          <IconButton label={t('workbench.canvas.zoomOut')} onClick={() => void flow.zoomOut()}>
-            <Minus size={16} />
-          </IconButton>
-          <IconButton label={t('workbench.canvas.zoomIn')} onClick={() => void flow.zoomIn()}>
-            <Plus size={16} />
-          </IconButton>
-          <IconButton label={t('workbench.canvas.fit')} onClick={fitCanvas}>
-            <Maximize size={16} />
-          </IconButton>
+      {fileDrag && (
+        <div className="board-drop-overlay">
+          <Plus size={30} />
+          <strong>{t('board.dropFiles')}</strong>
         </div>
+      )}
+      <div className="board-dock">
+        <Button kind="ghost" onClick={onImport} disabled={busy}>
+          <Plus size={16} />
+          {t('board.import')}
+        </Button>
+        <span className="dock-separator" />
+        <IconButton label={t('workbench.canvas.zoomOut')} onClick={() => void flow.zoomOut()}>
+          <Minus size={15} />
+        </IconButton>
+        <IconButton label={t('workbench.canvas.zoomIn')} onClick={() => void flow.zoomIn()}>
+          <Plus size={15} />
+        </IconButton>
+        <IconButton label={t('workbench.canvas.fit')} onClick={fitCanvas}>
+          <Maximize size={16} />
+        </IconButton>
       </div>
+      <p className="board-hint">{t('board.dragHint')}</p>
     </section>
   );
 }

@@ -51,7 +51,10 @@ export function Button({
       className={`button ${kind}`}
       title={title}
       aria-label={title}
-      onClick={onClick}
+      onClick={(event) => {
+        event.currentTarget.focus();
+        onClick?.();
+      }}
       disabled={disabled}
       data-testid={testId}
     >
@@ -80,7 +83,10 @@ export function IconButton({
         className={`icon-button${active ? ' active' : ''}`}
         aria-label={label}
         aria-pressed={active}
-        onClick={onClick}
+        onClick={(event) => {
+          event.currentTarget.focus();
+          onClick?.();
+        }}
         disabled={disabled}
       >
         {children}

@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 import type { DesktopApi, AppEvent } from '../adapters/contracts/api';
 const invoke = (method: string, input?: unknown) => ipcRenderer.invoke('framo:api', method, input);
 const api: DesktopApi = {
@@ -10,6 +10,14 @@ const api: DesktopApi = {
   snapshot: () => invoke('snapshot'),
   createSequence: (input) => invoke('createSequence', input),
   importMedia: () => invoke('importMedia'),
+  importFiles: (files) => {
+    if (!Array.isArray(files) || !files.length || files.length > 32)
+      return Promise.reject(new Error('Drop up to 32 media files from your computer.'));
+    const paths = files.map((file) => webUtils.getPathForFile(file));
+    if (paths.some((path) => !path))
+      return Promise.reject(new Error('Drop up to 32 media files from your computer.'));
+    return invoke('importDroppedMedia', { paths });
+  },
   apply: (input) => invoke('apply', input),
   undo: (sequenceId) => invoke('undo', sequenceId),
   redo: (sequenceId) => invoke('redo', sequenceId),

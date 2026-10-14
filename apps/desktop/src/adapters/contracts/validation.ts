@@ -126,6 +126,9 @@ export const settingsSchema = z
   })
   .strict();
 export const schemas: Record<string, z.ZodType> = {
+  importDroppedMedia: z
+    .object({ paths: z.array(z.string().min(1).max(4096)).min(1).max(32) })
+    .strict(),
   createProject: projectInput,
   createSequence: projectInput,
   openRecent: z.string().min(1).max(4096),

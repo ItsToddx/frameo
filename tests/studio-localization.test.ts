@@ -117,12 +117,14 @@ test('timeline chrome is English while work, track and source names remain autho
   assert.match(html, /aria-label="Trim start 晨光素材"/);
   assert.match(html, /value="主画面"/);
   assert.match(html, /我的作品/);
-  assert.match(html, /Save clip/);
+  assert.match(html, /aria-label="Open inspector"/);
+  assert.doesNotMatch(html, /class="inspector"/);
   assert.doesNotMatch(html, /作品时间线|合成预览|保存片段|起点 \/ 秒/);
   const chinese = render(editor, 'zh-CN');
   assert.match(chinese, /aria-label="作品时间线"/);
   assert.match(chinese, /aria-label="晨光素材，起点 90 帧，时长 90 帧"/);
-  assert.match(chinese, /保存片段/);
+  assert.match(chinese, /aria-label="打开检查器"/);
+  assert.doesNotMatch(chinese, /class="inspector"/);
   assert.match(chinese, /value="主画面"/);
   assert.deepEqual(sequence, original);
 });

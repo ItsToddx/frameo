@@ -24,6 +24,7 @@ import {
   Square,
   Wrench,
   X,
+  MoreHorizontal,
 } from 'lucide-react';
 import type {
   EditCommand,
@@ -38,7 +39,6 @@ import { useI18n } from './i18n';
 import { presentJobTitle } from '../localization/panels';
 import type { MessageKey } from '../localization';
 import { RecipeList, type RecipeResultInput, type RecipeInputReview } from './Panels';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import {
   CHAT_SUBMISSION_FAILURE,
   ChatDrafts,
@@ -67,6 +67,8 @@ export interface ChatProps {
   dirty: boolean;
   busy: boolean;
   onSetup: () => void;
+  onReference?: (id: string) => void;
+  onClearContext?: () => void;
   onReview: (id: string, decision: 'accept' | 'reject') => void;
   onResume: (id: string) => void;
   onRedo: (id: string, stepId: string) => void;
@@ -79,8 +81,8 @@ export function Chat(props: ChatProps) {
   const { t } = useI18n();
   const { snapshot, sessionId, running } = props;
   const [tab, setTab] = useState<ChatTab>('chat');
+  const [draggingReference, setDraggingReference] = useState(false);
   const [drafts] = useState(() => new ChatDrafts());
-  const recipeCount = useRef(snapshot?.recipes.length ?? 0);
   const previousScope = useRef<{ projectId?: string; sessionId?: string; draftKey: string } | null>(
     null,
   );
@@ -94,35 +96,79 @@ export function Chat(props: ChatProps) {
   const pendingCount =
     snapshot?.reviews.filter((review) => review.status === 'pending').length ?? 0;
 
-  useEffect(() => {
-    const count = snapshot?.recipes.length ?? 0;
-    if (count > recipeCount.current) setTab('recipes');
-    recipeCount.current = count;
-  }, [snapshot?.recipes.length]);
-
   return (
-    <aside className="agent-panel" data-testid="agent-panel" aria-label={t('chat.title')}>
+    <aside
+      className={`agent-panel ${draggingReference ? 'reference-drag' : ''}`}
+      data-testid="agent-panel"
+      aria-label={t('chat.title')}
+      onDragOver={(event) => {
+        if (event.dataTransfer.types.includes('application/x-framo-reference')) {
+          event.preventDefault();
+          setDraggingReference(true);
+        }
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setDraggingReference(false);
+      }}
+      onDrop={(event) => {
+        const id = event.dataTransfer.getData('application/x-framo-reference');
+        if (!id) return;
+        event.preventDefault();
+        setDraggingReference(false);
+        if (
+          snapshot?.assets.some((item) => item.id === id) ||
+          snapshot?.sequences.some((item) => item.id === id)
+        )
+          props.onReference?.(id);
+      }}
+    >
       <header className="agent-header">
-        <div className="agent-title">
-          <span className="agent-mark">
-            <Aperture size={18} />
-          </span>
-          <div>
-            <strong>{t('chat.title')}</strong>
-            <span>{t('chat.subtitle')}</span>
-          </div>
+        <strong>{t('conversation.title')}</strong>
+        <div className="conversation-header-actions">
+          <IconButton
+            label={t('chat.createSession')}
+            disabled={!snapshot || running || props.busy}
+            onClick={props.onNewSession}
+          >
+            <MessageSquarePlus size={16} />
+          </IconButton>
+          <details className="conversation-menu">
+            <summary aria-label={t('conversation.more')}>
+              <MoreHorizontal size={18} />
+            </summary>
+            <div
+              className="menu-popover"
+              onClick={(event) => {
+                if (!(event.target as HTMLElement).closest('button')) return;
+                const menu = event.currentTarget.closest('details');
+                menu?.removeAttribute('open');
+                menu?.querySelector('summary')?.focus();
+              }}
+            >
+              <label>
+                {t('conversation.history')}
+                <select
+                  aria-label={t('chat.chooseSession')}
+                  value={session?.id ?? ''}
+                  onChange={(event) => props.onSession(event.target.value)}
+                  disabled={!snapshot || running}
+                >
+                  {snapshot?.sessions.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Button onClick={() => setTab('chat')}>{t('chat.tab')}</Button>
+              <Button onClick={() => setTab('reviews')}>{t('conversation.archive')}</Button>
+              <Button onClick={() => setTab('recipes')}>{t('conversation.workflowArchive')}</Button>
+            </div>
+          </details>
         </div>
-        <span className={`agent-header-state ${running ? 'running' : ''}`}>
-          <span className="status-dot" />
-          {running
-            ? t('chat.running')
-            : !props.settings.hasApiKey
-              ? t('chat.disconnected')
-              : !snapshot
-                ? t('chat.noProject')
-                : t('chat.ready')}
-        </span>
       </header>
+      {draggingReference && <div className="conversation-drop-hint">{t('conversation.drop')}</div>}
       <ChatSession
         key={draftKey}
         {...props}
@@ -227,53 +273,9 @@ function ChatSession(props: ChatSessionProps) {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <Tabs
-        className="agent-tabs-root"
-        value={tab}
-        onValueChange={(value) => onTabChange(value as ChatTab)}
-      >
-        <TabsList className="agent-tabs" aria-label={t('chat.workspace')}>
-          <TabsTrigger value="chat">{t('chat.tab')}</TabsTrigger>
-          <TabsTrigger value="reviews">
-            {t('chat.reviews')}
-            {pendingCount > 0 && <b className="agent-tab-count">{pendingCount}</b>}
-          </TabsTrigger>
-          <TabsTrigger value="recipes">{t('chat.recipes')}</TabsTrigger>
-        </TabsList>
-        <TabsContent value="chat" className="agent-tab-content" forceMount hidden={tab !== 'chat'}>
+      <div className="agent-tabs-root">
+        <section className="agent-tab-content" hidden={tab !== 'chat'}>
           <ThreadPrimitive.Root className="chat-thread">
-            <div className="session-bar">
-              <select
-                aria-label={t('chat.chooseSession')}
-                value={session?.id ?? ''}
-                onChange={(event) => onSession(event.target.value)}
-                disabled={!snapshot || running || submission.pending}
-              >
-                {!snapshot?.sessions.length && <option value="">{t('chat.newSession')}</option>}
-                {snapshot?.sessions.map((item) => (
-                  <option value={item.id} key={item.id}>
-                    {item.title}
-                  </option>
-                ))}
-              </select>
-              <IconButton
-                label={t('chat.createSession')}
-                disabled={!snapshot || running || busy || submission.pending}
-                onClick={onNewSession}
-              >
-                <MessageSquarePlus size={17} />
-              </IconButton>
-            </div>
-            {pendingCount > 0 && (
-              <button className="agent-approval-cue" onClick={() => onTabChange('reviews')}>
-                <CheckCircle2 size={16} />
-                <span>
-                  <strong>{t('chat.reviewCount', { count: pendingCount })}</strong>
-                  <small>{t('chat.reviewContinue')}</small>
-                </span>
-                <ArrowUpRight size={16} />
-              </button>
-            )}
             <div className="chat-feed-wrapper">
               <ThreadPrimitive.Viewport
                 className="chat-feed"
@@ -301,6 +303,38 @@ function ChatSession(props: ChatSessionProps) {
                     </div>
                   </div>
                 )}
+                {pendingCount > 0 && (
+                  <div className="inline-reviews" aria-label={t('conversation.review')}>
+                    {snapshot?.reviews
+                      .filter((review) => review.status === 'pending')
+                      .map((review) => (
+                        <ReviewCard
+                          key={review.id}
+                          review={review}
+                          disabled={busy}
+                          acceptDisabled={dirty}
+                          onDecide={(decision) => onReview(review.id, decision)}
+                        />
+                      ))}
+                  </div>
+                )}
+                {!!snapshot?.recipes.length && (
+                  <div className="inline-workflows">
+                    <RecipeList
+                      recipes={snapshot.recipes.filter(
+                        (recipe) => !['completed', 'failed', 'cancelled'].includes(recipe.status),
+                      )}
+                      jobs={snapshot.jobs}
+                      dirty={dirty}
+                      busy={busy || running}
+                      onResume={onResume}
+                      onRedo={onRedo}
+                      onExport={onExportRecipe}
+                      onResult={onRecipeResult}
+                      onInput={onRecipeInput}
+                    />
+                  </div>
+                )}
                 <ProjectJobs snapshot={snapshot} />
               </ThreadPrimitive.Viewport>
               <ThreadPrimitive.ScrollToBottom
@@ -313,8 +347,8 @@ function ChatSession(props: ChatSessionProps) {
               </ThreadPrimitive.ScrollToBottom>
             </div>
           </ThreadPrimitive.Root>
-        </TabsContent>
-        <TabsContent value="reviews" className="agent-tab-content">
+        </section>
+        <section className="agent-tab-content" hidden={tab !== 'reviews'}>
           <div className="review-list">
             {!snapshot?.reviews.length && (
               <Empty icon={<Check size={24} />} title={t('chat.reviewEmpty')}>
@@ -331,8 +365,8 @@ function ChatSession(props: ChatSessionProps) {
               />
             ))}
           </div>
-        </TabsContent>
-        <TabsContent value="recipes" className="agent-tab-content">
+        </section>
+        <section className="agent-tab-content" hidden={tab !== 'recipes'}>
           <div className="recipe-scroll">
             <RecipeList
               recipes={snapshot?.recipes ?? []}
@@ -346,8 +380,8 @@ function ChatSession(props: ChatSessionProps) {
               onInput={onRecipeInput}
             />
           </div>
-        </TabsContent>
-      </Tabs>
+        </section>
+      </div>
       <ChatComposer {...props} submission={submission} onDraft={setDraft} />
     </AssistantRuntimeProvider>
   );
@@ -368,8 +402,8 @@ function ChatWelcome({
       <div className="agent-orbit">
         <Aperture size={28} />
       </div>
-      <h3>{t('chat.welcome')}</h3>
-      <p>{t('chat.welcomeBody')}</p>
+      <h3>{t('conversation.welcome')}</h3>
+      <p>{t('conversation.welcomeHint')}</p>
       <div className="chat-suggestions">
         <button disabled={disabled} onClick={() => onSuggestion(t('chat.planPrompt'))}>
           <span>{t('chat.planSuggestion')}</span>
@@ -441,6 +475,7 @@ function ChatComposer({
   running,
   onSetup,
   onStop,
+  onClearContext,
   submission,
   onDraft,
 }: ChatSessionProps & {
@@ -461,6 +496,9 @@ function ChatComposer({
               <span>{t('chat.assetContext', { asset: selectedAsset })}</span>
             </span>
           )}
+          <IconButton label={t('conversation.clear')} onClick={onClearContext}>
+            <X size={12} />
+          </IconButton>
           {sequence && (
             <span className="chat-context" title={sequence.name}>
               <Layers3 size={14} />
@@ -517,7 +555,6 @@ function ChatComposer({
           data-testid="agent-prompt"
         />
         <div className="compose-footer">
-          <span title={settings.agentModel}>{settings.agentModel || t('chat.noModel')}</span>
           {running ? (
             <IconButton label={t('chat.stop')} onClick={onStop}>
               <Square size={15} />

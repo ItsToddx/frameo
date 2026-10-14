@@ -26,7 +26,8 @@
     "format": "prettier --write apps packages tests scripts docs *.json *.ts *.md",
     "format:check": "prettier --check apps packages tests scripts docs *.json *.ts *.md",
     "test:desktop-ui": "tsx scripts/desktop-ui.ts",
-    "test:desktop-languages": "tsx scripts/desktop-languages.ts"
+    "test:desktop-languages": "tsx scripts/desktop-languages.ts",
+    "test:desktop-canvas": "tsx scripts/desktop-canvas-first.ts"
   },
   "dependencies": {
     "@assistant-ui/react": "0.15.28",

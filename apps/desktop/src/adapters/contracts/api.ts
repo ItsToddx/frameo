@@ -32,6 +32,7 @@ export interface DesktopApi {
     fps: number;
   }): Promise<ProjectSnapshot>;
   importMedia(): Promise<ProjectSnapshot>;
+  importFiles(files: File[]): Promise<ProjectSnapshot>;
   beginEdit(input: { sequenceId: Id; interactionId: Id }): Promise<void>;
   endEdit(input: { sequenceId: Id; interactionId: Id }): Promise<void>;
   apply(input: {

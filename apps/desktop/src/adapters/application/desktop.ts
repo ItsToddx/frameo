@@ -38,10 +38,10 @@ import {
   presentHostResult,
 } from '../../localization/host-presentation';
 type DesktopMethods = {
-  [K in Exclude<keyof DesktopApi, 'onEvent'>]: (
+  [K in Exclude<keyof DesktopApi, 'onEvent' | 'importFiles'>]: (
     ...input: Parameters<DesktopApi[K]>
   ) => ReturnType<DesktopApi[K]> | Awaited<ReturnType<DesktopApi[K]>>;
-};
+} & { importDroppedMedia(input: { paths: string[] }): Promise<ProjectSnapshot> };
 export interface DesktopApplicationPorts {
   userData: string;
   documents: string;
@@ -248,6 +248,17 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       throw new Error('会话记录损坏，请创建新对话；工程与任务不受影响。');
     }
   }
+  async function importPaths(paths: string[]): Promise<ProjectSnapshot> {
+    requireModels();
+    const validated = schemas.importDroppedMedia.parse({ paths }) as { paths: string[] };
+    const db = database();
+    for (const path of validated.paths) {
+      const asset = await archiveMedia(db.directory, path);
+      db.addAsset(asset);
+    }
+    changed(db);
+    return service(db).snapshot();
+  }
   const methods = {
     bootstrap: () => ({
       settings: settings(),
@@ -329,13 +340,9 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
         ],
       });
       if (result.canceled) return service(db).snapshot();
-      for (const path of result.filePaths) {
-        const asset = await archiveMedia(db.directory, path);
-        db.addAsset(asset);
-      }
-      changed(db);
-      return service(db).snapshot();
+      return importPaths(result.filePaths);
     },
+    importDroppedMedia: (input) => importPaths(input.paths),
     beginEdit(input) {
       const db = database();
       if (!db.read().sequences.some((s) => s.id === input.sequenceId))

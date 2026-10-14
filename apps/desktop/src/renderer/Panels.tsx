@@ -237,25 +237,28 @@ export function CreateModal({
             data-testid="project-name-input"
           />
         </label>
-        <div className="field-row">
-          <label>
-            {t('create.aspect')}
-            <select name="size">
-              <option value="1920x1080">{t('create.landscape')}</option>
-              <option value="1080x1920">{t('create.portrait')}</option>
-              <option value="1080x1080">{t('create.square')}</option>
-            </select>
-          </label>
-          <label>
-            {t('create.fps')}
-            <select name="fps">
-              <option value="30">30 fps</option>
-              <option value="24">24 fps</option>
-              <option value="25">25 fps</option>
-              <option value="60">60 fps</option>
-            </select>
-          </label>
-        </div>
+        <details className="create-options">
+          <summary>{t('create.aspect')} · 16:9</summary>
+          <div className="field-row">
+            <label>
+              {t('create.aspect')}
+              <select name="size">
+                <option value="1920x1080">{t('create.landscape')}</option>
+                <option value="1080x1920">{t('create.portrait')}</option>
+                <option value="1080x1080">{t('create.square')}</option>
+              </select>
+            </label>
+            <label>
+              {t('create.fps')}
+              <select name="fps">
+                <option value="30">30 fps</option>
+                <option value="24">24 fps</option>
+                <option value="25">25 fps</option>
+                <option value="60">60 fps</option>
+              </select>
+            </label>
+          </div>
+        </details>
         {error && (
           <p className="form-error" role="alert">
             {t(error)}

@@ -1,3 +1,10 @@
+import {
+  selectLanguage,
+  openLibrary,
+  openEditor,
+  openInspector,
+  conversationView,
+} from './desktop-ui-helpers';
 import assert from 'node:assert/strict';
 import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test';
 import electronBinary from 'electron';
@@ -78,11 +85,7 @@ async function launch() {
   await page.getByTestId('welcome-create').waitFor();
 }
 async function change(locale: 'en' | 'zh-CN') {
-  const selector = page.getByRole('dialog').locator('[data-testid="language-select"]');
-  await (
-    (await page.getByRole('dialog').count()) ? selector : page.getByTestId('language-select')
-  ).selectOption(locale);
-  await page.waitForFunction((locale) => document.documentElement.lang === locale, locale);
+  await selectLanguage(page, locale);
 }
 async function menuLabels() {
   return app.evaluate(
@@ -97,7 +100,9 @@ await launch();
 try {
   assert.equal(await page.getByTestId('language-select').inputValue(), 'en');
   assert.equal(await page.locator('html').getAttribute('lang'), 'en');
-  await page.getByRole('heading', { name: 'Start with an idea', exact: true, level: 1 }).waitFor();
+  await page
+    .getByRole('heading', { name: 'An idea. A canvas. Your film.', exact: true, level: 1 })
+    .waitFor();
   assert.ok((await menuLabels()).includes('Edit'));
   assert.equal(
     await page
@@ -126,7 +131,9 @@ try {
   assert.equal(await page.getByTestId('api-key-input').inputValue(), 'unsubmitted fake key');
   await page.getByRole('button', { name: '关闭窗口', exact: true }).click();
   assert.ok((await menuLabels()).includes('编辑'));
-  await page.getByRole('heading', { name: '从一个想法开始创作', exact: true, level: 1 }).waitFor();
+  await page
+    .getByRole('heading', { name: '一个想法，一张画布，一部作品。', exact: true, level: 1 })
+    .waitFor();
   await page.screenshot({ path: join(directory, 'welcome-zh.png') });
   await page.evaluate(() =>
     window.framo.saveSettings({
@@ -162,7 +169,7 @@ try {
   assert.equal(await toolNotice.innerText(), 'The user stopped this request.');
   assert.equal(await matchingAssistant.innerText(), 'The user stopped this request.');
   await composer.fill('Retain bilingual draft 中英文');
-  await page.locator('.sequence-list-row').first().click();
+  await openEditor(page);
   await page.getByTestId('timeline').waitFor();
   await page.locator('.timeline-caption').first().click();
   const caption = page.locator('textarea[name="text"]');

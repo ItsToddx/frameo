@@ -1,3 +1,10 @@
+import {
+  selectLanguage,
+  openLibrary,
+  openEditor,
+  openInspector,
+  conversationView,
+} from './desktop-ui-helpers';
 import assert from 'node:assert/strict';
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -61,7 +68,7 @@ try {
     errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.getByTestId('welcome-create').waitFor();
-  await page.getByTestId('language-select').selectOption('zh-CN');
+  await selectLanguage(page, 'zh-CN');
   await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   await page.getByRole('button', { name: '模型与应用设置', exact: true }).click();
   await page.getByTestId('agent-model-input').fill('fixture-no-inference');
@@ -78,12 +85,16 @@ try {
   const asset = initial.assets.find((a) => a.id === job.outputAssetId)!;
   assert.ok(asset?.kind === 'video');
   assert.equal(initial.sequences[0].clips.length, 0);
+  await openLibrary(page);
   await page.getByRole('button', { name: `将 ${asset.name} 添加至作品`, exact: true }).click();
+  await openEditor(page);
   await page.getByTestId('timeline-clip').click();
+  await openInspector(page);
   await page.locator('.inspector-form input[name="duration"]').fill('5');
   await page.getByTestId('save-clip').click();
   await page.getByRole('button', { name: '字幕', exact: true }).first().click();
   await page.locator('.inspector-form textarea[name="text"]').fill('让想法成为下一个镜头');
+  await openInspector(page);
   await page.locator('.inspector-form input[name="duration"]').fill('5');
   await page.getByRole('button', { name: '添加字幕', exact: true }).click();
   async function waitForJob(kind: 'preview' | 'export') {

@@ -1,3 +1,4 @@
+import { canvasFirst } from './canvas-first';
 import { common } from './common';
 import { workbench } from './workbench';
 import { panels } from './panels';
@@ -6,7 +7,7 @@ import type { Locale, Parameters } from './types';
 export { normalizeLocale } from './types';
 export type { Locale, Catalog, Parameters } from './types';
 export { localizeHostText } from './host-text';
-export const messages = { ...common, ...workbench, ...panels, ...studio };
+export const messages = { ...common, ...workbench, ...panels, ...studio, ...canvasFirst };
 export type MessageKey = keyof typeof messages;
 export function translate(locale: Locale, key: MessageKey, parameters: Parameters = {}): string {
   const message = messages[key];

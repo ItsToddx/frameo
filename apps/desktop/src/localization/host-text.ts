@@ -121,6 +121,10 @@ export function hostText(
 }
 
 const systemMessages: Message[] = [
+  {
+    en: 'Drop up to 32 media files from your computer.',
+    zh: '请从电脑拖入媒体文件，每次最多 32 个。',
+  },
   { zh: '片段不存在。', en: 'Clip does not exist.' },
   { zh: '轨道已锁定。', en: 'The track is locked.' },
   { zh: '时间线缩放无效。', en: 'Timeline zoom is invalid.' },

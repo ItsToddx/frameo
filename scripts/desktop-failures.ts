@@ -1,3 +1,10 @@
+import {
+  selectLanguage,
+  openLibrary,
+  openEditor,
+  openInspector,
+  conversationView,
+} from './desktop-ui-helpers';
 import assert from 'node:assert/strict';
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -214,7 +221,7 @@ try {
   }, project);
   let page = await app.firstWindow();
   await page.getByTestId('welcome-create').waitFor();
-  await page.getByTestId('language-select').selectOption('zh-CN');
+  await selectLanguage(page, 'zh-CN');
   await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));

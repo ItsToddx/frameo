@@ -1,3 +1,10 @@
+import {
+  selectLanguage,
+  openLibrary,
+  openEditor,
+  openInspector,
+  conversationView,
+} from './desktop-ui-helpers';
 import assert from 'node:assert/strict';
 import { _electron as electron } from '@playwright/test';
 import electronBinary from 'electron';
@@ -100,7 +107,7 @@ try {
   const page = await app.firstWindow();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.getByTestId('welcome-create').waitFor();
-  await page.getByTestId('language-select').selectOption('zh-CN');
+  await selectLanguage(page, 'zh-CN');
   await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   await page.screenshot({ path: join(directory, 'welcome.png') });
   const settingsButton = page.getByRole('button', { name: '模型与应用设置', exact: true });
@@ -158,10 +165,10 @@ try {
     ),
   );
   assert.equal(await compose.inputValue(), '保留这份草稿');
-  await page.getByRole('tab', { name: /审阅/ }).click();
-  await page.locator('.review-card').waitFor();
+  await conversationView(page, 'reviews');
+  await page.locator('.review-list .review-card').waitFor();
   await page.screenshot({ path: join(directory, 'review.png') });
-  await page.getByRole('tab', { name: /对话/ }).click();
+  await conversationView(page, 'chat');
   assert.equal(await compose.inputValue(), '保留这份草稿', 'Tabs preserve composer draft');
   const feed = page.locator('.chat-feed');
   await feed.evaluate((element) => {
@@ -175,13 +182,14 @@ try {
     Math.abs((await feed.evaluate((element) => element.scrollTop)) - initialScroll) < 5,
     'Snapshot updates must not jump conversation history',
   );
-  await page.getByRole('tab', { name: /审阅/ }).click();
+  await conversationView(page, 'reviews');
   await page.getByRole('button', { name: '采纳方案', exact: true }).click();
   const accepted = await page.evaluate(() => window.framo.snapshot());
   assert.equal(accepted.reviews[0].status, 'accepted');
   assert.equal(accepted.sequences[0].captions[0].text, '沿着海岸，继续前行');
-  await page.locator('.sequence-list-row').first().click();
+  await openEditor(page);
   await page.getByTestId('timeline-clip').click();
+  await openInspector(page);
   await page.screenshot({ path: join(directory, 'editor.png') });
   await page.getByTestId('timeline-clip').focus();
   await page.keyboard.press('ArrowRight');
@@ -230,7 +238,11 @@ try {
         ).uiSaveResolve = resolve;
       })) as typeof dialog.showSaveDialog;
   });
-  await page.getByRole('button', { name: '新建工程', exact: true }).click();
+  await page.getByTestId('project-menu').click();
+  await page
+    .locator('.project-menu')
+    .getByRole('button', { name: '新建工程', exact: true })
+    .click();
   await page.getByTestId('project-name-input').fill('保留待保存的工程名称');
   await page.getByTestId('confirm-create-project').click();
   await page.waitForFunction(
@@ -273,7 +285,7 @@ try {
     await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches),
     true,
   );
-  await page.getByTestId('language-select').selectOption('en');
+  await selectLanguage(page, 'en');
   await page.waitForFunction(() => document.documentElement.lang === 'en');
   await app.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows()[0].setSize(1520, 1000);

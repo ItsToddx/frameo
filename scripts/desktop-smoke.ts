@@ -1,3 +1,10 @@
+import {
+  selectLanguage,
+  openLibrary,
+  openEditor,
+  openInspector,
+  conversationView,
+} from './desktop-ui-helpers';
 import assert from 'node:assert/strict';
 import { _electron as electron } from '@playwright/test';
 import { createCanvas } from '@napi-rs/canvas';
@@ -53,7 +60,7 @@ try {
   page = await application.firstWindow();
   page.on('pageerror', (error) => errors.push(error.message));
   await page.getByTestId('welcome-create').waitFor({ timeout: 30000 });
-  await page.getByTestId('language-select').selectOption('zh-CN');
+  await selectLanguage(page, 'zh-CN');
   await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   assert.equal(
     await page.evaluate(() => typeof (window as unknown as { require?: unknown }).require),
@@ -102,11 +109,14 @@ try {
   await page.getByTestId('welcome-create').click();
   await page.getByTestId('project-name-input').fill('镜头之间');
   await page.getByTestId('confirm-create-project').click();
+  await openLibrary(page);
   await page.getByTestId('import-media').waitFor();
   await page.getByTestId('import-media').click();
   await page.getByRole('button', { name: '将 reference.png 添加至作品', exact: true }).click();
+  await openEditor(page);
   await page.getByTestId('timeline-clip').waitFor();
   await page.getByTestId('timeline-clip').click();
+  await openInspector(page);
   await page.locator('.inspector-form input[name="duration"]').fill('3');
   await page.getByTestId('save-clip').click();
   await page.getByRole('button', { name: '字幕', exact: true }).first().click();
@@ -160,7 +170,7 @@ try {
   assert.equal(reopened.sequences[0].clips[0].duration, 90);
   assert.equal(reopened.sequences[0].captions.length, 1);
   assert.equal(reopened.memories.length, 1);
-  await page.locator('.sequence-list-row').first().click();
+  await openEditor(page);
   await page.getByTestId('preview-video').waitFor();
   await page.locator('.toast').waitFor({ state: 'hidden', timeout: 10000 });
   await mkdir('docs/images', { recursive: true });

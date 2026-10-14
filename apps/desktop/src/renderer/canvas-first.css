@@ -1,0 +1,538 @@
+/* The default workspace has two surfaces: the board and the conversation. */
+.workspace {
+  position: relative;
+}
+.app-header {
+  border-bottom-color: #ededee;
+  gap: 18px;
+  height: 54px;
+}
+.project-trigger {
+  flex: 0 1 auto;
+  max-width: 420px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+}
+.header-actions {
+  margin-left: auto;
+}
+.app-header details,
+.app-header summary,
+.app-header select {
+  -webkit-app-region: no-drag;
+}
+.project-menu,
+.conversation-menu {
+  position: relative;
+}
+.project-menu summary,
+.conversation-menu summary {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  cursor: pointer;
+  list-style: none;
+  color: #71717a;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+.project-menu summary:hover,
+.conversation-menu summary:hover {
+  background: #f4f4f5;
+}
+.menu-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 236px;
+  padding: 8px;
+  border: 1px solid #e7e7eb;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 14px 40px #18181b14;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.menu-popover .button {
+  justify-content: flex-start;
+  border: 0;
+  background: transparent;
+  height: 34px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.menu-popover .button:hover {
+  background: #f4f4f5;
+}
+.menu-popover hr {
+  border: 0;
+  border-top: 1px solid #efeff1;
+  margin: 5px 0;
+}
+.menu-popover label {
+  padding: 6px;
+  font-size: 12px;
+  color: #71717a;
+}
+.menu-popover .language-picker {
+  flex-direction: row;
+  justify-content: space-between;
+}
+.menu-popover .language-select {
+  width: 105px;
+}
+.library-drawer {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  bottom: 16px;
+  width: 260px;
+  z-index: 20;
+  border: 1px solid #e4e4e7;
+  border-radius: 14px;
+  box-shadow: 0 12px 35px #18181b12;
+  overflow: auto;
+  background: white;
+}
+.board {
+  background: #f8f8fa;
+}
+.board > .react-flow {
+  width: 100%;
+  height: 100%;
+}
+.board-heading {
+  position: absolute;
+  top: 24px;
+  left: 26px;
+  z-index: 4;
+  display: flex;
+  gap: 9px;
+  color: #a1a1aa;
+  font-size: 12px;
+  pointer-events: none;
+}
+.board-heading > span:first-child {
+  color: #52525b;
+}
+.board .canvas-card {
+  width: 260px;
+  border-radius: 13px;
+  border: 1px solid #ffffff;
+  background: #fff;
+  box-shadow:
+    0 3px 13px #18181b0a,
+    0 0 0 1px #e8e8ed;
+  overflow: hidden;
+  transition:
+    box-shadow 140ms,
+    outline-color 140ms;
+}
+.board .canvas-card.selected {
+  outline: 2px solid #18181b;
+  outline-offset: 4px;
+  box-shadow: 0 6px 22px #18181b13;
+}
+.board .card-media {
+  height: 146px;
+  position: relative;
+  overflow: hidden;
+  background: #edf0f2;
+}
+.board .sequence-card .card-media {
+  height: 146px;
+}
+.board .card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.board .card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #1d232b, #3c4854);
+  color: #afb7c1;
+}
+.board .card-kind {
+  top: 10px;
+  left: 10px;
+  bottom: auto;
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #00000045;
+  color: #fff;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+}
+.board .card-duration {
+  bottom: 9px;
+  right: 10px;
+  font-size: 10px;
+}
+.board .card-info {
+  min-height: 58px;
+  padding: 12px 13px;
+  gap: 4px;
+}
+.board .card-info strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.board .card-info > div > span {
+  font-size: 10px;
+  margin-top: 3px;
+  color: #a1a1aa;
+}
+.board .card-preview {
+  display: grid;
+  place-items: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ffffff55;
+  border-radius: 50%;
+  background: #18181b50;
+  color: white;
+  opacity: 0;
+  transition: opacity 140ms;
+}
+.board .card-hide {
+  width: 23px;
+  height: 23px;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+}
+.board .card-reference,
+.board .card-add {
+  width: 25px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #a1a1aa;
+  opacity: 0;
+  flex-shrink: 0;
+}
+.board .card-reference {
+  cursor: grab;
+}
+.board .canvas-card:hover .card-preview,
+.board .canvas-card:focus-within .card-preview,
+.board .canvas-card:hover .card-hide,
+.board .canvas-card:focus-within .card-hide,
+.board .canvas-card:hover .card-reference,
+.board .canvas-card:focus-within .card-reference,
+.board .canvas-card:hover .card-add,
+.board .canvas-card:focus-within .card-add {
+  opacity: 1;
+}
+.board .card-reference:hover,
+.board .card-add:hover {
+  background: #f4f4f5;
+  color: #18181b;
+}
+.board .canvas-card.drop-target {
+  outline: 3px solid #18181b;
+  outline-offset: 5px;
+}
+.card-drop-label {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: #18181bc9;
+  font-size: 13px;
+}
+.board-dock {
+  position: absolute;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #fffffff2;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px #18181b09;
+}
+.board-dock .button {
+  height: 32px;
+  font-size: 12px;
+  border: 0;
+  padding-inline: 12px;
+}
+.board-dock .icon-button {
+  width: 30px;
+  height: 30px;
+}
+.dock-separator {
+  height: 18px;
+  width: 1px;
+  background: #ececf0;
+  margin-inline: 4px;
+}
+.board-hint {
+  position: absolute;
+  bottom: 19px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #a1a1aa;
+  pointer-events: none;
+}
+.board-drop-overlay {
+  position: absolute;
+  inset: 16px;
+  z-index: 8;
+  border: 2px dashed #71717a;
+  border-radius: 16px;
+  background: #f8f8faed;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  color: #3f3f46;
+  pointer-events: none;
+}
+.creative-main > .timeline-shell {
+  position: absolute;
+  inset: 16px;
+  z-index: 12;
+  border: 1px solid #e4e4e7;
+  border-radius: 14px;
+  box-shadow: 0 14px 50px #18181b20;
+  overflow: hidden;
+}
+.timeline-header {
+  padding: 10px 14px;
+}
+.timeline-title > div > span {
+  display: none;
+}
+.editor-stage {
+  border-bottom: 0;
+}
+.agent-panel {
+  width: 356px;
+  border-left-color: #ededee;
+  position: relative;
+}
+.agent-header {
+  min-height: 60px;
+  height: 60px;
+  padding: 0 20px;
+  border-bottom: 0;
+}
+.agent-header > strong {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+.conversation-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.conversation-header-actions .icon-button {
+  width: 28px;
+  height: 28px;
+}
+.chat-feed {
+  padding: 12px 20px 24px;
+}
+.chat-empty {
+  padding: 72px 8px 20px;
+  text-align: left;
+}
+.chat-empty .agent-orbit {
+  display: none;
+}
+.chat-empty h3 {
+  font-size: 21px;
+  font-weight: 450;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}
+.chat-empty p {
+  font-size: 12px;
+  line-height: 1.8;
+  color: #a1a1aa;
+}
+.chat-suggestions {
+  gap: 8px;
+  margin-top: 24px;
+}
+.chat-suggestions button {
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid #f0f0f3;
+  border-radius: 0;
+  background: transparent;
+  color: #71717a;
+  font-size: 12px;
+}
+.chat-compose-area {
+  padding: 12px 16px 16px;
+  border-top: 0;
+}
+.chat-compose {
+  padding: 13px;
+  border-radius: 14px;
+  background: #fafafa;
+  border-color: #e8e8ed;
+}
+.chat-compose textarea {
+  min-height: 48px;
+  font-size: 13px;
+  background: transparent;
+}
+.compose-footer > span {
+  font-size: 10px;
+  color: #a1a1aa;
+}
+.compose-footer .send-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.chat-footnote {
+  display: none;
+}
+.chat-compose-area:focus-within .chat-footnote {
+  display: flex;
+  font-size: 10px;
+}
+.agent-contexts {
+  margin-bottom: 8px;
+}
+.chat-context {
+  padding: 4px 7px;
+  font-size: 10px;
+  background: #f4f4f5;
+  border: 0;
+}
+.inline-reviews {
+  margin-top: 16px;
+}
+.inline-reviews .review-card {
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: none;
+}
+.inline-workflows:empty {
+  display: none;
+}
+.reference-drag::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed #a1a1aa;
+  border-radius: 14px;
+  background: #ffffffc9;
+  z-index: 20;
+  pointer-events: none;
+}
+.conversation-drop-hint {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  right: 16px;
+  z-index: 21;
+  text-align: center;
+  color: #3f3f46;
+  font-size: 13px;
+  pointer-events: none;
+}
+.welcome-screen {
+  flex: 1;
+  background-color: #f8f8fa;
+  background-image: radial-gradient(#d6d7da 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.welcome-screen .eyebrow,
+.welcome-mark,
+.welcome-screen > .model-connection {
+  display: none;
+}
+.welcome-screen h1 {
+  font-size: clamp(30px, 3.5vw, 44px);
+  font-weight: 430;
+  letter-spacing: -1.6px;
+  max-width: 580px;
+}
+.welcome-screen > p {
+  font-size: 13px;
+  color: #a1a1aa;
+}
+.welcome-actions {
+  margin-top: 26px;
+}
+.welcome-actions .button {
+  font-size: 12px;
+  height: 34px;
+}
+@media (max-width: 1200px) {
+  .agent-panel {
+    width: 336px;
+  }
+  .creative-main > .timeline-shell {
+    inset: 10px;
+  }
+  .agent-header {
+    padding-inline: 16px;
+  }
+  .chat-feed {
+    padding-inline: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board .canvas-card,
+  .board .card-preview {
+    transition: none;
+  }
+}
+
+.compose-footer {
+  justify-content: flex-end;
+}
+.chat-message .message-meta time {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+.chat-message:hover .message-meta time,
+.chat-message:focus-within .message-meta time {
+  opacity: 1;
+}
+
+.create-options {
+  font-size: 12px;
+  color: #71717a;
+}
+.create-options summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+.create-options .field-row {
+  padding-top: 12px;
+}
