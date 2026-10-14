@@ -110,6 +110,7 @@ export interface ProjectSnapshot {
   eventSeq: number;
 }
 export interface Settings {
+  language?: 'en' | 'zh-CN';
   arkBaseUrl: string;
   agentModel: string;
   seedanceModel: string;

@@ -27,6 +27,7 @@ const api: DesktopApi = {
   decideReview: (input) => invoke('decideReview', input),
   saveMemory: (input) => invoke('saveMemory', input),
   deleteMemory: (input) => invoke('deleteMemory', input),
+  setLanguage: (input) => invoke('setLanguage', input),
   saveSettings: (input) => invoke('saveSettings', input),
   listKits: () => invoke('listKits'),
   setKitEnabled: (input) => invoke('setKitEnabled', input),

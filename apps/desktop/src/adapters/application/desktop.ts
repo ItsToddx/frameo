@@ -417,6 +417,10 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       changed(database());
       return snapshot;
     },
+    setLanguage(language) {
+      application.set('language', language);
+      return settings();
+    },
     saveSettings(input) {
       const parsed = new URL(input.arkBaseUrl);
       if (

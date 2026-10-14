@@ -74,6 +74,7 @@ export interface DesktopApi {
     scope: 'project' | 'user';
     expectedRevision: number;
   }): Promise<ProjectSnapshot>;
+  setLanguage(language: 'en' | 'zh-CN'): Promise<Settings>;
   saveSettings(input: Omit<Settings, 'hasApiKey'> & { apiKey?: string }): Promise<Settings>;
   listKits(): Promise<KitInfo[]>;
   setKitEnabled(input: { id: Id; enabled: boolean }): Promise<KitInfo[]>;

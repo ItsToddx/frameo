@@ -271,7 +271,11 @@ export class AppDatabase {
       .run(key, JSON.stringify(value));
   }
   settings(hasApiKey: boolean): Settings {
-    return { ...this.get('settings', defaultSettings), hasApiKey };
+    return {
+      ...this.get('settings', defaultSettings),
+      hasApiKey,
+      language: this.get('language', 'en'),
+    };
   }
   remember(project: ProjectInfo): void {
     const recent = this.get<ProjectInfo[]>('recent', []).filter(

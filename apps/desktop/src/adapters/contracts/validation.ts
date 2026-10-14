@@ -194,6 +194,7 @@ export const schemas: Record<string, z.ZodType> = {
   deleteMemory: z
     .object({ id: identifier, scope: z.enum(['project', 'user']), expectedRevision: tick })
     .strict(),
+  setLanguage: z.enum(['en', 'zh-CN']),
   saveSettings: settingsSchema,
   setKitEnabled: z.object({ id: identifier, enabled: z.boolean() }).strict(),
   installKit: identifier,
