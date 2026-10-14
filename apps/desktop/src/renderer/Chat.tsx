@@ -35,6 +35,7 @@ import type {
 } from '../adapters/contracts/api';
 import { Button, Empty, IconButton } from './ui';
 import { useI18n } from './i18n';
+import { presentJobTitle } from '../localization/panels';
 import type { MessageKey } from '../localization';
 import { RecipeList, type RecipeResultInput, type RecipeInputReview } from './Panels';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
@@ -564,13 +565,13 @@ function ProjectJobs({ snapshot }: { snapshot: ProjectSnapshot | null }) {
 }
 
 function ProjectJob({ job, snapshot }: { job: Job; snapshot: ProjectSnapshot }) {
-  const { t, hostText } = useI18n();
+  const { t, hostText, locale } = useI18n();
   const progressing = ['queued', 'submitting', 'running', 'reconciling', 'finalizing'].includes(
     job.status,
   );
   const progress = Math.max(0, Math.min(100, Math.round(job.progress * 100)));
   const output = snapshot.assets.find((asset) => asset.id === job.outputAssetId);
-  const title = job.kind === 'export' ? hostText(job.title) : job.title;
+  const title = presentJobTitle(locale, job);
   return (
     <article className={`agent-job-card ${job.status}`}>
       <div className="agent-job-heading">
