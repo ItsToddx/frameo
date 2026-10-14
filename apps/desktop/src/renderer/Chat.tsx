@@ -25,11 +25,25 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
-import type { Job, ProjectSnapshot, Review, Session, Settings } from '../adapters/contracts/api';
-import { Button, Empty, IconButton, jobLabels } from './ui';
+import type {
+  EditCommand,
+  Job,
+  ProjectSnapshot,
+  Review,
+  Session,
+  Settings,
+} from '../adapters/contracts/api';
+import { Button, Empty, IconButton } from './ui';
+import { useI18n } from './i18n';
+import type { MessageKey } from '../localization';
 import { RecipeList, type RecipeResultInput, type RecipeInputReview } from './Panels';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
-import { ChatDrafts, createChatAdapter, isChatSubmitKey } from './chat-adapter';
+import {
+  CHAT_SUBMISSION_FAILURE,
+  ChatDrafts,
+  createChatAdapter,
+  isChatSubmitKey,
+} from './chat-adapter';
 import { ChatMarkdown } from './ChatMarkdown';
 
 type ChatTab = 'chat' | 'reviews' | 'recipes';
@@ -61,6 +75,7 @@ export interface ChatProps {
 }
 
 export function Chat(props: ChatProps) {
+  const { t } = useI18n();
   const { snapshot, sessionId, running } = props;
   const [tab, setTab] = useState<ChatTab>('chat');
   const [drafts] = useState(() => new ChatDrafts());
@@ -85,26 +100,26 @@ export function Chat(props: ChatProps) {
   }, [snapshot?.recipes.length]);
 
   return (
-    <aside className="agent-panel" data-testid="agent-panel" aria-label="创作 Agent">
+    <aside className="agent-panel" data-testid="agent-panel" aria-label={t('chat.title')}>
       <header className="agent-header">
         <div className="agent-title">
           <span className="agent-mark">
             <Aperture size={18} />
           </span>
           <div>
-            <strong>创作 Agent</strong>
-            <span>规划、生成与剪辑</span>
+            <strong>{t('chat.title')}</strong>
+            <span>{t('chat.subtitle')}</span>
           </div>
         </div>
         <span className={`agent-header-state ${running ? 'running' : ''}`}>
           <span className="status-dot" />
           {running
-            ? '执行中'
+            ? t('chat.running')
             : !props.settings.hasApiKey
-              ? '待连接'
+              ? t('chat.disconnected')
               : !snapshot
-                ? '待打开工程'
-                : '就绪'}
+                ? t('chat.noProject')
+                : t('chat.ready')}
         </span>
       </header>
       <ChatSession
@@ -131,6 +146,7 @@ interface ChatSessionProps extends ChatProps {
 }
 
 function ChatSession(props: ChatSessionProps) {
+  const { t, hostText } = useI18n();
   const {
     snapshot,
     settings,
@@ -215,23 +231,24 @@ function ChatSession(props: ChatSessionProps) {
         value={tab}
         onValueChange={(value) => onTabChange(value as ChatTab)}
       >
-        <TabsList className="agent-tabs" aria-label="Agent 工作区">
-          <TabsTrigger value="chat">对话</TabsTrigger>
+        <TabsList className="agent-tabs" aria-label={t('chat.workspace')}>
+          <TabsTrigger value="chat">{t('chat.tab')}</TabsTrigger>
           <TabsTrigger value="reviews">
-            审阅{pendingCount > 0 && <b className="agent-tab-count">{pendingCount}</b>}
+            {t('chat.reviews')}
+            {pendingCount > 0 && <b className="agent-tab-count">{pendingCount}</b>}
           </TabsTrigger>
-          <TabsTrigger value="recipes">工作流</TabsTrigger>
+          <TabsTrigger value="recipes">{t('chat.recipes')}</TabsTrigger>
         </TabsList>
         <TabsContent value="chat" className="agent-tab-content" forceMount hidden={tab !== 'chat'}>
           <ThreadPrimitive.Root className="chat-thread">
             <div className="session-bar">
               <select
-                aria-label="选择对话"
+                aria-label={t('chat.chooseSession')}
                 value={session?.id ?? ''}
                 onChange={(event) => onSession(event.target.value)}
                 disabled={!snapshot || running || submission.pending}
               >
-                {!snapshot?.sessions.length && <option value="">新对话</option>}
+                {!snapshot?.sessions.length && <option value="">{t('chat.newSession')}</option>}
                 {snapshot?.sessions.map((item) => (
                   <option value={item.id} key={item.id}>
                     {item.title}
@@ -239,7 +256,7 @@ function ChatSession(props: ChatSessionProps) {
                 ))}
               </select>
               <IconButton
-                label="新建对话"
+                label={t('chat.createSession')}
                 disabled={!snapshot || running || busy || submission.pending}
                 onClick={onNewSession}
               >
@@ -250,8 +267,8 @@ function ChatSession(props: ChatSessionProps) {
               <button className="agent-approval-cue" onClick={() => onTabChange('reviews')}>
                 <CheckCircle2 size={16} />
                 <span>
-                  <strong>{pendingCount} 个方案待你审阅</strong>
-                  <small>确认后继续生成或编辑</small>
+                  <strong>{t('chat.reviewCount', { count: pendingCount })}</strong>
+                  <small>{t('chat.reviewContinue')}</small>
                 </span>
                 <ArrowUpRight size={16} />
               </button>
@@ -262,7 +279,7 @@ function ChatSession(props: ChatSessionProps) {
                 autoScroll
                 scrollToBottomOnRunStart={false}
                 scrollToBottomOnThreadSwitch={false}
-                aria-label="对话记录"
+                aria-label={t('chat.history')}
                 aria-busy={ownsRun}
                 data-testid="agent-feed"
               >
@@ -278,8 +295,8 @@ function ChatSession(props: ChatSessionProps) {
                   <div className="agent-run-card" role="status">
                     <LoaderCircle size={16} className="spin" />
                     <div>
-                      <strong>Agent 正在执行</strong>
-                      <span>{status || '正在理解你的需求…'}</span>
+                      <strong>{t('chat.executing')}</strong>
+                      <span>{status ? hostText(status) : t('chat.understanding')}</span>
                     </div>
                   </div>
                 )}
@@ -287,11 +304,11 @@ function ChatSession(props: ChatSessionProps) {
               </ThreadPrimitive.Viewport>
               <ThreadPrimitive.ScrollToBottom
                 className="chat-scroll-bottom"
-                aria-label="回到最新消息"
+                aria-label={t('chat.scrollLatest')}
                 behavior="instant"
               >
                 <ArrowDown size={15} />
-                <span>最新消息</span>
+                <span>{t('chat.latest')}</span>
               </ThreadPrimitive.ScrollToBottom>
             </div>
           </ThreadPrimitive.Root>
@@ -299,8 +316,8 @@ function ChatSession(props: ChatSessionProps) {
         <TabsContent value="reviews" className="agent-tab-content">
           <div className="review-list">
             {!snapshot?.reviews.length && (
-              <Empty icon={<Check size={24} />} title="这里等待你的决定">
-                生成预算、剪辑方案与记忆建议会在这里审阅。
+              <Empty icon={<Check size={24} />} title={t('chat.reviewEmpty')}>
+                {t('chat.reviewEmptyBody')}
               </Empty>
             )}
             {[...(snapshot?.reviews ?? [])].reverse().map((review) => (
@@ -344,35 +361,28 @@ function ChatWelcome({
   hasSequence: boolean;
   onSuggestion: (text: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="chat-empty">
       <div className="agent-orbit">
         <Aperture size={28} />
       </div>
-      <h3>从一个想法开始</h3>
-      <p>一起规划镜头、整理素材，或让当前作品更完整。生成与剪辑方案由你确认。</p>
+      <h3>{t('chat.welcome')}</h3>
+      <p>{t('chat.welcomeBody')}</p>
       <div className="chat-suggestions">
-        <button
-          disabled={disabled}
-          onClick={() =>
-            onSuggestion('请帮我设计一个 15 秒的视频创作方案，先给出镜头脚本，等待我确认后再生成。')
-          }
-        >
-          <span>规划一个短片</span>
+        <button disabled={disabled} onClick={() => onSuggestion(t('chat.planPrompt'))}>
+          <span>{t('chat.planSuggestion')}</span>
           <ArrowUpRight size={15} />
         </button>
-        <button
-          disabled={disabled}
-          onClick={() => onSuggestion('请分析当前工程的素材，并提出剪辑建议。先不要修改作品。')}
-        >
-          <span>整理素材与故事线</span>
+        <button disabled={disabled} onClick={() => onSuggestion(t('chat.organizePrompt'))}>
+          <span>{t('chat.organizeSuggestion')}</span>
           <ArrowUpRight size={15} />
         </button>
         <button
           disabled={disabled || !hasSequence}
-          onClick={() => onSuggestion('请检查当前选中作品的节奏和字幕，提出可审阅的编辑方案。')}
+          onClick={() => onSuggestion(t('chat.refinePrompt'))}
         >
-          <span>优化选中作品</span>
+          <span>{t('chat.refineSuggestion')}</span>
           <ArrowUpRight size={15} />
         </button>
       </div>
@@ -381,6 +391,7 @@ function ChatWelcome({
 }
 
 function ChatMessage() {
+  const { t, date } = useI18n();
   const message = useAuiState((state) => state.message);
   const metadata = message.metadata.custom;
   const role = metadata.hostRole === 'tool' ? 'tool' : message.role;
@@ -388,9 +399,9 @@ function ChatMessage() {
     typeof metadata.author === 'string'
       ? metadata.author
       : role === 'user'
-        ? '你'
+        ? t('chat.you')
         : role === 'tool'
-          ? '工具'
+          ? t('chat.tool')
           : 'Frameo';
   const streaming = message.status?.type === 'running';
   return (
@@ -401,10 +412,10 @@ function ChatMessage() {
           {author}
         </span>
         {streaming ? (
-          <LoaderCircle size={13} className="spin" aria-label="正在回复" />
+          <LoaderCircle size={13} className="spin" aria-label={t('chat.replying')} />
         ) : (
           <time dateTime={message.createdAt.toISOString()}>
-            {message.createdAt.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+            {date(message.createdAt, { hour: '2-digit', minute: '2-digit' })}
           </time>
         )}
       </div>
@@ -433,17 +444,18 @@ function ChatComposer({
   submission: { pending: boolean; error?: string };
   onDraft: (text: string) => void;
 }) {
+  const { t, hostText } = useI18n();
   const composing = useRef(false);
   const canSend = useAuiState((state) => state.composer.canSend);
   const sequence = snapshot?.sequences.find((item) => item.id === selectedSequence);
   return (
     <div className="chat-compose-area">
       {(selectedAsset || sequence) && (
-        <div className="agent-contexts" aria-label="Agent 当前上下文">
+        <div className="agent-contexts" aria-label={t('chat.context')}>
           {selectedAsset && (
             <span className="chat-context" title={selectedAsset}>
               <Film size={14} />
-              <span>素材 · {selectedAsset}</span>
+              <span>{t('chat.assetContext', { asset: selectedAsset })}</span>
             </span>
           )}
           {sequence && (
@@ -451,31 +463,33 @@ function ChatComposer({
               <Layers3 size={14} />
               <span>
                 {sequence.name}
-                {selectedClip ? ' · 已选片段' : ''}
+                {selectedClip ? t('chat.selectedClip') : ''}
               </span>
             </span>
           )}
         </div>
       )}
-      {dirty && <p className="chat-draft-notice">先保存或放弃时间线草稿，再发送指令或采纳方案。</p>}
+      {dirty && <p className="chat-draft-notice">{t('chat.draftNotice')}</p>}
       {!settings.hasApiKey && (
         <button className="setup-reminder" onClick={onSetup}>
           <CircleHelp size={16} />
-          <span>连接模型后开始创作</span>
+          <span>{t('chat.connect')}</span>
           <span>
-            配置 <ArrowUpRight size={13} />
+            {t('chat.setup')} <ArrowUpRight size={13} />
           </span>
         </button>
       )}
       {submission.error && (
         <p className="chat-submit-error" role="alert">
-          {submission.error}
+          {submission.error === CHAT_SUBMISSION_FAILURE
+            ? t('chat.submitFailed')
+            : hostText(submission.error)}
         </p>
       )}
       <ComposerPrimitive.Root className={`chat-compose ${running ? 'running' : ''}`}>
         <ComposerPrimitive.Input
-          aria-label="给 Agent 的创作指令"
-          placeholder={!snapshot ? '先创建或打开一个工程…' : '描述想法，或对选中的内容提出要求…'}
+          aria-label={t('chat.promptLabel')}
+          placeholder={!snapshot ? t('chat.promptNoProject') : t('chat.promptPlaceholder')}
           minRows={2}
           maxRows={6}
           maxLength={15000}
@@ -500,15 +514,15 @@ function ChatComposer({
           data-testid="agent-prompt"
         />
         <div className="compose-footer">
-          <span title={settings.agentModel}>{settings.agentModel || '尚未连接模型'}</span>
+          <span title={settings.agentModel}>{settings.agentModel || t('chat.noModel')}</span>
           {running ? (
-            <IconButton label="停止 Agent" onClick={onStop}>
+            <IconButton label={t('chat.stop')} onClick={onStop}>
               <Square size={15} />
             </IconButton>
           ) : (
             <ComposerPrimitive.Send
               className="send-button"
-              aria-label="发送创作指令"
+              aria-label={t('chat.send')}
               data-testid="agent-send"
             >
               {submission.pending ? (
@@ -520,13 +534,14 @@ function ChatComposer({
           )}
         </div>
       </ComposerPrimitive.Root>
-      <p className="chat-footnote">Enter 发送 · Shift + Enter 换行</p>
-      {running && <p className="chat-footnote">停止 Agent 不会取消已提交的生成任务。</p>}
+      <p className="chat-footnote">{t('chat.keyboardHelp')}</p>
+      {running && <p className="chat-footnote">{t('chat.stopHelp')}</p>}
     </div>
   );
 }
 
 function ProjectJobs({ snapshot }: { snapshot: ProjectSnapshot | null }) {
+  const { t } = useI18n();
   const jobs =
     snapshot?.jobs
       .filter((job) => job.kind === 'seedance' || job.kind === 'export')
@@ -534,10 +549,10 @@ function ProjectJobs({ snapshot }: { snapshot: ProjectSnapshot | null }) {
       .reverse() ?? [];
   if (!jobs.length) return null;
   return (
-    <section className="agent-project-jobs" aria-label="最近工程任务">
+    <section className="agent-project-jobs" aria-label={t('chat.recentJobs')}>
       <div className="agent-job-section-heading">
         <Clock3 size={14} />
-        <span>最近工程任务</span>
+        <span>{t('chat.recentJobs')}</span>
       </div>
       {jobs.map((job) => (
         <ProjectJob key={job.id} job={job} snapshot={snapshot!} />
@@ -547,59 +562,62 @@ function ProjectJobs({ snapshot }: { snapshot: ProjectSnapshot | null }) {
 }
 
 function ProjectJob({ job, snapshot }: { job: Job; snapshot: ProjectSnapshot }) {
+  const { t, hostText } = useI18n();
   const progressing = ['queued', 'submitting', 'running', 'reconciling', 'finalizing'].includes(
     job.status,
   );
   const progress = Math.max(0, Math.min(100, Math.round(job.progress * 100)));
   const output = snapshot.assets.find((asset) => asset.id === job.outputAssetId);
+  const title = job.kind === 'export' ? hostText(job.title) : job.title;
   return (
     <article className={`agent-job-card ${job.status}`}>
       <div className="agent-job-heading">
-        <strong>{job.title}</strong>
-        <span className={`agent-job-status ${job.status}`}>{jobLabels[job.status]}</span>
+        <strong>{title}</strong>
+        <span className={`agent-job-status ${job.status}`}>{t(`job.${job.status}`)}</span>
       </div>
       <p>
-        {job.kind === 'seedance' ? 'Seedance 生成' : '视频导出'}
-        {job.estimatedCost !== undefined && ` · 确认预算 ¥${job.estimatedCost.toFixed(2)}`}
+        {job.kind === 'seedance' ? t('chat.seedance') : t('chat.export')}
+        {job.estimatedCost !== undefined &&
+          t('chat.budget', { cost: job.estimatedCost.toFixed(2) })}
       </p>
       {progressing && (
         <progress
           className="agent-job-progress"
-          aria-label={`${job.title}进度`}
+          aria-label={t('chat.jobProgress', { title })}
           max={100}
           value={job.kind === 'seedance' && job.status === 'running' ? undefined : progress}
         />
       )}
-      {job.status === 'unknown' && <p>云端状态待确认，可在任务记录中查询。</p>}
-      {job.cancelRequested && job.status !== 'cancelled' && <p>已请求取消，等待最终状态确认。</p>}
-      {job.error && <p className="error-message">{job.error}</p>}
+      {job.status === 'unknown' && <p>{t('chat.jobUnknown')}</p>}
+      {job.cancelRequested && job.status !== 'cancelled' && <p>{t('chat.jobCancelRequested')}</p>}
+      {job.error && <p className="error-message">{hostText(job.error)}</p>}
       {job.status === 'succeeded' && (
         <p className="agent-job-result">
           <CheckCircle2 size={14} />
           {output
-            ? `已保存素材 · ${output.name}`
+            ? t('chat.assetSaved', { name: output.name })
             : job.outputPath
-              ? '输出已保存，可在任务记录中查看'
-              : '任务已完成'}
+              ? t('chat.outputSaved')
+              : t('chat.jobCompleted')}
         </p>
       )}
     </article>
   );
 }
 
-const commandNames: Record<string, string> = {
-  addTrack: '添加轨道',
-  updateTrack: '更新轨道',
-  removeTrack: '删除轨道',
-  addClip: '添加片段',
-  updateClip: '调整片段',
-  removeClip: '删除片段',
-  splitClip: '分割片段',
-  replaceClip: '替换素材',
-  upsertCaption: '保存字幕',
-  removeCaption: '删除字幕',
-  sequenceSettings: '更新作品设置',
-};
+const commandNames = {
+  addTrack: 'command.addTrack',
+  updateTrack: 'command.updateTrack',
+  removeTrack: 'command.removeTrack',
+  addClip: 'command.addClip',
+  updateClip: 'command.updateClip',
+  removeClip: 'command.removeClip',
+  splitClip: 'command.splitClip',
+  replaceClip: 'command.replaceClip',
+  upsertCaption: 'command.upsertCaption',
+  removeCaption: 'command.removeCaption',
+  sequenceSettings: 'command.sequenceSettings',
+} as const satisfies Record<EditCommand['type'], MessageKey>;
 
 function ReviewCard({
   review,
@@ -612,19 +630,18 @@ function ReviewCard({
   acceptDisabled: boolean;
   onDecide: (decision: 'accept' | 'reject') => void;
 }) {
+  const { t } = useI18n();
   return (
     <article className={`review-card ${review.status}`}>
       <div className="row-heading">
         <span className="badge">
           {review.kind === 'generation'
-            ? 'Seedance 生成'
+            ? t('chat.seedance')
             : review.kind === 'memory'
-              ? '记忆建议'
-              : '剪辑方案'}
+              ? t('review.memory')
+              : t('review.edit')}
         </span>
-        <span className="review-status">
-          {{ pending: '待审阅', accepted: '已采纳', rejected: '已拒绝' }[review.status]}
-        </span>
+        <span className="review-status">{t(`review.${review.status}`)}</span>
       </div>
       <h3>{review.title}</h3>
       <p>{review.description}</p>
@@ -632,22 +649,27 @@ function ReviewCard({
         <div className="review-generation">
           <p>{review.generation.prompt}</p>
           <span>
-            {review.generation.duration} 秒 · {review.generation.ratio} · 确认预算 ¥
-            {review.generation.estimatedCost.toFixed(2)}
+            {t('review.generationSummary', {
+              duration: review.generation.duration,
+              ratio: review.generation.ratio,
+              cost: review.generation.estimatedCost.toFixed(2),
+            })}
           </span>
         </div>
       )}
       {review.memory && (
         <div className="review-generation">
           <p>{review.memory.content}</p>
-          <span>{review.memory.scope === 'project' ? '只用于当前工程' : '用于你的所有工程'}</span>
+          <span>
+            {review.memory.scope === 'project' ? t('review.projectMemory') : t('review.userMemory')}
+          </span>
         </div>
       )}
       {review.commands && (
         <ul className="command-summary">
           {review.commands.map((command, index) => (
             <li key={index}>
-              <span>{commandNames[command.type]}</span>
+              <span>{t(commandNames[command.type])}</span>
               {command.type === 'upsertCaption' && <em>{command.caption.text}</em>}
               {command.type === 'sequenceSettings' && command.patch.name && (
                 <em>{command.patch.name}</em>
@@ -657,26 +679,26 @@ function ReviewCard({
         </ul>
       )}
       {review.expectedRevision !== undefined && (
-        <p className="field-hint">针对作品修订 {review.expectedRevision}，采纳时再次校验版本。</p>
+        <p className="field-hint">{t('review.revision', { revision: review.expectedRevision })}</p>
       )}
       {review.status === 'pending' && (
         <div className="review-actions">
           <Button disabled={disabled} onClick={() => onDecide('reject')}>
             <X size={14} />
-            拒绝
+            {t('review.reject')}
           </Button>
           <Button
             kind="accent"
             disabled={disabled || acceptDisabled}
-            title={acceptDisabled ? '先保存或放弃时间线草稿' : undefined}
+            title={acceptDisabled ? t('review.saveDraftFirst') : undefined}
             onClick={() => onDecide('accept')}
           >
             <Check size={14} />
             {review.kind === 'generation'
-              ? '确认预算并生成'
+              ? t('review.generate')
               : review.kind === 'memory'
-                ? '确认保存记忆'
-                : '采纳方案'}
+                ? t('review.saveMemory')
+                : t('review.accept')}
           </Button>
         </div>
       )}

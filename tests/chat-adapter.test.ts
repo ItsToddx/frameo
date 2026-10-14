@@ -130,6 +130,7 @@ test('runtime sends go through the host and return failed submissions to its com
   const drafts = new ChatDrafts();
   drafts.set('a', '  帮我整理素材  ');
   const submitted: string[] = [];
+  let failure: string | undefined;
   const adapter = createChatAdapter({
     session,
     delta: '',
@@ -143,6 +144,9 @@ test('runtime sends go through the host and return failed submissions to its com
       return false;
     },
     onStop: () => {},
+    onSubmission: (state) => {
+      failure = state.error;
+    },
   });
   const message: AppendMessage = {
     role: 'user',
@@ -156,6 +160,10 @@ test('runtime sends go through the host and return failed submissions to its com
   };
   await assert.rejects(adapter.onNew(message), isMessageNotSentError);
   assert.deepEqual(submitted, ['帮我整理素材']);
+  assert.equal(
+    failure,
+    'Message was not sent. Your draft is kept. Check model settings and project state, then retry.',
+  );
   assert.equal(drafts.get('a'), '  帮我整理素材  ');
   assert.equal(adapter.messages?.length, 2);
 });
