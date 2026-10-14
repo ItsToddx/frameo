@@ -1058,8 +1058,10 @@ export function App() {
         <span>
           {snapshot
             ? t('workbench.project.stats', {
-                assets: snapshot.assets.length,
-                sequences: snapshot.sequences.length,
+                assets: t('workbench.project.assetCount', { count: snapshot.assets.length }),
+                sequences: t('workbench.project.sequenceCount', {
+                  count: snapshot.sequences.length,
+                }),
               })
             : t('workbench.welcome')}
           {busy && (

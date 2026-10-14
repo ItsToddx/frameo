@@ -668,9 +668,19 @@ export const workbench = {
     en: 'Selected media: {name} (Asset ID: {id})',
     zh: '当前选择的素材：{name}（Asset ID: {id}）',
   },
+  'workbench.project.assetCount': {
+    en: '{count} assets',
+    one: '{count} asset',
+    zh: '{count} 个素材',
+  },
+  'workbench.project.sequenceCount': {
+    en: '{count} sequences',
+    one: '{count} sequence',
+    zh: '{count} 个作品',
+  },
   'workbench.project.stats': {
-    en: '{assets} assets · {sequences} sequences',
-    zh: '{assets} 个素材 · {sequences} 个作品',
+    en: '{assets} · {sequences}',
+    zh: '{assets} · {sequences}',
   },
   'workbench.recipe.title': {
     en: 'Start creating · {name}',
