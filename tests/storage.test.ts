@@ -20,7 +20,7 @@ const asset = (id: string, originJobId?: string): Asset => ({
   createdAt: new Date().toISOString(),
 });
 async function fixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-storage-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-storage-'));
   const app = new AppDatabase(join(directory, 'app'));
   let database = ProjectDatabase.create(
     join(directory, 'project'),

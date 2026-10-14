@@ -1,6 +1,6 @@
 # Creative Kits
 
-A Kit declares exact capabilities in `kit.manifest.json`: provider, read/edit/job tool, agent or recipe. The public package is `@frameo/kit-sdk`; its registration APIs do not expose the core or database.
+A Kit declares exact capabilities in `kit.manifest.json`: provider, read/edit/job tool, agent or recipe. The public package is `@framo/kit-sdk`; its registration APIs do not expose the core or database.
 
 ## Author a code Kit
 
@@ -28,6 +28,6 @@ Export the recipe from the workflow panel. Export contains portable definitions 
 
 ## Catalog contributions
 
-The built-in catalog is versioned in `kits/builtin.ts`. Submit a pull request with your manifest, fixed version/content digest, source, license, macOS compatibility, permissions, fees and independently reproducible example. Creators may submit a `.frameokit` file instead of maintaining a code repository.
+The built-in catalog is versioned in `kits/builtin.ts`. Submit a pull request with your manifest, fixed version/content digest, source, license, macOS compatibility, permissions, fees and independently reproducible example. Creators may submit a `.framokit` file instead of maintaining a code repository.
 
 Reviewers distinguish listing, activation and execution. Browsing metadata never executes code. The current catalog is bundled for offline inspection; creative execution still requires model configuration. A larger remotely updated catalog can use the same versioned metadata and trust rules.

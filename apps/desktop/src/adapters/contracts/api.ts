@@ -112,6 +112,6 @@ export interface DesktopApi {
 }
 declare global {
   interface Window {
-    frameo: DesktopApi;
+    framo: DesktopApi;
   }
 }

@@ -2,7 +2,7 @@ import type { Catalog } from './types';
 export const workbench = {
   'workbench.desktop.missing': {
     en: 'Desktop connection unavailable. Open the workbench through the Framo desktop app.',
-    zh: '桌面连接不可用。请通过 Frameo 桌面应用启动工作台。',
+    zh: '桌面连接不可用。请通过 Framo 桌面应用启动工作台。',
   },
   'workbench.agent.working': {
     en: 'Agent is working',
@@ -407,7 +407,7 @@ export const workbench = {
   },
   'workbench.welcome': {
     en: 'Welcome to Framo',
-    zh: '欢迎来到 Frameo',
+    zh: '欢迎来到 Framo',
   },
   'workbench.kits.environment': {
     en: 'A creative studio powered by Kits',

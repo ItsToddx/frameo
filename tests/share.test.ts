@@ -9,7 +9,7 @@ import { ProjectDatabase } from '../apps/desktop/src/adapters/storage/database';
 import { shareProject, importSharedProject } from '../apps/desktop/src/adapters/storage/share';
 import { archiveMedia } from '../apps/desktop/src/adapters/runtime/media';
 test('sharing round-trips real archived media and saved edits, strips private state and creates a new identity', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-share-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-share-'));
   const db = ProjectDatabase.create(join(root, 'source'), 'Shared film', 640, 360, 30);
   let imported: ProjectDatabase | undefined;
   try {
@@ -41,7 +41,7 @@ test('sharing round-trips real archived media and saved edits, strips private st
         createdAt: 'x',
       });
     });
-    const archive = join(root, 'share.frameoproject');
+    const archive = join(root, 'share.framoproject');
     await shareProject(db, archive);
     const zip = new AdmZip(archive);
     const manifest = zip.getEntry('project.json')!.getData().toString();
@@ -61,7 +61,7 @@ test('sharing round-trips real archived media and saved edits, strips private st
   }
 });
 test('invalid archives cannot escape or leave an incomplete target directory', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-share-invalid-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-share-invalid-'));
   try {
     const archive = join(root, 'bad.zip'),
       target = join(root, 'target');
@@ -75,7 +75,7 @@ test('invalid archives cannot escape or leave an incomplete target directory', a
       'project.json',
       Buffer.from(
         JSON.stringify({
-          format: 'frameo-project',
+          format: 'framo-project',
           version: 1,
           name: 'Broken',
           sequences: [],

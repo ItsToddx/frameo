@@ -20,15 +20,15 @@ context.fillStyle = gradient;
 context.fillRect(0, 0, 640, 360);
 context.fillStyle = '#e7d9bd';
 context.font = 'bold 40px sans-serif';
-context.fillText('FRAMEO', 56, 185);
+context.fillText('FRAMO', 56, 185);
 await writeFile(image, canvas.toBuffer('image/png'));
-const project = join(directory, 'Smoke.frameo');
+const project = join(directory, 'Smoke.framo');
 const output = join(directory, 'Smoke.mp4');
-const env: NodeJS.ProcessEnv = { ...process.env, FRAMEO_USER_DATA: join(directory, 'user-data') };
+const env: NodeJS.ProcessEnv = { ...process.env, FRAMO_USER_DATA: join(directory, 'user-data') };
 delete env.ELECTRON_RUN_AS_NODE;
 const application = await electron.launch({
-  executablePath: process.env.FRAMEO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
-  args: process.env.FRAMEO_TEST_EXECUTABLE ? [] : [process.cwd()],
+  executablePath: process.env.FRAMO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
+  args: process.env.FRAMO_TEST_EXECUTABLE ? [] : [process.cwd()],
   cwd: process.cwd(),
   env: Object.fromEntries(
     Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined),
@@ -40,7 +40,7 @@ let page: import('@playwright/test').Page | undefined;
 async function waitForJob(kind: 'preview' | 'export') {
   const end = Date.now() + 60000;
   while (Date.now() < end) {
-    const snapshot = await page!.evaluate(() => window.frameo.snapshot());
+    const snapshot = await page!.evaluate(() => window.framo.snapshot());
     const job = snapshot.jobs.filter((j) => j.kind === kind).at(-1);
     if (job?.status === 'succeeded') return job;
     if (job && ['failed', 'cancelled'].includes(job.status))
@@ -74,7 +74,7 @@ try {
   assert.equal(escaped, false, 'Renderer must not fetch arbitrary file URLs');
   const blocked = await page.evaluate(async () => {
     try {
-      await window.frameo.createProject({ name: 'No key', width: 1920, height: 1080, fps: 30 });
+      await window.framo.createProject({ name: 'No key', width: 1920, height: 1080, fps: 30 });
       return false;
     } catch {
       return true;
@@ -113,12 +113,12 @@ try {
   await page.locator('.inspector-form textarea[name="text"]').fill('让想法成为下一个镜头');
   await page.locator('.inspector-form input[name="duration"]').fill('3');
   await page.getByRole('button', { name: '添加字幕', exact: true }).click();
-  const edited = await page.evaluate(() => window.frameo.snapshot());
+  const edited = await page.evaluate(() => window.framo.snapshot());
   assert.equal(edited.sequences[0].clips[0].duration, 90);
   assert.equal(edited.sequences[0].captions[0].text, '让想法成为下一个镜头');
   await page.getByRole('button', { name: '撤销剪辑', exact: true }).click();
   assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].captions.length,
+    (await page.evaluate(() => window.framo.snapshot())).sequences[0].captions.length,
     0,
   );
   await page.getByRole('button', { name: '重做剪辑', exact: true }).click();
@@ -151,12 +151,12 @@ try {
     .click()
     .catch(() => {});
   await page.evaluate(async () => {
-    const s = await window.frameo.snapshot();
-    await window.frameo.saveMemory({ scope: 'project', content: '优先使用简洁的中文字幕。' });
-    await window.frameo.closeProject();
-    await window.frameo.openRecent(s.project.path);
+    const s = await window.framo.snapshot();
+    await window.framo.saveMemory({ scope: 'project', content: '优先使用简洁的中文字幕。' });
+    await window.framo.closeProject();
+    await window.framo.openRecent(s.project.path);
   });
-  const reopened = await page.evaluate(() => window.frameo.snapshot());
+  const reopened = await page.evaluate(() => window.framo.snapshot());
   assert.equal(reopened.sequences[0].clips[0].duration, 90);
   assert.equal(reopened.sequences[0].captions.length, 1);
   assert.equal(reopened.memories.length, 1);
@@ -176,18 +176,18 @@ try {
       checkboxChecked: false,
     })) as typeof dialog.showMessageBox;
   }, resolve('kits/examples/caption-case'));
-  const installed = await page.evaluate(() => window.frameo.importKit());
+  const installed = await page.evaluate(() => window.framo.importKit());
   assert.ok(installed.some((kit) => kit.id === 'example.caption-case' && kit.enabled));
-  const latest = await page.evaluate(() => window.frameo.snapshot()),
+  const latest = await page.evaluate(() => window.framo.snapshot()),
     selected = latest.sequences[0],
     caption = selected.captions[0];
-  await page.evaluate(async (input) => window.frameo.apply(input), {
+  await page.evaluate(async (input) => window.framo.apply(input), {
     sequenceId: selected.id,
     expectedRevision: selected.revision,
     commandId: 'native-fixture-caption',
-    commands: [{ type: 'upsertCaption' as const, caption: { ...caption, text: 'Frameo' } }],
+    commands: [{ type: 'upsertCaption' as const, caption: { ...caption, text: 'Framo' } }],
   });
-  const declaredRecipe = join(directory, 'native-recipe.frameokit');
+  const declaredRecipe = join(directory, 'native-recipe.framokit');
   await writeFile(
     declaredRecipe,
     JSON.stringify({
@@ -197,7 +197,7 @@ try {
         name: 'Native caption recipe',
         version: '1.0.0',
         description: 'Test actual native worker and reviews',
-        author: 'Frameo test',
+        author: 'Framo test',
         license: 'Apache-2.0',
         hostApi: '1',
         source: 'fixture',
@@ -240,19 +240,19 @@ try {
       filePaths: [path],
     })) as typeof dialog.showOpenDialog;
   }, declaredRecipe);
-  await page.evaluate(() => window.frameo.importKit());
-  const started = await page.evaluate(async (input) => window.frameo.startRecipe(input), {
+  await page.evaluate(() => window.framo.importKit());
+  const started = await page.evaluate(async (input) => window.framo.startRecipe(input), {
     kitId: 'fixture.native-recipe',
     title: 'Native fixture',
     sequenceId: selected.id,
     input: { captionIds: [caption.id] },
   });
   const recipeId = started.recipes.at(-1)!.id;
-  await page.evaluate(async (recipeId) => window.frameo.resumeRecipe({ recipeId }), recipeId);
+  await page.evaluate(async (recipeId) => window.framo.resumeRecipe({ recipeId }), recipeId);
   const stop = Date.now() + 10000;
   let produced: Awaited<ReturnType<DesktopApi['snapshot']>>;
   while (true) {
-    produced = await page.evaluate(() => window.frameo.snapshot());
+    produced = await page.evaluate(() => window.framo.snapshot());
     if (
       produced.reviews.some((review) => review.recipeId === recipeId && review.status === 'pending')
     )
@@ -262,18 +262,18 @@ try {
   }
   const review = produced!.reviews.find((review) => review.recipeId === recipeId)!;
   assert.equal(review.commands?.[0].type, 'upsertCaption');
-  assert.equal(produced!.sequences[0].captions[0].text, 'Frameo');
-  await page.evaluate((input) => window.frameo.decideReview(input), {
+  assert.equal(produced!.sequences[0].captions[0].text, 'Framo');
+  await page.evaluate((input) => window.framo.decideReview(input), {
     reviewId: review.id,
     decision: 'accept' as const,
   });
-  await page.evaluate((recipeId) => window.frameo.resumeRecipe({ recipeId }), recipeId);
-  const materialized = await page.evaluate(() => window.frameo.snapshot()),
+  await page.evaluate((recipeId) => window.framo.resumeRecipe({ recipeId }), recipeId);
+  const materialized = await page.evaluate(() => window.framo.snapshot()),
     run = materialized.recipes.find((recipe) => recipe.id === recipeId)!,
     step = run.steps[0];
   assert.equal(step.reviewPhase, 'result');
-  assert.equal(materialized.sequences[0].captions[0].text, 'FRAMEO');
-  await page.evaluate((input) => window.frameo.decideRecipeResult(input), {
+  assert.equal(materialized.sequences[0].captions[0].text, 'FRAMO');
+  await page.evaluate((input) => window.framo.decideRecipeResult(input), {
     recipeId,
     expectedRevision: run.revision,
     stepId: step.id,
@@ -281,18 +281,18 @@ try {
     resultHash: step.resultHash!,
     decision: 'accept' as const,
   });
-  await page.evaluate((recipeId) => window.frameo.resumeRecipe({ recipeId }), recipeId);
+  await page.evaluate((recipeId) => window.framo.resumeRecipe({ recipeId }), recipeId);
   assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).recipes.find(
+    (await page.evaluate(() => window.framo.snapshot())).recipes.find(
       (recipe) => recipe.id === recipeId,
     )!.status,
     'completed',
   );
   await page.evaluate(() =>
-    window.frameo.setKitEnabled({ id: 'example.caption-case', enabled: false }),
+    window.framo.setKitEnabled({ id: 'example.caption-case', enabled: false }),
   );
   assert.ok(
-    (await page.evaluate(() => window.frameo.listKits())).find(
+    (await page.evaluate(() => window.framo.listKits())).find(
       (kit) => kit.id === 'example.caption-case',
     )?.enabled === false,
   );

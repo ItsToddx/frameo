@@ -130,7 +130,7 @@ export function App() {
           };
           editLeaseRef.current = lease;
           const entry = lease;
-          entry.ready = window.frameo
+          entry.ready = window.framo
             .beginEdit({ sequenceId: entry.sequenceId, interactionId: entry.interactionId })
             .then(() => {
               entry.acquired = true;
@@ -149,7 +149,7 @@ export function App() {
         await lease.ready.catch(() => {});
         if (lease.acquired) {
           try {
-            await window.frameo.endEdit({
+            await window.framo.endEdit({
               sequenceId: lease.sequenceId,
               interactionId: lease.interactionId,
             });
@@ -202,11 +202,11 @@ export function App() {
   const initialize = useCallback(async () => {
     setLoadError('');
     try {
-      if (!window.frameo)
+      if (!window.framo)
         throw new Error(
           'Desktop connection unavailable. Open the workbench through the Framo desktop app.',
         );
-      const data = await window.frameo.bootstrap();
+      const data = await window.framo.bootstrap();
       setBoot(data);
       setSettings(data.settings);
       setLocale(normalizeLocale(data.settings.language));
@@ -218,8 +218,8 @@ export function App() {
   }, [acceptSnapshot, setLocale]);
   useEffect(() => {
     void initialize();
-    if (!window.frameo) return;
-    return window.frameo.onEvent((event) => {
+    if (!window.framo) return;
+    return window.framo.onEvent((event) => {
       if (event.projectId && event.projectId !== snapshotRef.current?.project.id) return;
       if (event.type === 'state' && event.snapshot) acceptSnapshot(event.snapshot, 'event');
       if (event.type === 'chat.delta') {
@@ -288,7 +288,7 @@ export function App() {
     setModal('generation');
   };
   async function refresh() {
-    const result = await perform(t('workbench.project.read'), () => window.frameo.snapshot());
+    const result = await perform(t('workbench.project.read'), () => window.framo.snapshot());
     if (result) acceptSnapshot(result.value);
   }
   async function apply(commands: EditCommand[], expectedRevision?: number): Promise<boolean> {
@@ -296,7 +296,7 @@ export function App() {
     const lease = editLeaseRef.current?.sequenceId === sequence.id ? editLeaseRef.current : null;
     const result = await update(t('workbench.edit.save'), async () => {
       if (lease) await lease.ready;
-      return window.frameo.apply({
+      return window.framo.apply({
         sequenceId: sequence.id,
         expectedRevision: expectedRevision ?? sequence.revision,
         commandId: uid(),
@@ -310,7 +310,7 @@ export function App() {
     async (items: CanvasItem[]) => {
       if (!snapshot) return;
       await update(t('workbench.canvas.save'), () =>
-        window.frameo.saveCanvas({ expectedRevision: snapshot.canvas.revision, items }),
+        window.framo.saveCanvas({ expectedRevision: snapshot.canvas.revision, items }),
       );
     },
     [snapshot, t],
@@ -402,7 +402,7 @@ export function App() {
         },
       });
       void update(t('workbench.clip.add'), () =>
-        window.frameo.apply({
+        window.framo.apply({
           sequenceId: target.id,
           expectedRevision: target.revision,
           commandId: uid(),
@@ -423,7 +423,7 @@ export function App() {
       snapshot.sessions.find((s) => s.id === sessionId) || snapshot.sessions[0];
     if (!session) {
       const created = await update(t('workbench.chat.create'), () =>
-        window.frameo.createSession(t('workbench.chat.default')),
+        window.framo.createSession(t('workbench.chat.default')),
       );
       if (!created?.value) return false;
       session = created.value.sessions.at(-1);
@@ -435,7 +435,7 @@ export function App() {
     setDelta('');
     setAgentStatus(t('workbench.agent.understanding'));
     const result = await perform(t('workbench.prompt.send'), () =>
-      window.frameo.prompt({
+      window.framo.prompt({
         requestId: uid(),
         sessionId: session!.id,
         text: selectedAsset
@@ -449,7 +449,7 @@ export function App() {
     return !!result;
   }
   async function listKits() {
-    const result = await perform(t('workbench.kits.read'), () => window.frameo.listKits());
+    const result = await perform(t('workbench.kits.read'), () => window.framo.listKits());
     if (result) setKits(result.value);
   }
   async function kitOperation(label: string, fn: () => Promise<AppBootstrap['kits']>) {
@@ -460,7 +460,7 @@ export function App() {
     if (!requireSavedDraft()) return;
     await update(
       t('workbench.project.open'),
-      () => (path ? window.frameo.openRecent(path) : window.frameo.openProject()),
+      () => (path ? window.framo.openRecent(path) : window.framo.openProject()),
       true,
     );
   }
@@ -482,7 +482,7 @@ export function App() {
     return (
       <div className="loading-screen">
         <Aperture size={38} />
-        <h1>Frameo</h1>
+        <h1>Framo</h1>
         <span>
           <LoaderCircle size={14} className="spin" />
           {t('workbench.desktop.loading')}
@@ -494,7 +494,7 @@ export function App() {
       <header className="app-header">
         <div className="brand">
           <FrameMark size={25} />
-          <span>frameo</span>
+          <span>framo</span>
         </div>
         <div className="header-project">
           <span className={`status-dot ${snapshot ? 'ready' : ''}`} />
@@ -590,11 +590,7 @@ export function App() {
               label={t('workbench.share.import')}
               disabled={busy || dirtyEdit}
               onClick={() =>
-                void update(
-                  t('workbench.project.import'),
-                  () => window.frameo.importProject(),
-                  true,
-                )
+                void update(t('workbench.project.import'), () => window.framo.importProject(), true)
               }
             >
               <Upload size={18} />
@@ -604,7 +600,7 @@ export function App() {
               <Plus size={19} />
               <span>{t('workbench.new')}</span>
             </IconButton>
-            <span className="rail-version" title={`Frameo ${boot.version}`}>
+            <span className="rail-version" title={`Framo ${boot.version}`}>
               {boot.version}
             </span>
           </div>
@@ -627,7 +623,7 @@ export function App() {
                   <Button
                     disabled={busy}
                     onClick={() =>
-                      void update(t('workbench.media.import'), () => window.frameo.importMedia())
+                      void update(t('workbench.media.import'), () => window.framo.importMedia())
                     }
                     testId="import-media"
                   >
@@ -744,7 +740,7 @@ export function App() {
                     label={t('workbench.canvas.undoLabel')}
                     disabled={busy}
                     onClick={() =>
-                      void update(t('workbench.canvas.undo'), () => window.frameo.undoCanvas())
+                      void update(t('workbench.canvas.undo'), () => window.framo.undoCanvas())
                     }
                   >
                     <Undo2 size={14} />
@@ -771,7 +767,7 @@ export function App() {
                   <Button
                     onClick={() =>
                       void perform(t('workbench.project.close'), () =>
-                        window.frameo.closeProject(),
+                        window.framo.closeProject(),
                       ).then((result) => {
                         if (result) {
                           snapshotRef.current = null;
@@ -832,7 +828,7 @@ export function App() {
                 onAdd={addAsset}
                 onGenerate={showGenerate}
                 onImport={() =>
-                  void update(t('workbench.media.import'), () => window.frameo.importMedia())
+                  void update(t('workbench.media.import'), () => window.framo.importMedia())
                 }
                 busy={busy}
               />
@@ -865,7 +861,7 @@ export function App() {
                   onDraftChange={(dirty) => onDraftChange(dirty, sequence.id)}
                   onUndo={() =>
                     void update(t('workbench.edit.undo'), () =>
-                      window.frameo.undo({
+                      window.framo.undo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                         commandId: uid(),
@@ -874,7 +870,7 @@ export function App() {
                   }
                   onRedo={() =>
                     void update(t('workbench.edit.redo'), () =>
-                      window.frameo.redo({
+                      window.framo.redo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                         commandId: uid(),
@@ -885,7 +881,7 @@ export function App() {
                   canRedo={!!snapshot.canRedo[sequence.id]}
                   onPreview={() =>
                     void perform(t('workbench.preview.submit'), () =>
-                      window.frameo.preview({
+                      window.framo.preview({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
@@ -895,7 +891,7 @@ export function App() {
                   }
                   onExport={() =>
                     void perform(t('workbench.export.submit'), () =>
-                      window.frameo.exportVideo({
+                      window.framo.exportVideo({
                         sequenceId: sequence.id,
                         expectedRevision: sequence.revision,
                       }),
@@ -921,7 +917,7 @@ export function App() {
               <div className="welcome-mark">
                 <FrameMark size={32} />
               </div>
-              <span className="eyebrow">FRAMEO STUDIO</span>
+              <span className="eyebrow">FRAMO STUDIO</span>
               <h1>{t('workbench.welcome.title')}</h1>
               <p>{t('workbench.welcome.description')}</p>
               <div className="welcome-workflow" aria-label={t('workbench.welcome.workflow')}>
@@ -983,7 +979,7 @@ export function App() {
           onSession={setSessionId}
           onNewSession={() =>
             void update(t('workbench.chat.new'), () =>
-              window.frameo.createSession(
+              window.framo.createSession(
                 t('workbench.chat.numbered', { count: (snapshot?.sessions.length || 0) + 1 }),
               ),
             ).then((result) => {
@@ -992,7 +988,7 @@ export function App() {
           }
           onPrompt={sendPrompt}
           onStop={() =>
-            void perform(t('workbench.agent.stop'), () => window.frameo.stopAgent()).then(
+            void perform(t('workbench.agent.stop'), () => window.framo.stopAgent()).then(
               (result) => {
                 if (result) {
                   setAgentRunning(false);
@@ -1014,13 +1010,13 @@ export function App() {
           onReview={(reviewId, decision) => {
             if (decision === 'accept' && !requireSavedDraft()) return;
             void update(t('workbench.review'), () =>
-              window.frameo.decideReview({ reviewId, decision }),
+              window.framo.decideReview({ reviewId, decision }),
             );
           }}
           onResume={(recipeId) => {
             if (requireSavedDraft())
               void perform(t('workbench.recipe.resume'), () =>
-                window.frameo.resumeRecipe({ recipeId }),
+                window.framo.resumeRecipe({ recipeId }),
               );
           }}
           onRedo={(recipeId, redoStepId) => {
@@ -1030,24 +1026,24 @@ export function App() {
               return;
             }
             void perform(t('workbench.recipe.redo'), () =>
-              window.frameo.resumeRecipe({ recipeId, redoStepId }),
+              window.framo.resumeRecipe({ recipeId, redoStepId }),
             );
           }}
           onRecipeResult={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
             void update(t('workbench.recipe.reviewResult'), () =>
-              window.frameo.decideRecipeResult(input),
+              window.framo.decideRecipeResult(input),
             );
           }}
           onRecipeInput={(input) => {
             if (input.decision === 'accept' && !requireSavedDraft()) return;
             void update(t('workbench.recipe.reviewInput'), () =>
-              window.frameo.decideRecipeInput(input),
+              window.framo.decideRecipeInput(input),
             );
           }}
           onExportRecipe={(recipeId) =>
             void perform(t('workbench.recipe.export'), () =>
-              window.frameo.exportRecipe({ recipeId }),
+              window.framo.exportRecipe({ recipeId }),
             ).then((result) => {
               if (result?.value) notify({ key: 'workbench.recipe.exported' });
             })
@@ -1084,7 +1080,7 @@ export function App() {
           onClose={closeModal}
           onSave={async (value) => {
             const result = await perform(t('workbench.model.save'), () =>
-              window.frameo.saveSettings(value),
+              window.framo.saveSettings(value),
             );
             if (result) {
               setSettings(result.value);
@@ -1106,8 +1102,8 @@ export function App() {
               modal === 'project' ? t('workbench.project.create') : t('workbench.sequence.create'),
               () =>
                 modal === 'project'
-                  ? window.frameo.createProject(value)
-                  : window.frameo.createSequence(value),
+                  ? window.framo.createProject(value)
+                  : window.framo.createSequence(value),
               modal === 'project',
             );
             if (result?.value) {
@@ -1119,7 +1115,7 @@ export function App() {
                 setSequenceId(created.id);
               }
               const next = await perform(t('workbench.projects.read'), () =>
-                window.frameo.bootstrap(),
+                window.framo.bootstrap(),
               );
               if (next) setBoot(next.value);
             }
@@ -1136,7 +1132,7 @@ export function App() {
           onSubmit={async (input) => {
             if (!needModel()) return false;
             const result = await perform(t('workbench.seedance.submit'), () =>
-              window.frameo.generate(input),
+              window.framo.generate(input),
             );
             if (result) {
               setModal(null);
@@ -1152,13 +1148,13 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onCancel={(id) =>
-            void perform(t('workbench.task.cancel'), () => window.frameo.cancelJob(id))
+            void perform(t('workbench.task.cancel'), () => window.framo.cancelJob(id))
           }
           onReconcile={(id) =>
-            void perform(t('workbench.task.query'), () => window.frameo.reconcileJob(id))
+            void perform(t('workbench.task.query'), () => window.framo.reconcileJob(id))
           }
           onReveal={(path) =>
-            void perform(t('workbench.output.reveal'), () => window.frameo.revealFile(path))
+            void perform(t('workbench.output.reveal'), () => window.framo.revealFile(path))
           }
         />
       )}
@@ -1168,18 +1164,18 @@ export function App() {
           busy={busy}
           onClose={closeModal}
           onInstall={(id) =>
-            void kitOperation(t('workbench.kit.install'), () => window.frameo.installKit(id))
+            void kitOperation(t('workbench.kit.install'), () => window.framo.installKit(id))
           }
           onEnable={(id, enabled) =>
             void kitOperation(t('workbench.kit.enable'), () =>
-              window.frameo.setKitEnabled({ id, enabled }),
+              window.framo.setKitEnabled({ id, enabled }),
             )
           }
           onUninstall={(id) =>
-            void kitOperation(t('workbench.kit.uninstall'), () => window.frameo.uninstallKit(id))
+            void kitOperation(t('workbench.kit.uninstall'), () => window.framo.uninstallKit(id))
           }
           onImport={() =>
-            void kitOperation(t('workbench.kit.import'), () => window.frameo.importKit())
+            void kitOperation(t('workbench.kit.import'), () => window.framo.importKit())
           }
           onRefresh={() => void listKits()}
           canStart={!!snapshot}
@@ -1197,13 +1193,13 @@ export function App() {
           onClose={closeModal}
           onSave={async (input) => {
             const result = await update(t('workbench.memory.save'), () =>
-              window.frameo.saveMemory(input),
+              window.framo.saveMemory(input),
             );
             return !!result?.value;
           }}
           onDelete={(memory) =>
             void update(t('workbench.memory.delete'), () =>
-              window.frameo.deleteMemory({
+              window.framo.deleteMemory({
                 id: memory.id,
                 scope: memory.scope,
                 expectedRevision: memory.revision,
@@ -1236,7 +1232,7 @@ export function App() {
                 return;
               }
               void update(t('workbench.recipe.starting'), () =>
-                window.frameo.startRecipe({
+                window.framo.startRecipe({
                   kitId: recipeKit.id,
                   title: String(data.get('title')).trim(),
                   sequenceId: contextSequence?.id,
@@ -1301,7 +1297,7 @@ export function App() {
               kind="accent"
               disabled={busy}
               onClick={() =>
-                void perform(t('workbench.share.export'), () => window.frameo.exportProject()).then(
+                void perform(t('workbench.share.export'), () => window.framo.exportProject()).then(
                   (result) => {
                     if (result?.value) {
                       notify({ key: 'workbench.share.exported' });
@@ -1350,7 +1346,7 @@ export function App() {
               disabled={busy}
               onClick={() =>
                 void perform(t('workbench.file.showing'), () =>
-                  window.frameo.revealFile(inspectAsset.path),
+                  window.framo.revealFile(inspectAsset.path),
                 )
               }
             >

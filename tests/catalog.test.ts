@@ -36,7 +36,7 @@ function declaration(
       name: id,
       version: '1.0.0',
       description: 'Fixture Kit',
-      author: 'Frameo tests',
+      author: 'Framo tests',
       license: 'Apache-2.0',
       hostApi: '1',
       source: 'fixture',
@@ -121,7 +121,7 @@ class NativeFixture {
   }
 }
 async function fixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-catalog-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-catalog-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const app = new AppDatabase(directory);
   t.after(() => app.close());

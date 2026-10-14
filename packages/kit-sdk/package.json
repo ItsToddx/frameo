@@ -1,7 +1,7 @@
 {
-  "name": "@frameo/kit-sdk",
-  "version": "0.2.0",
-  "description": "Public contracts and atomic registration for Frameo creation Kits",
+  "name": "@framo/kit-sdk",
+  "version": "0.3.0",
+  "description": "Public contracts and atomic registration for Framo creation Kits",
   "type": "module",
   "license": "Apache-2.0",
   "exports": {

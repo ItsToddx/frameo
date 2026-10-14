@@ -1,6 +1,6 @@
 {
-  "name": "frameo",
-  "version": "0.2.0",
+  "name": "framo",
+  "version": "0.3.0",
   "private": true,
   "description": "An agent-powered desktop video studio",
   "type": "module",
@@ -68,7 +68,7 @@
   },
   "build": {
     "appId": "com.reelbeam.desktop",
-    "productName": "Frameo",
+    "productName": "Framo",
     "directories": {
       "output": "release"
     },
@@ -86,7 +86,7 @@
       ],
       "identity": null
     },
-    "artifactName": "Frameo-${version}-${arch}.${ext}",
+    "artifactName": "Framo-${version}-${arch}.${ext}",
     "npmRebuild": false,
     "extraResources": [
       {

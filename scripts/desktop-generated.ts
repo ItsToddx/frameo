@@ -20,14 +20,14 @@ assert.ok(
 const directory = resolve('test-results/desktop-generated');
 await rm(directory, { recursive: true, force: true });
 await mkdir(directory, { recursive: true });
-const project = join(directory, 'Generated.frameo');
+const project = join(directory, 'Generated.framo');
 await cp(resolve(source), project, { recursive: true });
 const output = join(directory, 'Generated.mp4'),
-  environment: NodeJS.ProcessEnv = { ...process.env, FRAMEO_USER_DATA: join(directory, 'profile') };
+  environment: NodeJS.ProcessEnv = { ...process.env, FRAMO_USER_DATA: join(directory, 'profile') };
 delete environment.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({
-  executablePath: process.env.FRAMEO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
-  args: process.env.FRAMEO_TEST_EXECUTABLE ? [] : [process.cwd()],
+  executablePath: process.env.FRAMO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
+  args: process.env.FRAMO_TEST_EXECUTABLE ? [] : [process.cwd()],
   cwd: process.cwd(),
   env: Object.fromEntries(
     Object.entries(environment).filter(
@@ -70,7 +70,7 @@ try {
   await page.getByTestId('save-settings').click();
   await page.getByRole('main').getByRole('button', { name: '打开工程', exact: true }).click();
   await page.getByTestId('jobs-button').waitFor();
-  const initial = await page.evaluate(() => window.frameo.snapshot());
+  const initial = await page.evaluate(() => window.framo.snapshot());
   const job = initial.jobs.find(
     (j) => j.kind === 'seedance' && j.status === 'succeeded' && j.outputAssetId,
   )!;
@@ -89,7 +89,7 @@ try {
   async function waitForJob(kind: 'preview' | 'export') {
     const end = Date.now() + 60000;
     while (Date.now() < end) {
-      const state = await page.evaluate(() => window.frameo.snapshot());
+      const state = await page.evaluate(() => window.framo.snapshot());
       const result = state.jobs.filter((j) => j.kind === kind).at(-1);
       if (result?.status === 'succeeded') return result;
       if (result && ['failed', 'cancelled'].includes(result.status))
@@ -147,11 +147,11 @@ try {
   assert.ok(Math.abs(Number(metadata.format.duration) - 5) < 0.05);
   await runProcess(ffmpegPath(), ['-v', 'error', '-xerror', '-i', output, '-f', 'null', '-']);
   await page.evaluate(async () => {
-    const state = await window.frameo.snapshot();
-    await window.frameo.closeProject();
-    await window.frameo.openRecent(state.project.path);
+    const state = await window.framo.snapshot();
+    await window.framo.closeProject();
+    await window.framo.openRecent(state.project.path);
   });
-  const reopened = await page.evaluate(() => window.frameo.snapshot());
+  const reopened = await page.evaluate(() => window.framo.snapshot());
   assert.equal(reopened.sequences[0].clips[0].duration, 120);
   assert.equal(reopened.sequences[0].captions[0].text, '让想法成为下一个镜头');
   assert.equal(reopened.assets.length, initial.assets.length);

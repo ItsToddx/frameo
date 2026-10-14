@@ -59,8 +59,8 @@ export const panels = {
   'panel.cancel': { en: 'Cancel', zh: '取消' },
   'settings.title': { en: 'Connect to Volcengine Ark', zh: '连接火山方舟' },
   'settings.description': {
-    en: 'Frameo uses models to understand your creative goals. The first release uses Seedance to generate video.',
-    zh: 'Frameo 通过模型理解创作需求，第一版使用 Seedance 生成视频。',
+    en: 'Framo uses models to understand your creative goals. The first release uses Seedance to generate video.',
+    zh: 'Framo 通过模型理解创作需求，第一版使用 Seedance 生成视频。',
   },
   'settings.keySaved': { en: 'API key saved on this device', zh: 'API Key 已保存在本机' },
   'settings.setup': { en: 'Configure models to start creating', zh: '配置模型后开始创作' },

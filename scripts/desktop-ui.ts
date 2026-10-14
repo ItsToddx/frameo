@@ -11,7 +11,7 @@ import { archiveMedia } from '../apps/desktop/src/adapters/runtime/media';
 const directory = resolve('test-results/desktop-ui');
 await rm(directory, { recursive: true, force: true });
 await mkdir(directory, { recursive: true });
-const project = join(directory, 'Interface.frameo');
+const project = join(directory, 'Interface.framo');
 const image = join(directory, 'reference.png');
 const canvas = createCanvas(640, 360);
 const ctx = canvas.getContext('2d');
@@ -84,11 +84,11 @@ db.transaction((state) => {
   });
 });
 db.close();
-const env: NodeJS.ProcessEnv = { ...process.env, FRAMEO_USER_DATA: join(directory, 'profile') };
+const env: NodeJS.ProcessEnv = { ...process.env, FRAMO_USER_DATA: join(directory, 'profile') };
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({
-  executablePath: process.env.FRAMEO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
-  args: process.env.FRAMEO_TEST_EXECUTABLE ? [] : [process.cwd()],
+  executablePath: process.env.FRAMO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
+  args: process.env.FRAMO_TEST_EXECUTABLE ? [] : [process.cwd()],
   cwd: process.cwd(),
   env: Object.fromEntries(
     Object.entries(env).filter((entry): entry is [string, string] => entry[1] !== undefined),
@@ -125,7 +125,7 @@ try {
     'Close restores trigger focus',
   );
   await page.evaluate(() =>
-    window.frameo.saveSettings({
+    window.framo.saveSettings({
       arkBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
       agentModel: 'ui-no-inference',
       seedanceModel: 'doubao-seedance-2-5-260628',
@@ -169,9 +169,7 @@ try {
   });
   await page.waitForTimeout(200);
   const initialScroll = await feed.evaluate((element) => element.scrollTop);
-  await page.evaluate(() =>
-    window.frameo.saveMemory({ scope: 'project', content: '界面测试偏好' }),
-  );
+  await page.evaluate(() => window.framo.saveMemory({ scope: 'project', content: '界面测试偏好' }));
   await page.waitForTimeout(300);
   assert.ok(
     Math.abs((await feed.evaluate((element) => element.scrollTop)) - initialScroll) < 5,
@@ -179,7 +177,7 @@ try {
   );
   await page.getByRole('tab', { name: /审阅/ }).click();
   await page.getByRole('button', { name: '采纳方案', exact: true }).click();
-  const accepted = await page.evaluate(() => window.frameo.snapshot());
+  const accepted = await page.evaluate(() => window.framo.snapshot());
   assert.equal(accepted.reviews[0].status, 'accepted');
   assert.equal(accepted.sequences[0].captions[0].text, '沿着海岸，继续前行');
   await page.locator('.sequence-list-row').first().click();
@@ -188,21 +186,15 @@ try {
   await page.getByTestId('timeline-clip').focus();
   await page.keyboard.press('ArrowRight');
   await page.getByTestId('save-timeline-draft').click();
-  assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].clips[0].start,
-    1,
-  );
+  assert.equal((await page.evaluate(() => window.framo.snapshot())).sequences[0].clips[0].start, 1);
   await page.getByRole('button', { name: '撤销剪辑', exact: true }).click();
-  assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].clips[0].start,
-    0,
-  );
+  assert.equal((await page.evaluate(() => window.framo.snapshot())).sequences[0].clips[0].start, 0);
 
   await page.locator('.inspector-form input[name="duration"]').fill('4');
   assert.equal(await page.getByTestId('discard-timeline-draft').isVisible(), true);
   await page.getByTestId('discard-timeline-draft').click();
   assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].clips[0].duration,
+    (await page.evaluate(() => window.framo.snapshot())).sequences[0].clips[0].duration,
     120,
   );
   await app.evaluate(({ BrowserWindow }) => {

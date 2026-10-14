@@ -402,7 +402,7 @@ function ChatMessage() {
         ? t('chat.you')
         : role === 'tool'
           ? t('chat.tool')
-          : 'Frameo';
+          : 'Framo';
   const streaming = message.status?.type === 'running';
   return (
     <MessagePrimitive.Root className={`chat-message ${role}`} data-message-id={message.id}>

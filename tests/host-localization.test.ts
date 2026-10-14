@@ -167,7 +167,7 @@ test('host default names follow the explicit language while existing content sur
       height: 360,
       fps: 30,
     })) as ProjectSnapshot;
-    assert.equal(dialogs[0].title, 'Create Frameo project');
+    assert.equal(dialogs[0].title, 'Create Framo project');
     assert.equal(project.project.name, 'User 工程');
     assert.equal(project.sequences[0].name, 'Sequence 01');
     assert.deepEqual(
@@ -193,7 +193,7 @@ test('host default names follow the explicit language while existing content sur
     assert.equal(next.sequences[0].name, 'Sequence 01');
     assert.equal(next.project.name, 'User 工程');
     await app.methods.openProject();
-    assert.equal(dialogs[1].title, '打开 Frameo 工程');
+    assert.equal(dialogs[1].title, '打开 Framo 工程');
     assert.throws(
       () => app.methods.preview({ sequenceId: 'missing', expectedRevision: 0 }),
       /作品不存在/,

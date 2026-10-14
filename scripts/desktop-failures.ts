@@ -14,7 +14,7 @@ import type { Settings } from '../apps/desktop/src/adapters/contracts/api';
 const directory = resolve('test-results/desktop-failures');
 await rm(directory, { recursive: true, force: true });
 await mkdir(directory, { recursive: true });
-const project = join(directory, 'Failures.frameo');
+const project = join(directory, 'Failures.framo');
 const database = ProjectDatabase.create(project, '模型异常验收', 1280, 720, 24);
 const fixtureKey = 'failure-fixture-secret';
 const vault = {
@@ -158,12 +158,12 @@ assert.equal(database.read().sequences[0].clips.length, 0);
 database.close();
 const environment: NodeJS.ProcessEnv = {
   ...process.env,
-  FRAMEO_USER_DATA: join(directory, 'profile'),
+  FRAMO_USER_DATA: join(directory, 'profile'),
 };
 delete environment.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({
-  executablePath: process.env.FRAMEO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
-  args: process.env.FRAMEO_TEST_EXECUTABLE ? [] : [process.cwd()],
+  executablePath: process.env.FRAMO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
+  args: process.env.FRAMO_TEST_EXECUTABLE ? [] : [process.cwd()],
   cwd: process.cwd(),
   env: Object.fromEntries(
     Object.entries(environment).filter(
@@ -218,7 +218,7 @@ try {
       if (job.cancelRequested && !job.remoteId)
         assert.ok((await row.locator('.field-hint').innerText()).includes('缺少云端任务 ID'));
     }
-    const state = await page.evaluate(() => window.frameo.snapshot());
+    const state = await page.evaluate(() => window.framo.snapshot());
     assert.equal(state.assets.length, 0);
     assert.equal(state.sequences[0].clips.length, 0);
     assert.deepEqual(
@@ -240,7 +240,7 @@ try {
   assert.ok((await unknownRow.locator('.field-hint').innerText()).includes('缺少云端任务 ID'));
   unknown.cancelRequested = true;
   await page.screenshot({ path: join(directory, 'failures.png'), fullPage: true });
-  await page.evaluate(() => window.frameo.closeProject());
+  await page.evaluate(() => window.framo.closeProject());
   await page.reload();
   await page.getByTestId('welcome-create').waitFor();
   await page.getByRole('main').getByRole('button', { name: '打开工程', exact: true }).click();

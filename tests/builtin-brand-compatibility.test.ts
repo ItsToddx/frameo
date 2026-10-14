@@ -61,8 +61,8 @@ function legacyCatalog(current: KitCatalog): RecipeCatalog {
   };
 }
 
-test('Frameo preserves every version 1.0.0 builtin fingerprint while displaying its current author', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-builtin-fingerprints-'));
+test('Framo preserves every version 1.0.0 builtin fingerprint while displaying its current author', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'framo-builtin-fingerprints-'));
   const application = new AppDatabase(root);
   try {
     const catalog = new KitCatalog(application, nativeCatalog);
@@ -77,7 +77,7 @@ test('Frameo preserves every version 1.0.0 builtin fingerprint while displaying 
         'Reelbeam',
         'Canonical historical attribution remains frozen',
       );
-      assert.equal(catalog.list().find((kit) => kit.id === id)?.author, 'Frameo');
+      assert.equal(catalog.list().find((kit) => kit.id === id)?.author, 'Framo');
     }
   } finally {
     application.close();
@@ -85,8 +85,8 @@ test('Frameo preserves every version 1.0.0 builtin fingerprint while displaying 
   }
 });
 
-test('a frozen v0.1.1 recipe resumes after reopening under Frameo without rewriting its definitions', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-frozen-recipe-'));
+test('a frozen v0.1.1 recipe resumes after reopening under Framo without rewriting its definitions', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'framo-frozen-recipe-'));
   const application = new AppDatabase(join(root, 'profile'));
   let database = ProjectDatabase.create(join(root, 'Legacy.reelbeam'), 'Legacy', 640, 360, 30);
   try {
@@ -111,7 +111,7 @@ test('a frozen v0.1.1 recipe resumes after reopening under Frameo without rewrit
 });
 
 test('legacy pending builtin proposals stay approvable while actual capability changes still invalidate them', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-pending-builtin-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-pending-builtin-'));
   const application = new AppDatabase(join(root, 'profile'));
   const database = ProjectDatabase.create(join(root, 'Legacy.reelbeam'), 'Legacy', 640, 360, 30);
   const catalog = new KitCatalog(application, nativeCatalog);
@@ -190,7 +190,7 @@ test('legacy pending builtin proposals stay approvable while actual capability c
   }
 });
 
-test('the current runtime composes Frameo identity after a frozen historical role prompt', async () => {
+test('the current runtime composes Framo identity after a frozen historical role prompt', async () => {
   let prompt = '';
   const engine = new WorkerEngine(
     () => {},
@@ -250,6 +250,6 @@ test('the current runtime composes Frameo identity after a frozen historical rol
   assert.equal(result.status, 'completed', result.error);
   assert.ok(prompt.includes(agents[0].systemPrompt));
   assert.ok(
-    prompt.indexOf('Current application identity: Frameo') > prompt.indexOf(agents[0].systemPrompt),
+    prompt.indexOf('Current application identity: Framo') > prompt.indexOf(agents[0].systemPrompt),
   );
 });

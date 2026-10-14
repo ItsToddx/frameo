@@ -27,7 +27,7 @@ const files = {
 };
 
 test('explicit replacement preserves unreadable historical ciphertext and creates a new account without remapping old references', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-vault-replacement-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-vault-replacement-'));
   try {
     const old = new CredentialVault(directory, encryption('legacy-fixture'));
     const oldRef = old.save('synthetic-old-key');
@@ -55,7 +55,7 @@ test('explicit replacement preserves unreadable historical ciphertext and create
 });
 
 test('readable account rotation retains every previous account reference', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-vault-rotation-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-vault-rotation-'));
   try {
     const vault = new CredentialVault(directory, encryption('fixture'));
     const first = vault.save('synthetic-first-key'),
@@ -70,7 +70,7 @@ test('readable account rotation retains every previous account reference', async
 });
 
 test('an unavailable keychain never resets an existing encrypted vault', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-vault-unavailable-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-vault-unavailable-'));
   try {
     new CredentialVault(directory, encryption('legacy-fixture')).save('synthetic-old-key');
     const path = join(directory, 'credentials.enc'),
@@ -89,7 +89,7 @@ test('an unavailable keychain never resets an existing encrypted vault', async (
 });
 
 test('failed staged writes and final installation restore the original unreadable bytes', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-vault-write-failure-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-vault-write-failure-'));
   try {
     new CredentialVault(directory, encryption('legacy-fixture')).save('synthetic-old-key');
     const path = join(directory, 'credentials.enc'),

@@ -13,7 +13,7 @@ for (let i = 0; i < 100; i++) {
 }
 desktop = spawn(electron, ['.'], {
   stdio: 'inherit',
-  env: { ...process.env, FRAMEO_DEV_URL: 'http://127.0.0.1:5173' },
+  env: { ...process.env, FRAMO_DEV_URL: 'http://127.0.0.1:5173' },
 });
 const stop = () => {
   desktop?.kill();

@@ -12,11 +12,17 @@ import { hostText } from '../localization/host-text';
 import { hostErrorMessage } from '../localization/host-presentation';
 import { normalizeLocale, type Locale } from '../localization/types';
 const base = dirname(fileURLToPath(import.meta.url));
-app.setName('Frameo');
-app.setPath('userData', profileLocation(app.getPath('userData'), process.env.FRAMEO_USER_DATA));
+app.setName('Framo');
+app.setPath(
+  'userData',
+  profileLocation(
+    app.getPath('userData'),
+    process.env.FRAMO_USER_DATA ?? process.env.FRAMEO_USER_DATA,
+  ),
+);
 protocol.registerSchemesAsPrivileged([
   {
-    scheme: 'frameo-media',
+    scheme: 'framo-media',
     privileges: {
       standard: true,
       secure: true,
@@ -25,7 +31,7 @@ protocol.registerSchemesAsPrivileged([
       corsEnabled: true,
     },
   },
-  { scheme: 'frameo-app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
+  { scheme: 'framo-app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
 if (!app.requestSingleInstanceLock()) app.quit();
 let window: BrowserWindow;
@@ -39,7 +45,7 @@ function setNativeLanguage(locale: Locale): void {
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
       {
-        label: 'Frameo',
+        label: 'Framo',
         submenu: [
           { role: 'about', label: label('menu.about') },
           { type: 'separator' },
@@ -145,7 +151,7 @@ app
       vault,
       workerPaths: { agent: join(base, 'agent-worker.js'), kit: join(base, 'kit-worker.js') },
       emit: (event) => {
-        if (window && !window.isDestroyed()) window.webContents.send('frameo:event', event);
+        if (window && !window.isDestroyed()) window.webContents.send('framo:event', event);
       },
       revealFile: (path) => shell.showItemInFolder(path),
       languageChanged: setNativeLanguage,
@@ -161,7 +167,7 @@ app
       height: 1000,
       minWidth: 1120,
       minHeight: 760,
-      title: 'Frameo',
+      title: 'Framo',
       backgroundColor: '#fafafa',
       titleBarStyle: 'hiddenInset',
       webPreferences: {
@@ -181,10 +187,12 @@ app
         controller.resetRenderer();
       }
     });
-    const devUrl = !app.isPackaged ? process.env.FRAMEO_DEV_URL : undefined;
+    const devUrl = !app.isPackaged
+      ? (process.env.FRAMO_DEV_URL ?? process.env.FRAMEO_DEV_URL)
+      : undefined;
     const rendererRoot = resolve(base, '../renderer'),
-      rendererURL = 'frameo-app://desktop/index.html';
-    protocol.handle('frameo-app', async (request) => {
+      rendererURL = 'framo-app://desktop/index.html';
+    protocol.handle('framo-app', async (request) => {
       try {
         const url = new URL(request.url);
         if (url.hostname !== 'desktop') return new Response(null, { status: 403 });
@@ -215,13 +223,13 @@ app
         responseHeaders: {
           ...details.responseHeaders,
           'Content-Security-Policy': [
-            `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: frameo-media:; media-src 'self' frameo-media:; connect-src 'self' ${devUrl ? 'ws://127.0.0.1:5173' : ''}; object-src 'none'; base-uri 'none'; frame-src 'none'`,
+            `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: framo-media:; media-src 'self' framo-media:; connect-src 'self' ${devUrl ? 'ws://127.0.0.1:5173' : ''}; object-src 'none'; base-uri 'none'; frame-src 'none'`,
           ],
         },
       }),
     );
-    protocol.handle('frameo-media', mediaProtocol);
-    ipcMain.handle('frameo:api', async (event, method: unknown, input: unknown) => {
+    protocol.handle('framo-media', mediaProtocol);
+    ipcMain.handle('framo:api', async (event, method: unknown, input: unknown) => {
       if (
         event.sender !== window.webContents ||
         event.senderFrame !== window.webContents.mainFrame ||
@@ -241,8 +249,8 @@ app
     });
     if (devUrl) await window.loadURL(devUrl);
     else await window.loadURL(rendererURL);
-    if (!app.isPackaged && process.env.FRAMEO_PROJECT)
-      await controller.openPath(process.env.FRAMEO_PROJECT);
+    const startupProject = process.env.FRAMO_PROJECT ?? process.env.FRAMEO_PROJECT;
+    if (!app.isPackaged && startupProject) await controller.openPath(startupProject);
     app.on('second-instance', () => {
       if (window.isMinimized()) window.restore();
       window.focus();

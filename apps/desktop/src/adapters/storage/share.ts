@@ -13,7 +13,7 @@ export async function shareProject(database: ProjectDatabase, path: string): Pro
   const state = database.read();
   const zip = new AdmZip();
   const manifest = {
-    format: 'frameo-project',
+    format: 'framo-project',
     version: 1,
     name: state.project.name,
     sequences: state.sequences,
@@ -24,7 +24,7 @@ export async function shareProject(database: ProjectDatabase, path: string): Pro
   zip.addFile(
     'README.txt',
     Buffer.from(
-      'Frameo shared project. Contains media and edit data. No account keys, chats, personal memories, reviews, jobs or installed code. Import does not execute Kits.\n',
+      'Framo shared project. Contains media and edit data. No account keys, chats, personal memories, reviews, jobs or installed code. Import does not execute Kits.\n',
     ),
   );
   const added = new Set<string>();
@@ -92,7 +92,7 @@ export async function importSharedProject(
     canvas: ProjectSnapshot['canvas'];
   };
   if (
-    !['frameo-project', 'reelbeam-project'].includes(manifest.format) ||
+    !['framo-project', 'frameo-project', 'reelbeam-project'].includes(manifest.format) ||
     manifest.version !== 1 ||
     !Array.isArray(manifest.sequences) ||
     !Array.isArray(manifest.assets) ||
@@ -128,7 +128,7 @@ export async function importSharedProject(
     )
       throw new Error('共享工程画布引用无效。');
   await mkdir(dirname(directory), { recursive: true });
-  const staging = await mkdtemp(join(dirname(directory), '.frameo-import-'));
+  const staging = await mkdtemp(join(dirname(directory), '.framo-import-'));
   let database: ProjectDatabase | undefined;
   try {
     for (const folder of ['media', 'cache', 'sessions', 'snapshots'])

@@ -144,7 +144,7 @@ class Catalog implements RecipeCatalog {
   }
 }
 async function fixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-recipe-service-')),
+  const directory = await mkdtemp(join(tmpdir(), 'framo-recipe-service-')),
     app = new AppDatabase(join(directory, 'app')),
     catalog = new Catalog();
   let database = ProjectDatabase.create(join(directory, 'project'), 'Recipe test', 320, 180, 24);

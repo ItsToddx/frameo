@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { DesktopApi, AppEvent } from '../adapters/contracts/api';
-const invoke = (method: string, input?: unknown) => ipcRenderer.invoke('frameo:api', method, input);
+const invoke = (method: string, input?: unknown) => ipcRenderer.invoke('framo:api', method, input);
 const api: DesktopApi = {
   bootstrap: () => invoke('bootstrap'),
   createProject: (input) => invoke('createProject', input),
@@ -45,8 +45,8 @@ const api: DesktopApi = {
   decideRecipeResult: (input) => invoke('decideRecipeResult', input),
   onEvent(callback) {
     const listener = (_event: Electron.IpcRendererEvent, event: AppEvent) => callback(event);
-    ipcRenderer.on('frameo:event', listener);
-    return () => ipcRenderer.removeListener('frameo:event', listener);
+    ipcRenderer.on('framo:event', listener);
+    return () => ipcRenderer.removeListener('framo:event', listener);
   },
 };
-contextBridge.exposeInMainWorld('frameo', Object.freeze(api));
+contextBridge.exposeInMainWorld('framo', Object.freeze(api));

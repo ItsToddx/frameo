@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from './compone
 import { Tooltip } from './components/ui/tooltip';
 
 export const uid = () => crypto.randomUUID();
-export const mediaUrl = (path: string) => `frameo-media://local/${encodeURIComponent(path)}`;
+export const mediaUrl = (path: string) => `framo-media://local/${encodeURIComponent(path)}`;
 export const seconds = (frames: number, fps: number) => frames / fps;
 export function timecode(value: number) {
   const s = Math.max(0, value);
@@ -105,7 +105,7 @@ export function LanguagePicker({ disabled = false }: { disabled?: boolean }) {
           setSaving(true);
           setError('');
           try {
-            await window.frameo.setLanguage(next);
+            await window.framo.setLanguage(next);
             setLocale(next);
           } catch (reason) {
             setError(reason instanceof Error ? reason.message : String(reason));

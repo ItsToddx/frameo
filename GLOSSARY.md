@@ -1,6 +1,6 @@
-# Frameo creation studio
+# Framo creation studio
 
-Frameo turns a creative intent into reviewed shots and editable films. Its name abbreviates frame-operation.
+Framo turns a creative intent into reviewed shots and editable films. Its name abbreviates frame-operation.
 
 ## Language
 

@@ -1,6 +1,6 @@
 <div align="center">
 
-# Frameo
+# Framo
 
 **Describe a story. Shape every frame.**
 
@@ -10,19 +10,19 @@ A desktop video studio where an agent, a canvas, and a timeline work on the same
 
 </div>
 
-**Frameo** abbreviates **frame-operation**.
+**Framo** is a further shortening of **frame operation**.
 
-Frameo brings planning, Seedance generation, candidate review, and precise editing into one macOS workspace. Ask the agent for a shot, inspect the proposal, adopt the result, and keep shaping the film yourself.
+Framo brings planning, Seedance generation, candidate review, and precise editing into one macOS workspace. Ask the agent for a shot, inspect the proposal, adopt the result, and keep shaping the film yourself.
 
 **Model configuration is required.** This first release generates video with **Seedance only** through Volcengine Ark. Pi reasoning uses a separate tool-capable, image-capable Ark chat model. Bring your own API key and model access; local test fixtures are not an offline creative mode.
 
-![Frameo canvas, timeline and agent](docs/images/workbench.png)
+![Framo canvas, timeline and agent](docs/images/workbench.png)
 
 ## Quick start
 
-1. Download the macOS Apple Silicon build from [Releases](https://github.com/ItsToddx/frameo/releases).
+1. Download the macOS Apple Silicon build from [Releases](https://github.com/ItsToddx/framo/releases).
 2. This preview is not Developer ID signed or notarized. If macOS blocks it, follow [Apple’s Open Anyway instructions](https://support.apple.com/102445) for a build you have verified.
-3. Open Frameo and configure your Ark API key, chat model or endpoint ID, and Seedance model ID in **Settings**. Both models must be available to that account.
+3. Open Framo and configure your Ark API key, chat model or endpoint ID, and Seedance model ID in **Settings**. Both models must be available to that account.
 4. Create a project. Import a reference image or footage, or describe your idea in the agent panel.
 5. Review generation parameters and the spending estimate before submission. Seedance outputs appear as candidates in your asset library.
 6. Add or replace a timeline clip, edit captions and sound, compose a preview, and export MP4.
@@ -32,6 +32,10 @@ Try a request such as:
 > Plan a five-second product reveal from the selected image. Keep the film in 16:9, explain the generation settings, and propose the shot for review before submitting it.
 
 Ark bills model requests to your own account. The app stores the key using macOS credential encryption, outside projects. A user-entered budget is a submission guard and estimate, not a guarantee of the provider's final bill.
+
+### Interface language
+
+The interface starts in **English**. Choose **简体中文** in the language selector in the top bar or any dialog. Your choice is saved on this computer; switching keeps conversations, form inputs, and timeline drafts intact. Authored names, messages, and custom Kit content keep their original language.
 
 ### Upgrading an existing profile
 
@@ -97,8 +101,8 @@ The curated catalog lives in this repository. See [catalog contributions](docs/k
 Requirements: macOS Apple Silicon, Node.js 22.13 or newer, and Apple command line tools for the media build.
 
 ```bash
-git clone https://github.com/ItsToddx/frameo.git
-cd frameo
+git clone https://github.com/ItsToddx/framo.git
+cd framo
 npm ci
 npm run media:build
 npm run dev
@@ -136,7 +140,7 @@ docs/              Architecture, Kits, validation and release notes
 
 macOS Apple Silicon is the initial supported platform. Windows and Intel macOS are not release targets yet. Advanced transitions, speed ramps and keyframe effects are outside the first editing format. Seedance cancellation depends on provider state; requesting cancellation does not mean a running cloud task stopped or was refunded.
 
-Use [Issues](https://github.com/ItsToddx/frameo/issues) for reproducible bugs and proposals. Read [CONTRIBUTING](CONTRIBUTING.md) before changing the project format or SDK.
+Use [Issues](https://github.com/ItsToddx/framo/issues) for reproducible bugs and proposals. Read [CONTRIBUTING](CONTRIBUTING.md) before changing the project format or SDK.
 
 ## Inspiration and dependencies
 
@@ -148,4 +152,4 @@ The implementation uses [Electron](https://www.electronjs.org/), [Pi](https://gi
 
 ## License
 
-Frameo and the Kit SDK are Apache-2.0. Third-party libraries, media tools and your source assets retain their own licenses.
+Framo and the Kit SDK are Apache-2.0. Third-party libraries, media tools and your source assets retain their own licenses.

@@ -38,7 +38,7 @@ async function wait(check: () => boolean) {
   }
 }
 async function fixture(run: (db: ProjectDatabase, root: string) => Promise<void>) {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-jobs-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-jobs-'));
   const db = ProjectDatabase.create(join(root, 'p'), 'Test', 640, 360, 30);
   try {
     await run(db, root);

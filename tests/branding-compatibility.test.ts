@@ -9,8 +9,8 @@ import { shareProject, importSharedProject } from '../apps/desktop/src/adapters/
 import { profileLocation } from '../apps/desktop/src/adapters/storage/profile-location';
 import { builtinManifests } from '../kits/builtin';
 
-test('Frameo opens legacy projects and shared manifests without rewriting source or task identities', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-compat-'));
+test('Framo opens legacy projects and shared manifests without rewriting source or task identities', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'framo-compat-'));
   let source: ProjectDatabase | undefined, imported: ProjectDatabase | undefined;
   try {
     const path = join(root, 'Original.reelbeam');
@@ -43,10 +43,20 @@ test('Frameo opens legacy projects and shared manifests without rewriting source
     await shareProject(source, archive);
     const zip = new AdmZip(archive);
     const manifest = JSON.parse(zip.readAsText('project.json'));
+    assert.equal(manifest.format, 'framo-project');
+    const modernArchive = join(root, 'Frameo.frameoproject');
+    const modernZip = new AdmZip(archive);
+    const modernManifest = JSON.parse(modernZip.readAsText('project.json'));
+    modernManifest.format = 'frameo-project';
+    modernZip.updateFile('project.json', Buffer.from(JSON.stringify(modernManifest)));
+    modernZip.writeZip(modernArchive);
+    const migrated = await importSharedProject(modernArchive, join(root, 'Frameo-migrated.framo'));
+    assert.equal(migrated.read().project.name, 'Original');
+    migrated.close();
     manifest.format = 'reelbeam-project';
     zip.updateFile('project.json', Buffer.from(JSON.stringify(manifest)));
     zip.writeZip(archive);
-    imported = await importSharedProject(archive, join(root, 'Imported.frameo'));
+    imported = await importSharedProject(archive, join(root, 'Imported.framo'));
     assert.equal(imported.read().project.name, 'Original');
     assert.equal(imported.read().sequences[0].fps, 24);
     assert.notEqual(imported.read().project.id, source.read().project.id);
@@ -62,14 +72,18 @@ test('Frameo opens legacy projects and shared manifests without rewriting source
   }
 });
 test('profile rename preserves the existing encrypted-account directory and respects explicit profiles', async () => {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-profile-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-profile-'));
   try {
     const legacy = join(root, 'Reelbeam'),
-      current = join(root, 'Frameo');
+      current = join(root, 'Framo');
     await mkdir(legacy);
     await writeFile(join(legacy, 'app.sqlite'), 'existing-profile');
     assert.equal(profileLocation(current), legacy);
     assert.equal(profileLocation(current, join(root, 'isolated')), join(root, 'isolated'));
+    const previous = join(root, 'Frameo');
+    await mkdir(previous);
+    await writeFile(join(previous, 'app.sqlite'), 'prior-profile');
+    assert.equal(profileLocation(current), previous);
     await mkdir(current);
     await writeFile(join(current, 'app.sqlite'), 'new-profile');
     assert.equal(profileLocation(current), current);

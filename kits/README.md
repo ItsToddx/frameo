@@ -1,4 +1,4 @@
-# Frameo Kits
+# Framo Kits
 
 The public SDK is in `packages/kit-sdk/src`. A Kit declares capabilities and uses `KitRegistry.register()` to stage all registrations. The registry enables the package only after the registrations match its manifest. Cleanup removes every capability in the package.
 
@@ -10,4 +10,4 @@ Agents discover capabilities through `capabilities_search`, inspect their schema
 
 Recipes bind inputs through JSON Pointers, declare predecessor steps, and retain separate reviews before execution and after results. Packages cannot contain API keys, private file paths, chat sessions or recipe run state.
 
-To build the SDK independently, run `npm install` and `npm run build` in `packages/kit-sdk`. TypeScript Kit authors import contracts from `@frameo/kit-sdk`, compile their entry to JavaScript, and supply the resulting directory. The application does not invoke the author's build command.
+To build the SDK independently, run `npm install` and `npm run build` in `packages/kit-sdk`. TypeScript Kit authors import contracts from `@framo/kit-sdk`, compile their entry to JavaScript, and supply the resulting directory. The application does not invoke the author's build command.

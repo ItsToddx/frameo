@@ -9,7 +9,7 @@ import { ProjectDatabase } from '../apps/desktop/src/adapters/storage/database';
 const directory = resolve('test-results/desktop-languages');
 await rm(directory, { recursive: true, force: true });
 await mkdir(directory, { recursive: true });
-const project = join(directory, 'Languages.frameo');
+const project = join(directory, 'Languages.framo');
 const database = ProjectDatabase.create(project, '用户创作名称', 1280, 720, 24);
 database.transaction((state) => {
   const sequence = state.sequences[0];
@@ -33,7 +33,7 @@ database.transaction((state) => {
 database.close();
 const environment: NodeJS.ProcessEnv = {
   ...process.env,
-  FRAMEO_USER_DATA: join(directory, 'profile'),
+  FRAMO_USER_DATA: join(directory, 'profile'),
 };
 delete environment.ELECTRON_RUN_AS_NODE;
 let app!: ElectronApplication;
@@ -42,8 +42,8 @@ let fetches = 0;
 const errors: string[] = [];
 async function launch() {
   app = await electron.launch({
-    executablePath: process.env.FRAMEO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
-    args: process.env.FRAMEO_TEST_EXECUTABLE ? [] : [process.cwd()],
+    executablePath: process.env.FRAMO_TEST_EXECUTABLE ?? (electronBinary as unknown as string),
+    args: process.env.FRAMO_TEST_EXECUTABLE ? [] : [process.cwd()],
     cwd: process.cwd(),
     env: Object.fromEntries(
       Object.entries(environment).filter(
@@ -96,7 +96,7 @@ try {
   // Configuration errors appear in English and no credentials are needed to change language.
   const blocked = await page.evaluate(async () => {
     try {
-      await window.frameo.createSequence({ name: 'Forbidden', width: 1280, height: 720, fps: 24 });
+      await window.framo.createSequence({ name: 'Forbidden', width: 1280, height: 720, fps: 24 });
       return '';
     } catch (reason) {
       return String(reason);
@@ -114,7 +114,7 @@ try {
   await page.getByRole('heading', { name: '从一个想法开始创作', exact: true, level: 1 }).waitFor();
   await page.screenshot({ path: join(directory, 'welcome-zh.png') });
   await page.evaluate(() =>
-    window.frameo.saveSettings({
+    window.framo.saveSettings({
       arkBaseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
       agentModel: 'locale-no-inference',
       seedanceModel: 'doubao-seedance-2-5-260628',
@@ -154,7 +154,7 @@ try {
   assert.equal(await caption.inputValue(), 'Unsaved caption 草稿');
   await page.getByTestId('save-timeline-draft').click();
   assert.equal(
-    (await page.evaluate(() => window.frameo.snapshot())).sequences[0].captions[0].text,
+    (await page.evaluate(() => window.framo.snapshot())).sequences[0].captions[0].text,
     'Unsaved caption 草稿',
   );
   await app.evaluate(({ BrowserWindow }) => {
@@ -164,7 +164,7 @@ try {
   await page.screenshot({ path: join(directory, 'editor-en-compact.png') });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   assert.equal(await page.getByTestId('export-button').isVisible(), true);
-  const preserved = await page.evaluate(() => window.frameo.snapshot());
+  const preserved = await page.evaluate(() => window.framo.snapshot());
   assert.equal(preserved.project.name, '用户创作名称');
   assert.equal(preserved.sessions[0].messages[0].text, 'Original model 内容');
   assert.equal(preserved.jobs.length, 0);

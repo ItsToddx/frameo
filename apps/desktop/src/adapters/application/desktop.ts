@@ -176,7 +176,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
     return service(db).snapshot();
   }
   async function openPath(path: string): Promise<ProjectSnapshot> {
-    if (!existsSync(join(path, 'project.sqlite'))) throw new Error('所选目录不是 Frameo 工程。');
+    if (!existsSync(join(path, 'project.sqlite'))) throw new Error('所选目录不是 Framo 工程。');
     await stopAgent();
     const normalized = realpathSync(path);
     return adopt(projects.get(normalized) ?? new ProjectDatabase(normalized));
@@ -261,7 +261,7 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       requireModels();
       const result = await ports.dialog.save({
         title: uiText('dialog.createProject'),
-        defaultPath: join(ports.documents, input.name + '.frameo'),
+        defaultPath: join(ports.documents, input.name + '.framo'),
         buttonLabel: uiText('dialog.create'),
       });
       if (result.canceled || !result.filePath) return null;
@@ -508,7 +508,12 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       const result = await ports.dialog.open({
         title: uiText('dialog.importKit'),
         properties: ['openFile', 'openDirectory'],
-        filters: [{ name: 'Frameo Kit', extensions: ['json', 'frameokit', 'reelbeamkit', 'zip'] }],
+        filters: [
+          {
+            name: 'Framo Kit',
+            extensions: ['json', 'framokit', 'frameokit', 'reelbeamkit', 'zip'],
+          },
+        ],
       });
       if (result.canceled) return kitList();
       const file = result.filePaths[0];
@@ -564,8 +569,8 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       );
       const result = await ports.dialog.save({
         title: uiText('dialog.shareRecipe'),
-        defaultPath: recipe.definition.descriptor.name + '.frameokit',
-        filters: [{ name: 'Frameo Kit', extensions: ['frameokit'] }],
+        defaultPath: recipe.definition.descriptor.name + '.framokit',
+        filters: [{ name: 'Framo Kit', extensions: ['framokit'] }],
       });
       if (result.canceled || !result.filePath) return null;
       await writeFile(result.filePath, exportDeclaration(data));
@@ -620,11 +625,11 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
       });
       if (answer.response !== 0) return null;
       const result = await ports.dialog.save({
-        defaultPath: db.read().project.name + '.frameoproject',
+        defaultPath: db.read().project.name + '.framoproject',
         filters: [
           {
             name: uiText('dialog.sharedProjectFilter'),
-            extensions: ['frameoproject', 'reelbeamproject'],
+            extensions: ['framoproject', 'frameoproject', 'reelbeamproject'],
           },
         ],
       });
@@ -639,14 +644,14 @@ export async function createDesktopApplication(ports: DesktopApplicationPorts) {
         filters: [
           {
             name: uiText('dialog.sharedProjectFilter'),
-            extensions: ['frameoproject', 'reelbeamproject'],
+            extensions: ['framoproject', 'frameoproject', 'reelbeamproject'],
           },
         ],
       });
       if (source.canceled) return null;
       const target = await ports.dialog.save({
         title: uiText('dialog.saveNewProject'),
-        defaultPath: uiText('default.importedProject') + '.frameo',
+        defaultPath: uiText('default.importedProject') + '.framo',
       });
       if (target.canceled || !target.filePath) return null;
       await stopAgent();

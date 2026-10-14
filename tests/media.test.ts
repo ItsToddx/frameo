@@ -15,7 +15,7 @@ import { AppDatabase, ProjectDatabase } from '../apps/desktop/src/adapters/stora
 import { ProjectService } from '../apps/desktop/src/adapters/storage/project-service';
 
 async function fixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-media-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-media-'));
   const app = new AppDatabase(join(directory, 'app'));
   const database = ProjectDatabase.create(
     join(directory, 'project'),
@@ -271,7 +271,7 @@ test('FFmpeg exports exact split boundaries, later video layers, images, Chinese
         id: 'caption',
         start: 0,
         duration: 48,
-        text: '你好，Frameo',
+        text: '你好，Framo',
         fontSize: 30,
         color: '#ffffff',
         position: 'bottom',

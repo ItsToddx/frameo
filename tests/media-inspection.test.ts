@@ -16,7 +16,7 @@ import { WorkerEngine } from '../apps/desktop/src/agent-worker/engine.js';
 import type { WorkerRun } from '../apps/desktop/src/agent-worker/protocol.js';
 
 async function fixture(t: TestContext) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-inspection-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-inspection-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const videoFile = join(directory, 'red-blue.mp4');
   await runProcess(ffmpegPath(), [
@@ -144,7 +144,7 @@ test('audio inspection reports finite measured PCM facts without sending raw sou
   assert.ok(JSON.stringify(result).length < 1500);
 });
 test('high-detail image inspections remain below the upload byte limit', async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-inspection-noise-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-inspection-noise-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const canvas = createCanvas(800, 800),
     context = canvas.getContext('2d'),
@@ -169,7 +169,7 @@ test('high-detail image inspections remain below the upload byte limit', async (
   assert.ok(decoded.width <= 640 && decoded.height <= 640);
 });
 test('silence has null dBFS and clipped PCM is measured without subjective sound claims', async (t) => {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-inspection-pcm-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-inspection-pcm-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   for (const raw of [0, 32767]) {
     const samples = 16000,

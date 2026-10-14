@@ -35,7 +35,7 @@ export function digest(value: unknown): string {
 export const now = () => new Date().toISOString();
 export const id = () => randomUUID();
 export function mediaUrl(path: string): string {
-  return `frameo-media://local/${encodeURIComponent(path)}`;
+  return `framo-media://local/${encodeURIComponent(path)}`;
 }
 export type { ProjectState as PersistedState } from '../../../../../packages/application/src/project-store.js';
 import type {

@@ -21,23 +21,26 @@ function run(binary, args) {
 await run(resolve('node_modules/.bin/electron-builder'), [
   '--mac',
   'dir',
-  ...(process.env.FRAMEO_ELECTRON_DIST
-    ? ['--config.electronDist=' + process.env.FRAMEO_ELECTRON_DIST]
+  ...((process.env.FRAMO_ELECTRON_DIST ?? process.env.FRAMEO_ELECTRON_DIST)
+    ? [
+        '--config.electronDist=' +
+          (process.env.FRAMO_ELECTRON_DIST ?? process.env.FRAMEO_ELECTRON_DIST),
+      ]
     : []),
 ]);
-const stage = await mkdtemp(join(tmpdir(), 'frameo-release-'));
+const stage = await mkdtemp(join(tmpdir(), 'framo-release-'));
 try {
-  const app = join(stage, 'Frameo.app');
+  const app = join(stage, 'Framo.app');
   // Documents/FileProvider can attach Finder metadata; build a clean signed distribution in temp.
   await run('/usr/bin/ditto', [
     '--norsrc',
     '--noextattr',
-    resolve('release/mac-arm64/Frameo.app'),
+    resolve('release/mac-arm64/Framo.app'),
     app,
   ]);
   await run('/usr/bin/codesign', ['--force', '--deep', '--sign', '-', app]);
   await run('/usr/bin/codesign', ['--verify', '--deep', '--strict', app]);
-  const archive = resolve(`release/Frameo-${version}-arm64.zip`);
+  const archive = resolve(`release/Framo-${version}-arm64.zip`);
   await run('/usr/bin/ditto', [
     '-c',
     '-k',
@@ -51,13 +54,13 @@ try {
   await run('/usr/bin/hdiutil', [
     'create',
     '-volname',
-    'Frameo',
+    'Framo',
     '-srcfolder',
     stage,
     '-ov',
     '-format',
     'UDZO',
-    resolve(`release/Frameo-${version}-arm64.dmg`),
+    resolve(`release/Framo-${version}-arm64.dmg`),
   ]);
   const source = resolve('.media-build/ffmpeg.tar.xz');
   if (!existsSync(source))
@@ -66,10 +69,10 @@ try {
     );
   await copyFile(source, resolve('release/ffmpeg-9.0.2-source.tar.xz'));
   const assets = [
-    `Frameo-${version}-arm64.zip`,
-    `Frameo-${version}-arm64.dmg`,
+    `Framo-${version}-arm64.zip`,
+    `Framo-${version}-arm64.dmg`,
     'ffmpeg-9.0.2-source.tar.xz',
-    `frameo-kit-sdk-${sdkVersion}.tgz`,
+    `framo-kit-sdk-${sdkVersion}.tgz`,
   ];
   const lines = [];
   for (const name of assets) {

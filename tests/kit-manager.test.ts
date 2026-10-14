@@ -19,7 +19,7 @@ function manifest(
     name: 'Manager fixture',
     version,
     description: 'Native manager contract fixture',
-    author: 'Frameo tests',
+    author: 'Framo tests',
     license: 'Apache-2.0',
     hostApi: '1',
     source: 'fixture',
@@ -30,7 +30,7 @@ function manifest(
   };
 }
 async function setup(t: { after: (fn: () => unknown) => void }) {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-manager-test-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-manager-test-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const workerPath = join(root, 'worker.mjs');
   await build({

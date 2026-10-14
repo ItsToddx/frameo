@@ -16,7 +16,7 @@ const manifest: KitManifest = {
   name: 'Fixture native Kit',
   version: '1.0.0',
   description: 'Trusted contract fixture',
-  author: 'Frameo tests',
+  author: 'Framo tests',
   license: 'Apache-2.0',
   hostApi: '1',
   source: 'fixture',
@@ -37,14 +37,14 @@ export function register(api) {
     if(input.mode==='exit')process.exit(9);
     if(input.mode==='hang')await new Promise(()=>{});
     if(input.mode==='wait')await new Promise((resolve,reject)=>ctx.signal.addEventListener('abort',()=>reject(new Error('stopped')),{once:true}));
-    return {value:{text:input.text,projectId:ctx.projectId,hasSecret:!!process.env.FRAMEO_TEST_SECRET},artifacts:[]};
+    return {value:{text:input.text,projectId:ctx.projectId,hasSecret:!!process.env.FRAMO_TEST_SECRET},artifacts:[]};
   }});
   api.registerEditTool({descriptor:descriptor('fixture.edit','edit'),async propose(input,ctx){return {sequenceId:input.mode==='wrong'?'wrong':ctx.sequenceId,expectedRevision:ctx.revision,
     title:input.text,commands:[{type:'upsertCaption',caption:{id:'c1',text:input.text,start:0,duration:1,fontSize:32,color:'#ffffff',position:'bottom'}}]};}});
   api.registerJobTool({descriptor:descriptor('fixture.job','job'),async plan(input){return {providerId:'reelbeam.seedance',input:{prompt:input.text,duration:5,ratio:'16:9'},estimatedCost:1,title:input.text};}});
 }`;
 async function fixture(t: { after: (fn: () => unknown) => void }) {
-  const directory = await mkdtemp(join(tmpdir(), 'frameo-code-kit-'));
+  const directory = await mkdtemp(join(tmpdir(), 'framo-code-kit-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await writeFile(join(directory, 'kit.manifest.json'), JSON.stringify(manifest));
   await writeFile(join(directory, 'entry.mjs'), source);
@@ -56,7 +56,7 @@ function context(signal = new AbortController().signal): ToolContext {
 }
 test('native worker loads reviewed relative modules, validates tools, and returns proposals', async (t) => {
   const directory = await fixture(t),
-    scratch = await mkdtemp(join(tmpdir(), 'frameo-worker-'));
+    scratch = await mkdtemp(join(tmpdir(), 'framo-worker-'));
   t.after(() => rm(scratch, { recursive: true, force: true }));
   const workerPath = join(scratch, 'kit-worker.mjs');
   await build({
@@ -69,9 +69,9 @@ test('native worker loads reviewed relative modules, validates tools, and return
   });
   const runtime = new CodeKitRuntime({ workerPath, timeoutMs: 5000 });
   t.after(() => runtime.dispose());
-  process.env.FRAMEO_TEST_SECRET = 'not-for-kits';
+  process.env.FRAMO_TEST_SECRET = 'not-for-kits';
   t.after(() => {
-    delete process.env.FRAMEO_TEST_SECRET;
+    delete process.env.FRAMO_TEST_SECRET;
   });
   const loaded = await runtime.load(directory, manifest, {
     expectedDigest: await codeKitDigest(directory),
@@ -117,7 +117,7 @@ test('native worker loads reviewed relative modules, validates tools, and return
 });
 test('noncooperative native tool is terminated after cancellation grace period', async (t) => {
   const directory = await fixture(t),
-    scratch = await mkdtemp(join(tmpdir(), 'frameo-worker-'));
+    scratch = await mkdtemp(join(tmpdir(), 'framo-worker-'));
   t.after(() => rm(scratch, { recursive: true, force: true }));
   const workerPath = join(scratch, 'kit-worker.mjs');
   await build({

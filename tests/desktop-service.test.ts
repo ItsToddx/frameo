@@ -30,7 +30,7 @@ async function fixture(
     runtime?: (options: PiRuntimeOptions, run: WorkerRun) => Promise<WorkerResult>;
   } = {},
 ) {
-  const root = await mkdtemp(join(tmpdir(), 'frameo-host-'));
+  const root = await mkdtemp(join(tmpdir(), 'framo-host-'));
   const vault = {
     hasKey: () => true,
     get: () => 'test-fixture-key',

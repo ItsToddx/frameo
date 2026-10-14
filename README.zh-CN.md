@@ -1,18 +1,20 @@
-# Frameo
+# Framo
 
 **把想法，打磨成下一个镜头。**
 
-**Frameo** 是 **frame-operation** 的缩写。
+**Framo** 是 **frame operation** 的进一步缩写。
 
-Frameo 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作，时间线完成精调；人工与 Agent 修改同一份作品。
+Framo 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作，时间线完成精调；人工与 Agent 修改同一份作品。
 
 [安装与使用](#安装与使用) · [创作套件](docs/kits.md) · [技术架构](docs/architecture.md) · [验证说明](docs/verification.md) · [English](README.md)
 
-![Frameo 工作台](docs/images/workbench.png)
+![Framo 工作台](docs/images/workbench.png)
+
+界面默认使用 **英文**，同时支持 **简体中文**。在顶部或弹窗的语言选择器中切换；选择会保存到本机，切换时保留对话、表单和时间线草稿。用户与模型内容保持原文。
 
 ## 安装与使用
 
-1. 从 [GitHub Releases](https://github.com/ItsToddx/frameo/releases) 下载 Apple Silicon 版。
+1. 从 [GitHub Releases](https://github.com/ItsToddx/framo/releases) 下载 Apple Silicon 版。
 2. 在设置中填写火山方舟 API Key、支持工具调用的 Agent 模型或接入点 ID，以及 Seedance 模型 ID。
 3. 创建工程，导入参考图片或已有视频，在右侧对话提出创作目标。
 4. 检查 Agent 提案、生成参数与预算，确认后提交；生成结果先进入素材库。
@@ -38,8 +40,8 @@ Frameo 是 macOS 桌面视频 Agent。画布整理素材，对话推进创作，
 需要 macOS Apple Silicon、Node.js 22.13+ 和 Apple command line tools。
 
 ```bash
-git clone https://github.com/ItsToddx/frameo.git
-cd frameo
+git clone https://github.com/ItsToddx/framo.git
+cd framo
 npm ci
 npm run media:build
 npm run dev

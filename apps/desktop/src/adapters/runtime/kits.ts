@@ -29,7 +29,7 @@ export const builtinKits: KitInfo[] = builtinManifests.map((m) => ({
   version: m.version,
   description: m.description,
   // Display branding must not change the canonical 1.0.0 manifest fingerprint.
-  author: 'Frameo',
+  author: 'Framo',
   license: m.license,
   source: m.source,
   permissions: m.permissions,

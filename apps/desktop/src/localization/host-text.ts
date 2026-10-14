@@ -2,11 +2,11 @@ import type { Catalog, Locale, Message, Parameters } from './types';
 
 /** Only host-owned presentation belongs here. Never apply this boundary to user/model content. */
 export const hostMessages = {
-  'menu.about': { en: 'About Frameo', zh: '关于 Frameo' },
-  'menu.hide': { en: 'Hide Frameo', zh: '隐藏 Frameo' },
+  'menu.about': { en: 'About Framo', zh: '关于 Framo' },
+  'menu.hide': { en: 'Hide Framo', zh: '隐藏 Framo' },
   'menu.hideOthers': { en: 'Hide Others', zh: '隐藏其他应用' },
   'menu.showAll': { en: 'Show All', zh: '显示全部' },
-  'menu.quit': { en: 'Quit Frameo', zh: '退出 Frameo' },
+  'menu.quit': { en: 'Quit Framo', zh: '退出 Framo' },
   'menu.edit': { en: 'Edit', zh: '编辑' },
   'menu.undo': { en: 'Undo', zh: '撤销' },
   'menu.redo': { en: 'Redo', zh: '重做' },
@@ -27,9 +27,9 @@ export const hostMessages = {
   'default.export': { en: 'Export {name}', zh: '导出 {name}' },
   'default.recipeSession': { en: 'Recipe · {name}', zh: '配方 · {name}' },
   'default.importedProject': { en: 'Imported project', zh: '导入工程' },
-  'dialog.createProject': { en: 'Create Frameo project', zh: '创建 Frameo 工程' },
+  'dialog.createProject': { en: 'Create Framo project', zh: '创建 Framo 工程' },
   'dialog.create': { en: 'Create project', zh: '创建工程' },
-  'dialog.openProject': { en: 'Open Frameo project', zh: '打开 Frameo 工程' },
+  'dialog.openProject': { en: 'Open Framo project', zh: '打开 Framo 工程' },
   'dialog.importMedia': { en: 'Import media', zh: '导入素材' },
   'dialog.media': { en: 'Media', zh: '媒体' },
   'dialog.exportMp4': { en: 'Export MP4', zh: '导出 MP4' },
@@ -60,7 +60,7 @@ export const hostMessages = {
   'dialog.continueExport': { en: 'Continue export', zh: '继续导出' },
   'dialog.importProject': { en: 'Import shared project', zh: '导入共享工程' },
   'dialog.saveNewProject': { en: 'Save as new project', zh: '保存为新工程' },
-  'dialog.sharedProjectFilter': { en: 'Frameo shared project', zh: 'Frameo 共享工程' },
+  'dialog.sharedProjectFilter': { en: 'Framo shared project', zh: 'Framo 共享工程' },
   'review.kitEditDescription': {
     en: 'Proposed by {name}. Acceptance saves the edit; it can be undone.',
     zh: '由 {name} 提出；采纳后保存，可撤销。',
@@ -213,7 +213,7 @@ const systemMessages: Message[] = [
     zh: '同一工程副本已经打开；请通过共享工程导入创建独立副本。',
     en: 'This project copy is already open. Import a shared project to create an independent copy.',
   },
-  { zh: '所选目录不是 Frameo 工程。', en: 'The selected directory is not a Frameo project.' },
+  { zh: '所选目录不是 Framo 工程。', en: 'The selected directory is not a Framo project.' },
   {
     zh: '作品已修改，请重新读取后再预览或导出。',
     en: 'The sequence changed. Refresh it before previewing or exporting.',
@@ -554,8 +554,8 @@ const systemMessages: Message[] = [
   },
   { zh: '作品引用了缺失的素材或轨道。', en: 'The sequence references missing media or tracks.' },
   {
-    zh: '缺少字幕字体，请配置 FRAMEO_FONT。',
-    en: 'No caption font is available. Configure FRAMEO_FONT.',
+    zh: '缺少字幕字体，请配置 FRAMO_FONT。',
+    en: 'No caption font is available. Configure FRAMO_FONT.',
   },
   {
     zh: '导出校验失败：尺寸、时长、帧数或音轨不符合要求。',
@@ -947,7 +947,7 @@ function templatePattern(template: string): { pattern: RegExp; names: string[] }
         names.push(part.slice(1, -1));
         return '([\\s\\S]*?)';
       }
-      return part.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
+      return part.replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/Framo/g, '(?:Framo|Frameo)');
     })
     .join('');
   return { pattern: new RegExp('^' + source + '$'), names };

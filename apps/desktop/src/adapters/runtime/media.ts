@@ -10,8 +10,9 @@ import { id, now } from '../storage/database';
 function bundledBinary(name: string): string {
   const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
   const packaged = resources ? join(resources, 'bin', name) : '';
-  const path = process.env.FRAMEO_MEDIA_DIR
-    ? join(process.env.FRAMEO_MEDIA_DIR, name)
+  const mediaDirectory = process.env.FRAMO_MEDIA_DIR ?? process.env.FRAMEO_MEDIA_DIR;
+  const path = mediaDirectory
+    ? join(mediaDirectory, name)
     : packaged && existsSync(packaged)
       ? packaged
       : resolve('resources/bin', name);
@@ -19,10 +20,10 @@ function bundledBinary(name: string): string {
   return path;
 }
 export function ffmpegPath(): string {
-  return process.env.FRAMEO_FFMPEG ?? bundledBinary('ffmpeg');
+  return process.env.FRAMO_FFMPEG ?? process.env.FRAMEO_FFMPEG ?? bundledBinary('ffmpeg');
 }
 export function ffprobePath(): string {
-  return process.env.FRAMEO_FFPROBE ?? bundledBinary('ffprobe');
+  return process.env.FRAMO_FFPROBE ?? process.env.FRAMEO_FFPROBE ?? bundledBinary('ffprobe');
 }
 export interface ProcessResult {
   stdout: string;
@@ -286,18 +287,18 @@ export async function renderSequence(
       await mkdir(join(directory, 'cache'), { recursive: true });
       captionFiles.push(imagePath);
       const fontCandidates = [
-        process.env.FRAMEO_FONT,
+        process.env.FRAMO_FONT ?? process.env.FRAMEO_FONT,
         '/System/Library/Fonts/PingFang.ttc',
         '/System/Library/Fonts/Hiragino Sans GB.ttc',
         '/System/Library/Fonts/Supplemental/Songti.ttc',
         '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
       ].filter((p): p is string => !!p && existsSync(p));
-      if (!fontCandidates.length) throw new Error('缺少字幕字体，请配置 FRAMEO_FONT。');
-      GlobalFonts.registerFromPath(fontCandidates[0], 'Frameo Caption');
+      if (!fontCandidates.length) throw new Error('缺少字幕字体，请配置 FRAMO_FONT。');
+      GlobalFonts.registerFromPath(fontCandidates[0], 'Framo Caption');
       const canvas = createCanvas(width, height);
       const ctx = canvas.getContext('2d');
       const fontSize = Math.max(8, Math.round((caption.fontSize * width) / sequence.width));
-      ctx.font = `${fontSize}px "Frameo Caption"`;
+      ctx.font = `${fontSize}px "Framo Caption"`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = caption.color;
@@ -351,6 +352,7 @@ export async function renderSequence(
     const temporary = options.output + `.${randomUUID()}.partial.mp4`;
     await mkdir(resolve(options.output, '..'), { recursive: true });
     const encoder =
+      process.env.FRAMO_ENCODER ??
       process.env.FRAMEO_ENCODER ??
       (process.platform === 'darwin' ? 'h264_videotoolbox' : 'libx264');
     const encodeArgs =
