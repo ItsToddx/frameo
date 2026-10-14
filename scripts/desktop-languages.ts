@@ -36,8 +36,8 @@ const environment: NodeJS.ProcessEnv = {
   FRAMEO_USER_DATA: join(directory, 'profile'),
 };
 delete environment.ELECTRON_RUN_AS_NODE;
-let app: ElectronApplication;
-let page: Page;
+let app!: ElectronApplication;
+let page!: Page;
 let fetches = 0;
 const errors: string[] = [];
 async function launch() {
@@ -139,11 +139,11 @@ try {
     () => (globalThis as unknown as { localeDialog: { title: string } }).localeDialog,
   );
   assert.equal(/\p{Script=Han}/u.test(nativeDialog.title), false, nativeDialog.title);
-  const composer = page.locator('.chat-composer textarea');
+  const composer = page.getByTestId('agent-prompt');
   await composer.fill('Retain bilingual draft 中英文');
   await page.locator('.sequence-list-row').first().click();
   await page.getByTestId('timeline').waitFor();
-  await page.getByRole('button', { name: 'Captions', exact: true }).first().click();
+  await page.locator('.timeline-caption').first().click();
   const caption = page.locator('textarea[name="text"]');
   await caption.fill('Unsaved caption 草稿');
   await page.getByTestId('save-timeline-draft').waitFor();

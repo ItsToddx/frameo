@@ -35,6 +35,7 @@ import type {
   Session,
   KitInfo,
 } from '../adapters/contracts/api';
+import { presentKit } from '../localization/panels';
 import { FrameMark } from './FrameMark';
 import { Canvas } from './Canvas';
 import { Chat } from './Chat';
@@ -69,7 +70,7 @@ const defaultSettings: Settings = {
   maxModelCalls: 12,
 };
 export function App() {
-  const { t, date, hostText, setLocale } = useI18n();
+  const { t, date, hostText, locale, setLocale } = useI18n();
   const [boot, setBoot] = useState<AppBootstrap | null>(null);
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
@@ -1210,8 +1211,8 @@ export function App() {
       )}
       {modal === 'recipe' && recipeKit && snapshot && (
         <Modal
-          title={t('workbench.recipe.title', { name: recipeKit.name })}
-          description={recipeKit.description}
+          title={t('workbench.recipe.title', { name: presentKit(locale, recipeKit).name })}
+          description={presentKit(locale, recipeKit).description}
           busy={busy}
           onClose={closeModal}
         >
