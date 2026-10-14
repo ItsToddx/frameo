@@ -115,6 +115,7 @@ npm run build
 npm run test:desktop
 npm run test:desktop-failures
 npm run test:desktop-ui
+npm run test:desktop-languages
 npm run format:check
 npm run dist:mac
 ```
