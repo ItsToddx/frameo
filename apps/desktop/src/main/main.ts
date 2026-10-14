@@ -4,11 +4,13 @@ import { fileURLToPath } from 'node:url';
 import { createReadStream, realpathSync } from 'node:fs';
 import { stat, readFile } from 'node:fs/promises';
 import { Readable } from 'node:stream';
-import { z } from 'zod';
 import { schemas } from '../adapters/contracts/validation';
 import { CredentialVault } from '../adapters/storage/credentials';
 import { profileLocation } from '../adapters/storage/profile-location';
 import { createDesktopApplication } from '../adapters/application/desktop';
+import { hostText } from '../localization/host-text';
+import { hostErrorMessage } from '../localization/host-presentation';
+import { normalizeLocale, type Locale } from '../localization/types';
 const base = dirname(fileURLToPath(import.meta.url));
 app.setName('Frameo');
 app.setPath('userData', profileLocation(app.getPath('userData'), process.env.FRAMEO_USER_DATA));
@@ -30,6 +32,47 @@ let window: BrowserWindow;
 let controller: Awaited<ReturnType<typeof createDesktopApplication>>;
 let closing = false;
 let finishedClosing = false;
+let language: Locale = 'en';
+function setNativeLanguage(locale: Locale): void {
+  language = locale;
+  const label = (key: Parameters<typeof hostText>[1]) => hostText(locale, key);
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Frameo',
+        submenu: [
+          { role: 'about', label: label('menu.about') },
+          { type: 'separator' },
+          { role: 'hide', label: label('menu.hide') },
+          { role: 'hideOthers', label: label('menu.hideOthers') },
+          { role: 'unhide', label: label('menu.showAll') },
+          { type: 'separator' },
+          { role: 'quit', label: label('menu.quit') },
+        ],
+      },
+      {
+        label: label('menu.edit'),
+        submenu: [
+          { role: 'undo', label: label('menu.undo') },
+          { role: 'redo', label: label('menu.redo') },
+          { type: 'separator' },
+          { role: 'cut', label: label('menu.cut') },
+          { role: 'copy', label: label('menu.copy') },
+          { role: 'paste', label: label('menu.paste') },
+          { role: 'selectAll', label: label('menu.selectAll') },
+        ],
+      },
+      {
+        label: label('menu.window'),
+        submenu: [
+          { role: 'minimize', label: label('menu.minimize') },
+          { role: 'zoom', label: label('menu.zoom') },
+          { role: 'front', label: label('menu.front') },
+        ],
+      },
+    ]),
+  );
+}
 async function mediaProtocol(request: Request): Promise<Response> {
   try {
     const url = new URL(request.url);
@@ -105,12 +148,14 @@ app
         if (window && !window.isDestroyed()) window.webContents.send('frameo:event', event);
       },
       revealFile: (path) => shell.showItemInFolder(path),
+      languageChanged: setNativeLanguage,
       dialog: {
         save: (options) => dialog.showSaveDialog(window, options),
         open: (options) => dialog.showOpenDialog(window, options),
         confirm: (options) => dialog.showMessageBox(window, options),
       },
     });
+    setNativeLanguage(normalizeLocale((await controller.methods.bootstrap()).settings.language));
     window = new BrowserWindow({
       width: 1520,
       height: 1000,
@@ -184,52 +229,16 @@ app
         !Object.hasOwn(controller.methods, method) ||
         closing
       )
-        throw new Error('无效或过期的应用连接。');
+        throw new Error(hostText(language, 'error.connection'));
       try {
         const parsed = schemas[method] ? schemas[method].parse(input) : input;
-        if (!schemas[method] && input !== undefined) throw new Error('该操作不接受参数。');
+        if (!schemas[method] && input !== undefined)
+          throw new Error(hostText(language, 'error.noParameters'));
         return await controller.methods[method](parsed);
       } catch (error) {
-        if (error instanceof z.ZodError)
-          throw new Error(
-            '参数无效：' +
-              error.issues
-                .map((issue) => issue.message)
-                .slice(0, 3)
-                .join('；'),
-          );
-        throw new Error(error instanceof Error ? error.message : '操作失败。');
+        throw new Error(hostErrorMessage(error, language));
       }
     });
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate([
-        {
-          label: 'Frameo',
-          submenu: [
-            { role: 'about' },
-            { type: 'separator' },
-            { role: 'hide' },
-            { role: 'hideOthers' },
-            { role: 'unhide' },
-            { type: 'separator' },
-            { role: 'quit' },
-          ],
-        },
-        {
-          label: '编辑',
-          submenu: [
-            { role: 'undo' },
-            { role: 'redo' },
-            { type: 'separator' },
-            { role: 'cut' },
-            { role: 'copy' },
-            { role: 'paste' },
-            { role: 'selectAll' },
-          ],
-        },
-        { label: '窗口', submenu: [{ role: 'minimize' }, { role: 'zoom' }, { role: 'front' }] },
-      ]),
-    );
     if (devUrl) await window.loadURL(devUrl);
     else await window.loadURL(rendererURL);
     if (!app.isPackaged && process.env.FRAMEO_PROJECT)

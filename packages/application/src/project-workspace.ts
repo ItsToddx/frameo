@@ -12,6 +12,10 @@ export class ProjectWorkspace {
     readonly database: ProjectStore,
     private readonly userMemories: UserMemoryRepository,
     private readonly environment: IdentityClock,
+    private readonly trackNames: { video: string; audio: string } = {
+      video: '画面',
+      audio: '声音',
+    },
   ) {}
   snapshot(): ProjectSnapshot {
     return this.database.snapshot(this.userMemories.read());
@@ -31,8 +35,20 @@ export class ProjectWorkspace {
         height: input.height,
         fps: input.fps,
         tracks: [
-          { id: this.environment.id(), name: '画面', kind: 'video', muted: false, locked: false },
-          { id: this.environment.id(), name: '声音', kind: 'audio', muted: false, locked: false },
+          {
+            id: this.environment.id(),
+            name: this.trackNames.video,
+            kind: 'video',
+            muted: false,
+            locked: false,
+          },
+          {
+            id: this.environment.id(),
+            name: this.trackNames.audio,
+            kind: 'audio',
+            muted: false,
+            locked: false,
+          },
         ],
         clips: [],
         captions: [],

@@ -32,6 +32,7 @@ import type { ProjectStore, ProjectState as PersistedState } from './project-sto
 import type { Review, KitInfo } from './model.js';
 export interface RecipePorts {
   id(): string;
+  sessionTitle?(recipeName: string): string;
   assetAvailable(directory: string, relativePath: string): boolean;
 }
 export interface RecipeCatalog {
@@ -164,7 +165,9 @@ export class RecipeExecutionService {
       };
       state.sessions.push({
         id: sessionId,
-        title: `配方 · ${definition.descriptor.name}`,
+        title:
+          this.ports.sessionTitle?.(definition.descriptor.name) ??
+          `配方 · ${definition.descriptor.name}`,
         messages: [],
       });
       state.recipes.push(recipe as unknown as PersistedState['recipes'][number]);

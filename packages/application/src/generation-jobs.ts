@@ -414,7 +414,9 @@ export class GenerationJobs {
       id: this.ports.id(),
       requestId: this.ports.id(),
       kind: preview ? 'preview' : 'export',
-      title: preview ? '合成预览' : `导出 ${sequence.name}`,
+      title:
+        this.ports.renderTitle?.(sequence, preview) ??
+        (preview ? '合成预览' : `导出 ${sequence.name}`),
       status: 'queued',
       progress: 0,
       createdAt: timestamp,
