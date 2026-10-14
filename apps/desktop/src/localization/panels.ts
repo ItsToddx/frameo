@@ -1,2 +1,319 @@
-import type { Catalog } from './types';
-export const panels = {} as const satisfies Catalog;
+import type { Catalog, Locale } from './types';
+export const panels = {
+  'recipes.empty.title': { en: 'No workflow records yet', zh: '还没有工作流记录' },
+  'recipes.empty.description': {
+    en: 'Ask the Agent in chat to run an enabled workflow.',
+    zh: '在对话中让 Agent 执行已启用的工作流。',
+  },
+  'recipes.status.running': { en: 'Running', zh: '执行中' },
+  'recipes.status.paused': { en: 'Awaiting continuation', zh: '待继续' },
+  'recipes.status.completed': { en: 'Completed', zh: '已完成' },
+  'recipes.status.failed': { en: 'Failed', zh: '失败' },
+  'recipes.step': { en: 'Step', zh: '步骤' },
+  'recipes.attempt': { en: 'Attempt {count}', zh: '第 {count} 次' },
+  'recipes.step.pending': { en: 'Pending', zh: '待执行' },
+  'recipes.step.running': { en: 'Running', zh: '执行中' },
+  'recipes.step.review': { en: 'Awaiting review', zh: '待审阅' },
+  'recipes.step.waiting': { en: 'Waiting for tasks or proposals', zh: '等待任务或提案' },
+  'recipes.step.completed': { en: 'Completed', zh: '完成' },
+  'recipes.step.failed': { en: 'Failed', zh: '失败' },
+  'recipes.step.stale': { en: 'Needs redo', zh: '需重做' },
+  'recipes.inputRejected': {
+    en: 'Execution input was rejected. Adjust the goal or redo this step before confirming again.',
+    zh: '执行输入已拒绝。请调整目标或重做步骤后再确认。',
+  },
+  'recipes.fullInput': { en: 'Complete input for this step', zh: '此步骤将使用的完整输入' },
+  'recipes.fullResult': { en: 'Complete result of this attempt', zh: '此次执行的完整结果' },
+  'recipes.rejectInput': { en: 'Reject input', zh: '拒绝输入' },
+  'recipes.confirmInput': { en: 'Confirm input', zh: '确认输入' },
+  'recipes.confirmInputHint': {
+    en: 'Confirm the complete input for this step',
+    zh: '确认此步骤的完整输入',
+  },
+  'recipes.saveDraftHint': {
+    en: 'Save or discard the timeline draft first',
+    zh: '先保存或放弃时间线草稿',
+  },
+  'recipes.resultRejected': {
+    en: 'Result was rejected. Redo this step and review it again.',
+    zh: '结果已拒绝，请重做此步骤后再次审阅。',
+  },
+  'recipes.resultAccepted': { en: 'Result accepted', zh: '结果已采纳' },
+  'recipes.rejectResult': { en: 'Reject result', zh: '拒绝结果' },
+  'recipes.acceptResult': { en: 'Accept result', zh: '采纳结果' },
+  'recipes.acceptResultHint': {
+    en: 'Accept the current result of this step',
+    zh: '采纳此步骤的当前结果',
+  },
+  'recipes.redo': { en: 'Redo step {title}', zh: '重做步骤 {title}' },
+  'recipes.unresolvedJobs': {
+    en: 'Some tasks are unfinished or awaiting confirmation. Check or cancel them in task history before redoing a step.',
+    zh: '有任务尚未结束或状态待确认。请在任务记录中查询或取消后，再重做步骤。',
+  },
+  'recipes.reviewBeforeContinue': {
+    en: 'Review the current step’s result before continuing the workflow.',
+    zh: '先审阅当前步骤的结果，再继续工作流。',
+  },
+  'recipes.resume': { en: 'Continue workflow', zh: '继续工作流' },
+  'recipes.export': { en: 'Export record', zh: '导出记录' },
+  'panel.cancel': { en: 'Cancel', zh: '取消' },
+  'settings.title': { en: 'Connect to Volcengine Ark', zh: '连接火山方舟' },
+  'settings.description': {
+    en: 'Frameo uses models to understand your creative goals. The first release uses Seedance to generate video.',
+    zh: 'Frameo 通过模型理解创作需求，第一版使用 Seedance 生成视频。',
+  },
+  'settings.keySaved': { en: 'API key saved on this device', zh: 'API Key 已保存在本机' },
+  'settings.setup': { en: 'Configure models to start creating', zh: '配置模型后开始创作' },
+  'settings.keyNotice': {
+    en: 'The desktop app stores the key and sends creative requests through Volcengine Ark.',
+    zh: '密钥由桌面端保存，通过火山方舟发送创作请求。',
+  },
+  'settings.account': { en: 'Models and account', zh: '模型与账户' },
+  'settings.agentModel': { en: 'Agent model / endpoint ID', zh: 'Agent 模型 / 接入点 ID' },
+  'settings.agentPlaceholder': {
+    en: 'Model ID with tool calling and image understanding',
+    zh: '填写支持工具调用与图像理解的模型 ID',
+  },
+  'settings.seedanceModel': { en: 'Seedance model / endpoint ID', zh: 'Seedance 模型 / 接入点 ID' },
+  'settings.seedancePlaceholder': {
+    en: 'Seedance video model ID',
+    zh: '填写 Seedance 视频模型 ID',
+  },
+  'settings.apiKey': { en: 'API key', zh: 'API Key' },
+  'settings.apiKeyPlaceholder': {
+    en: 'Enter your Volcengine Ark API key',
+    zh: '输入火山方舟 API Key',
+  },
+  'settings.replaceKey': { en: 'Replace key', zh: '替换密钥' },
+  'settings.dataSummary': { en: 'Which assets does the Agent use?', zh: 'Agent 会使用哪些素材？' },
+  'settings.costControl': { en: 'Cost controls', zh: '费用控制' },
+  'settings.generationBudget': {
+    en: 'Budget limit per generation / CNY',
+    zh: '单次生成预算上限 / 元',
+  },
+  'settings.callLimit': { en: 'Agent model call limit per request', zh: '单次 Agent 模型调用上限' },
+  'settings.costHint': {
+    en: 'The budget is used for confirmation and blocking requests. The provider bills actual costs at your account prices. Model IDs and the key must belong to the same Ark account.',
+    zh: '预算用于确认与拦截，实际费用由服务商按账户价格结算。模型 ID 和密钥须来自同一方舟账户。',
+  },
+  'settings.advanced': { en: 'Advanced connection settings', zh: '高级连接设置' },
+  'settings.baseUrl': { en: 'Ark API URL', zh: '方舟 API 地址' },
+  'settings.save': { en: 'Save configuration', zh: '保存配置' },
+  'settings.saveFailed': {
+    en: 'Configuration was not saved. Check the error message. Your input is retained.',
+    zh: '配置未保存，请检查错误提示。输入已保留。',
+  },
+  'create.projectTitle': { en: 'Create a project', zh: '新建创作工程' },
+  'create.workTitle': { en: 'Create a work', zh: '新建作品' },
+  'create.projectDescription': {
+    en: 'Name your story, then choose where to save the project.',
+    zh: '为故事起一个名字，然后选择工程的保存位置。',
+  },
+  'create.workDescription': {
+    en: 'A project can contain multiple works that share assets.',
+    zh: '一份工程可以包含多个作品，素材可以共同使用。',
+  },
+  'create.projectName': { en: 'Project name', zh: '工程名称' },
+  'create.workName': { en: 'Work name', zh: '作品名称' },
+  'create.projectPlaceholder': {
+    en: 'For example: Another rhythm of the city',
+    zh: '例如：城市的另一种节奏',
+  },
+  'create.workPlaceholder': { en: 'For example: Main film', zh: '例如：主影片' },
+  'create.aspect': { en: 'Aspect ratio', zh: '画幅' },
+  'create.landscape': { en: '16:9 · Landscape', zh: '16:9 · 横屏' },
+  'create.portrait': { en: '9:16 · Portrait', zh: '9:16 · 竖屏' },
+  'create.square': { en: '1:1 · Square', zh: '1:1 · 方形' },
+  'create.fps': { en: 'Frame rate', zh: '帧率' },
+  'create.projectSubmit': { en: 'Choose location and create', zh: '选择位置并创建' },
+  'create.workSubmit': { en: 'Create work', zh: '创建作品' },
+  'create.failed': {
+    en: 'Creation did not finish. Your input is retained. Check the message and try again.',
+    zh: '创建未完成，输入已保留。请检查提示后重试。',
+  },
+  'generate.title': { en: 'Generate a new shot', zh: '生成一个新镜头' },
+  'generate.description': {
+    en: 'Seedance · Results stay in the asset library. You confirm when to add them to a work.',
+    zh: 'Seedance · 结果保留在素材库，加入作品时由你确认。',
+  },
+  'generate.prompt': { en: 'Describe the shot', zh: '描述画面' },
+  'generate.promptPlaceholder': {
+    en: 'For example: A coastal road in the morning mist. The camera slowly follows a silver car, natural light, cinematic texture.',
+    zh: '例如：清晨，薄雾中的海岸公路。镜头缓慢跟随一辆银色汽车，自然光，电影质感。',
+  },
+  'generate.duration': { en: 'Video duration', zh: '视频时长' },
+  'generate.fiveSeconds': { en: '5 seconds', zh: '5 秒' },
+  'generate.tenSeconds': { en: '10 seconds', zh: '10 秒' },
+  'generate.reference': { en: 'Reference image', zh: '参考图片' },
+  'generate.noReference': { en: 'No reference asset', zh: '不使用参考素材' },
+  'generate.budget': {
+    en: 'I confirm this generation budget / CNY',
+    zh: '我确认此次生成预算 / 元',
+  },
+  'generate.budgetPlaceholder': { en: 'Enter the confirmed budget', zh: '输入已确认的预算' },
+  'generate.submit': { en: 'Confirm budget and generate', zh: '确认预算并生成' },
+  'generate.failed': {
+    en: 'Task was not submitted. Your input is retained. Check the error message before proceeding.',
+    zh: '任务未提交，输入已保留。请检查错误提示后再操作。',
+  },
+  'jobs.title': { en: 'Task history', zh: '任务记录' },
+  'jobs.description': {
+    en: 'Cloud generation and local rendering tasks update here.',
+    zh: '云端生成与本地合成任务在这里持续更新。',
+  },
+  'jobs.empty.title': { en: 'No tasks yet', zh: '还没有任务' },
+  'jobs.empty.description': {
+    en: 'Generation, preview, and export tasks show their actual execution status here.',
+    zh: '提交生成、预览或导出后会显示真实执行状态。',
+  },
+  'jobs.kind.seedance': { en: 'Seedance cloud generation', zh: 'Seedance 云端生成' },
+  'jobs.kind.preview': { en: 'Local preview rendering', zh: '本地预览合成' },
+  'jobs.kind.motion': { en: 'Motion rendering', zh: '动效渲染' },
+  'jobs.kind.export': { en: 'Video export', zh: '视频导出' },
+  'jobs.details': { en: 'Task details', zh: '任务详情' },
+  'jobs.model': { en: 'Model', zh: '模型' },
+  'jobs.id': { en: 'Task ID', zh: '任务 ID' },
+  'jobs.noRemoteId': { en: 'Cloud ID not received yet', zh: '尚未获得云端 ID' },
+  'jobs.cancelLocal': { en: 'Stop requested for local processing.', zh: '已请求停止本地处理。' },
+  'jobs.cancelRemote': {
+    en: 'Cancellation requested; the final cloud status will still be checked.',
+    zh: '已请求取消；云端最终状态仍会查询确认。',
+  },
+  'jobs.cancelUnknown': {
+    en: 'Cancellation intent recorded. The cloud task ID is missing; verify in the Ark console first. The app will not resubmit a paid request.',
+    zh: '已记录取消意图；缺少云端任务 ID，请先在方舟控制台核对。应用不会重新付费提交。',
+  },
+  'kits.title': { en: 'Kit store', zh: 'Kit 商店' },
+  'kits.description': {
+    en: 'Manage providers, tools, agents, and creative workflows. Installed Kits join your creative environment only after you enable them.',
+    zh: '管理 Provider、工具、Agent 与创作工作流。安装后需启用，才会加入创作环境。',
+  },
+  'kits.search': { en: 'Search Kits', zh: '搜索 Kit' },
+  'kits.category': { en: 'Kit category', zh: 'Kit 分类' },
+  'kits.category.all': { en: 'All categories', zh: '全部类别' },
+  'kits.category.provider': { en: 'Provider', zh: 'Provider' },
+  'kits.category.tool': { en: 'Tool', zh: '工具' },
+  'kits.category.agent': { en: 'Agent', zh: 'Agent' },
+  'kits.category.recipe': { en: 'Workflow', zh: '工作流' },
+  'kits.importHint': {
+    en: 'Import a Kit directory, ZIP, or declaration file',
+    zh: '导入 Kit 目录、ZIP 或声明文件',
+  },
+  'kits.import': { en: 'Import Kit', zh: '导入 Kit' },
+  'kits.refresh': { en: 'Refresh Kit list', zh: '刷新 Kit 列表' },
+  'kits.importNotice': {
+    en: 'Kit directories, ZIP archives, and declaration files are supported. For Kits with native tools, the desktop app shows permissions and asks for trust confirmation.',
+    zh: '支持 Kit 目录、ZIP 与声明文件。含原生工具的 Kit 会由桌面端展示权限与信任确认。',
+  },
+  'kits.enabled': { en: 'Enabled', zh: '已启用' },
+  'kits.installed': { en: 'Installed', zh: '已安装' },
+  'kits.noPermissions': { en: 'No additional permissions', zh: '无额外权限' },
+  'kits.startHint': { en: 'Start the creative workflow', zh: '启动创作工作流' },
+  'kits.openProjectHint': { en: 'Open a project first', zh: '请先打开一个工程' },
+  'kits.start': { en: 'Start creating', zh: '开始制作' },
+  'kits.disable': { en: 'Disable', zh: '停用' },
+  'kits.enable': { en: 'Enable', zh: '启用' },
+  'kits.install': { en: 'Install', zh: '安装' },
+  'kits.empty.title': { en: 'No matching Kits', zh: '没有找到匹配的 Kit' },
+  'kits.empty.description': {
+    en: 'Try other keywords or import a local Kit.',
+    zh: '尝试其他关键词，或导入本地 Kit。',
+  },
+  'memories.title': { en: 'Creative memory', zh: '创作记忆' },
+  'memories.description': {
+    en: 'Save explicit preferences for brands, characters, and creative style for the Agent to read in future work.',
+    zh: '明确记录品牌、角色和创作偏好，Agent 可在后续创作中读取。',
+  },
+  'memories.project': { en: 'Current project', zh: '当前工程' },
+  'memories.user': { en: 'Personal', zh: '个人' },
+  'memories.edit': { en: 'Edit memory', zh: '编辑记忆' },
+  'memories.delete': { en: 'Delete memory', zh: '删除记忆' },
+  'memories.empty.title': {
+    en: 'Save creative preferences worth remembering',
+    zh: '记录值得记住的创作偏好',
+  },
+  'memories.empty.description': {
+    en: 'For example: brand colors, shot style, and caption standards.',
+    zh: '例如：品牌主色、镜头风格、字幕规范。',
+  },
+  'memories.add': { en: 'Add memory', zh: '新增记忆' },
+  'memories.scope': { en: 'Scope', zh: '作用范围' },
+  'memories.allProjects': { en: 'Personal · All projects', zh: '个人 · 所有工程' },
+  'memories.content': { en: 'Memory content', zh: '记忆内容' },
+  'memories.placeholder': {
+    en: 'Briefly describe preferences the Agent should keep following.',
+    zh: '简洁描述希望 Agent 持续遵守的偏好。',
+  },
+  'memories.save': { en: 'Save memory', zh: '保存记忆' },
+  'memories.addAnother': { en: 'Add another', zh: '新增另一条' },
+  'settings.dataNotice': {
+    en: 'Use an Agent model with tool calling and image understanding. Images, video keyframes, and audio measurements from selected assets may be sent to this model.',
+    zh: '请使用支持工具调用与图像理解的 Agent 模型。选中素材的图片、视频关键帧及音频测量数据可能会发送至此模型。',
+  },
+  'generate.budgetNotice': {
+    en: 'Limit ¥{budget}. Clicking the button below submits your description and reference assets to Ark and incurs model costs. Actual charges follow the provider’s bill.',
+    zh: '上限 ¥{budget}。点击下方按钮后，描述与参考素材会提交至方舟，产生模型费用。实际费用以服务商账单为准。',
+  },
+  'jobs.budget': { en: 'Confirmed budget ¥{budget}', zh: '确认预算 ¥{budget}' },
+  'jobs.cancel': { en: 'Cancel task {title}', zh: '取消任务 {title}' },
+  'jobs.reconcile': { en: 'Check task {title}', zh: '查询任务 {title}' },
+  'jobs.reveal': { en: 'Show output for {title}', zh: '查看输出 {title}' },
+  'kits.permissions': { en: 'Required permissions · {count}', zh: '所需权限 · {count}' },
+  'kits.source': { en: 'Source: {source}', zh: '来源：{source}' },
+  'kits.uninstall': { en: 'Uninstall {name}', zh: '卸载 {name}' },
+  'builtin.seedance.name': { en: 'Seedance', zh: 'Seedance' },
+  'builtin.seedance.description': {
+    en: 'Volcengine Ark video generation with resumable task polling.',
+    zh: '通过火山方舟生成视频，支持恢复任务状态查询。',
+  },
+  'builtin.captions.name': { en: 'Caption style', zh: '字幕样式' },
+  'builtin.captions.description': {
+    en: 'Revision-aware caption styling proposals.',
+    zh: '基于当前版本提出字幕样式修改方案。',
+  },
+  'builtin.creative.name': { en: 'Creative director', zh: '创意导演' },
+  'builtin.creative.description': {
+    en: 'Plans scripts, structure and shot intent.',
+    zh: '规划脚本、结构和镜头意图。',
+  },
+  'builtin.visual.name': { en: 'Visual producer', zh: '视觉制作' },
+  'builtin.visual.description': {
+    en: 'Selects image references and prepares Seedance generation proposals.',
+    zh: '选择参考图片并准备 Seedance 生成方案。',
+  },
+  'builtin.editor.name': { en: 'Film editor', zh: '影片剪辑' },
+  'builtin.editor.description': {
+    en: 'Prepares revision-aware timeline and caption changes.',
+    zh: '基于当前版本准备时间线与字幕修改。',
+  },
+  'builtin.product.name': { en: 'Product film', zh: '产品影片' },
+  'builtin.product.description': {
+    en: 'Create a product ad through script, visual generation review, and timeline assembly.',
+    zh: '通过脚本、视觉生成审阅和时间线编排制作产品广告。',
+  },
+} as const satisfies Catalog;
+
+const builtinKitMessages = {
+  'reelbeam.seedance-kit': 'seedance',
+  'reelbeam.captions-kit': 'captions',
+  'reelbeam.creative-kit': 'creative',
+  'reelbeam.visual-kit': 'visual',
+  'reelbeam.editor-kit': 'editor',
+  'reelbeam.product-ad-kit': 'product',
+} as const;
+
+/** Display only: never modify the Kit passed to installation, enablement, or workflow callbacks. */
+export function presentKit(
+  locale: Locale,
+  kit: { id: string; source: string; name: string; description: string },
+): { name: string; description: string } {
+  const builtin = Object.hasOwn(builtinKitMessages, kit.id)
+    ? builtinKitMessages[kit.id as keyof typeof builtinKitMessages]
+    : undefined;
+  if (locale !== 'zh-CN' || kit.source !== 'builtin' || !builtin)
+    return { name: kit.name, description: kit.description };
+  return {
+    name: panels[`builtin.${builtin}.name`].zh,
+    description: panels[`builtin.${builtin}.description`].zh,
+  };
+}
