@@ -928,7 +928,7 @@ export function App() {
                 </div>
                 <div>
                   <span>02</span>
-                  <strong>{t('workbench.review')}</strong>
+                  <strong>{t('workbench.welcome.review')}</strong>
                   <p>{t('workbench.welcome.reviewHelp')}</p>
                 </div>
                 <div>

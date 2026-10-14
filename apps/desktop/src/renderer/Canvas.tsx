@@ -92,7 +92,7 @@ function Card({ data }: NodeProps<CardNode>) {
         </button>
         <span className="card-kind">
           {sequence
-            ? t('workbench.sequences')
+            ? t('workbench.kind.sequence')
             : asset?.kind === 'video'
               ? t('workbench.kind.video')
               : asset?.kind === 'audio'

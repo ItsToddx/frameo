@@ -208,6 +208,7 @@ export const workbench = {
     en: 'Click to show on canvas; double-click to preview',
     zh: '点击显示在画布，双击预览',
   },
+  'workbench.kind.sequence': { en: 'Sequence', zh: '作品' },
   'workbench.kind.image': {
     en: 'Image',
     zh: '图片',
