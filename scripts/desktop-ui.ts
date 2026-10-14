@@ -100,6 +100,8 @@ try {
   const page = await app.firstWindow();
   page.on('pageerror', (e) => errors.push(e.message));
   await page.getByTestId('welcome-create').waitFor();
+  await page.getByTestId('language-select').selectOption('zh-CN');
+  await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   await page.screenshot({ path: join(directory, 'welcome.png') });
   const settingsButton = page.getByRole('button', { name: '模型与应用设置', exact: true });
   await settingsButton.click();

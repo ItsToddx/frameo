@@ -61,6 +61,8 @@ try {
     errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.getByTestId('welcome-create').waitFor();
+  await page.getByTestId('language-select').selectOption('zh-CN');
+  await page.waitForFunction(() => document.documentElement.lang === 'zh-CN');
   await page.getByRole('button', { name: '模型与应用设置', exact: true }).click();
   await page.getByTestId('agent-model-input').fill('fixture-no-inference');
   await page.getByTestId('seedance-model-input').fill('doubao-seedance-2-5-260628');
