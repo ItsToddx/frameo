@@ -35,6 +35,7 @@ import type {
   Session,
   KitInfo,
 } from '../adapters/contracts/api';
+import type { MessageKey, Parameters } from '../localization';
 import { presentKit } from '../localization/panels';
 import { FrameMark } from './FrameMark';
 import { Canvas } from './Canvas';
@@ -49,6 +50,8 @@ import {
   SettingsModal,
 } from './Panels';
 import { Button, Empty, IconButton, Modal, LanguagePicker, uid } from './ui';
+
+type Notice = string | { key: MessageKey; parameters?: Parameters };
 
 type ModalType =
   | 'settings'
@@ -77,7 +80,7 @@ export function App() {
   const [kits, setKits] = useState<AppBootstrap['kits']>([]);
   const [modal, setModal] = useState<ModalType>(null);
   const [pending, setPending] = useState('');
-  const [toast, setToast] = useState<{ text: string; error: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: Notice; error: boolean } | null>(null);
   const [loadError, setLoadError] = useState('');
   const [selection, setSelection] = useState<string | null>(null);
   const [sequenceId, setSequenceId] = useState<string | null>(null);
@@ -110,7 +113,7 @@ export function App() {
   const activeJobs =
     snapshot?.jobs.filter((j) => !['succeeded', 'failed', 'cancelled'].includes(j.status)).length ||
     0;
-  const notify = useCallback((text: string, error = false) => setToast({ text, error }), []);
+  const notify = useCallback((text: Notice, error = false) => setToast({ text, error }), []);
   const onDraftChange = useCallback(
     async (dirty: boolean, targetSequenceId?: string): Promise<boolean> => {
       if (dirty) {
@@ -262,7 +265,7 @@ export function App() {
   }
   const requireSavedDraft = useCallback(() => {
     if (!dirtyEditRef.current) return true;
-    notify(t('workbench.draft.saveFirst'));
+    notify({ key: 'workbench.draft.saveFirst' });
     return false;
   }, [notify, t]);
   function needModel() {
@@ -279,7 +282,7 @@ export function App() {
   const showGenerate = () => {
     if (!needModel()) return;
     if (!snapshot) {
-      notify(t('workbench.project.openFirst'));
+      notify({ key: 'workbench.project.openFirst' });
       return;
     }
     setModal('generation');
@@ -362,7 +365,7 @@ export function App() {
       if (!requireSavedDraft()) return;
       const target = snapshot?.sequences.find((s) => s.id === sequenceId) || snapshot?.sequences[0];
       if (!target) {
-        notify(t('workbench.sequence.createFirst'));
+        notify({ key: 'workbench.sequence.createFirst' });
         return;
       }
       const kind = asset.kind === 'audio' ? 'audio' : 'video';
@@ -887,7 +890,7 @@ export function App() {
                         expectedRevision: sequence.revision,
                       }),
                     ).then((result) => {
-                      if (result) notify(t('workbench.preview.rendering'));
+                      if (result) notify({ key: 'workbench.preview.rendering' });
                     })
                   }
                   onExport={() =>
@@ -898,7 +901,7 @@ export function App() {
                       }),
                     ).then((result) => {
                       if (result?.value) {
-                        notify(t('workbench.export.submitted'));
+                        notify({ key: 'workbench.export.submitted' });
                         setModal('jobs');
                       }
                     })
@@ -1023,7 +1026,7 @@ export function App() {
           onRedo={(recipeId, redoStepId) => {
             if (!requireSavedDraft()) return;
             if (activeJobs) {
-              notify(t('workbench.recipe.activeJobs'));
+              notify({ key: 'workbench.recipe.activeJobs' });
               return;
             }
             void perform(t('workbench.recipe.redo'), () =>
@@ -1046,7 +1049,7 @@ export function App() {
             void perform(t('workbench.recipe.export'), () =>
               window.frameo.exportRecipe({ recipeId }),
             ).then((result) => {
-              if (result?.value) notify(t('workbench.recipe.exported'));
+              if (result?.value) notify({ key: 'workbench.recipe.exported' });
             })
           }
         />
@@ -1086,7 +1089,7 @@ export function App() {
             if (result) {
               setSettings(result.value);
               setModal(null);
-              notify(t('workbench.model.saved'));
+              notify({ key: 'workbench.model.saved' });
             }
             return !!result;
           }}
@@ -1137,7 +1140,7 @@ export function App() {
             );
             if (result) {
               setModal(null);
-              notify(t('workbench.seedance.submitted'));
+              notify({ key: 'workbench.seedance.submitted' });
             }
             return !!result;
           }}
@@ -1229,7 +1232,7 @@ export function App() {
                 if (parameters && (typeof parameters !== 'object' || Array.isArray(parameters)))
                   throw new Error(t('workbench.recipe.inputObject'));
               } catch {
-                notify(t('workbench.recipe.invalidJson'), true);
+                notify({ key: 'workbench.recipe.invalidJson' }, true);
                 return;
               }
               void update(t('workbench.recipe.starting'), () =>
@@ -1242,7 +1245,7 @@ export function App() {
               ).then((result) => {
                 if (result?.value) {
                   setModal(null);
-                  notify(t('workbench.recipe.started'));
+                  notify({ key: 'workbench.recipe.started' });
                 }
               });
             }}
@@ -1301,7 +1304,7 @@ export function App() {
                 void perform(t('workbench.share.export'), () => window.frameo.exportProject()).then(
                   (result) => {
                     if (result?.value) {
-                      notify(t('workbench.share.exported'));
+                      notify({ key: 'workbench.share.exported' });
                       setModal(null);
                     }
                   },
@@ -1375,7 +1378,11 @@ export function App() {
           role={toast.error ? 'alert' : 'status'}
         >
           {toast.error ? <X size={16} /> : <CheckCircle2 size={16} />}
-          <span>{hostText(toast.text)}</span>
+          <span>
+            {typeof toast.text === 'string'
+              ? hostText(toast.text)
+              : t(toast.text.key, toast.text.parameters)}
+          </span>
           <IconButton label={t('workbench.toast.close')} onClick={() => setToast(null)}>
             <X size={13} />
           </IconButton>
