@@ -30,13 +30,16 @@ export function I18nProvider({
 export function useI18n() {
   const context = useContext(Context);
   if (!context) throw Error('I18nProvider is required');
-  return {
-    ...context,
-    t: (key: MessageKey, params?: Parameters) => translate(context.locale, key, params),
-    date: (value: string | Date, options?: Intl.DateTimeFormatOptions) =>
-      formatDate(context.locale, value, options),
-    hostText: (value: string) => localizeHostText(value, context.locale),
-  };
+  return useMemo(
+    () => ({
+      ...context,
+      t: (key: MessageKey, params?: Parameters) => translate(context.locale, key, params),
+      date: (value: string | Date, options?: Intl.DateTimeFormatOptions) =>
+        formatDate(context.locale, value, options),
+      hostText: (value: string) => localizeHostText(value, context.locale),
+    }),
+    [context],
+  );
 }
 export { normalizeLocale };
 export type { Locale };

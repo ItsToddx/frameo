@@ -47,7 +47,7 @@ import {
   MemoriesModal,
   SettingsModal,
 } from './Panels';
-import { Button, Empty, IconButton, Modal, uid } from './ui';
+import { Button, Empty, IconButton, Modal, LanguagePicker, uid } from './ui';
 
 type ModalType =
   | 'settings'
@@ -69,7 +69,7 @@ const defaultSettings: Settings = {
   maxModelCalls: 12,
 };
 export function App() {
-  const { t, date, hostText, locale, setLocale } = useI18n();
+  const { t, date, hostText, setLocale } = useI18n();
   const [boot, setBoot] = useState<AppBootstrap | null>(null);
   const [snapshot, setSnapshot] = useState<ProjectSnapshot | null>(null);
   const [settings, setSettings] = useState<Settings>(defaultSettings);
@@ -460,14 +460,6 @@ export function App() {
       true,
     );
   }
-  async function changeLanguage(value: string) {
-    const nextLocale = normalizeLocale(value);
-    const result = await perform(t('language.label'), () => window.frameo.setLanguage(nextLocale));
-    if (result) {
-      setSettings(result.value);
-      setLocale(nextLocale);
-    }
-  }
   const closeModal = useCallback(() => {
     if (!busy) setModal(null);
   }, [busy]);
@@ -512,17 +504,7 @@ export function App() {
           )}
         </div>
         <div className="header-actions">
-          <select
-            className="language-select"
-            aria-label={t('language.label')}
-            data-testid="language-select"
-            value={locale}
-            disabled={busy}
-            onChange={(event) => void changeLanguage(event.target.value)}
-          >
-            <option value="en">English</option>
-            <option value="zh-CN">简体中文</option>
-          </select>
+          <LanguagePicker disabled={busy} />
           <Button onClick={() => setModal('jobs')} disabled={!snapshot} testId="jobs-button">
             <Clock3 size={15} />
             <span>{t('workbench.jobs')}</span>
